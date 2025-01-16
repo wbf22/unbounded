@@ -1,31 +1,23 @@
 import './App.css';
 import Button from './util/Button';
 import imageSrc from './util/Monet_-_Impression,_Sunrise.jpg';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import Paint from './paint/Paint';
+import Home from './home/Home';
+import { Link } from 'react-router-dom';
 
 function App() {
-  return (
-    <div class="App">
-
-        <div class="Main-Page-Content">
-
-          <b class="Big-Title">
-            Welcome to Monet tools!
-          </b>
-
-          <div class="tool-button paint-button" >
-              <b>Paint</b>
-          </div>
-
-          <div class="tool-button pallete-button" >
-              <b>Color Pallete Generator</b>
-          </div>
-
+    return (
+        <div>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/" element={<Home/>} />
+                    <Route path="/paint" element={<Paint />} />
+                </Routes>
+            </BrowserRouter>
         </div>
-
-        <img class="monet_impression" src={imageSrc}  alt="logo" />
-        
-    </div>
   );
 }
 
 export default App;
+
