@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>monet paint</title>
+    <script type="module" src="Button.js"></script>
+</head>
+<body>
+    <custom-button text="Click Me"></custom-button>
+
+    <script>
+        // Optional: Update the text dynamically
+        const button = document.querySelector('custom-button');
+        setTimeout(() => {
+            button.text = "Updated Text";
+        }, 2000);
+    </script>
+
+    <style>
+        .App {
+            text-align: center;
+            height: 100vh;
+        
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .Main-Page-Content {
+            width: 40%;
+            height: 100vh;
+        
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .Big-Title {
+            font-size: 4em;
+            margin-bottom: 10%;
+        }
+        
+        
+        .tool-button{
+            width: 50%;
+            height: 5vh;
+        
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+        
+            margin-bottom: 5%;
+        
+            border-radius: 5px;
+        }
+        
+        .paint-button {
+            background-color: rgb(255, 130, 34);
+            color:  #fdfeff;
+        }
+        
+        .paint-button:hover{
+            background-color: rgb(219, 144, 87);
+        }
+        
+        .pallete-button {
+            background-color: #fdfeff;
+            color: rgb(255, 130, 34);
+            border-color: #d3d3d3;
+            border: 1px solid;
+        }
+        
+        .pallete-button:hover{
+            background-color: rgb(219, 144, 87);
+            color:  #fdfeff;
+        }
+
+        .monet_impression {
+            width: 60%;
+            height: 100%;
+        }
+    </style>
+
+    <div class="App">
+
+        <div class="Main-Page-Content">
+
+            <b class="Big-Title">
+                Welcome to Monet tools!
+            </b>
+
+            <a href="Paint.html" class="tool-button paint-button">
+                <b>Paint</b>
+            </a>
+
+            <div class="tool-button pallete-button" >
+                <b>Color Pallete Generator</b>
+            </div>
+
+        </div>
+
+        <img class="monet_impression" src="./assets/Claude_Monet_Boulevard_des_Capucines.jpg"  alt="logo"/>
+        
+    </div>
+</body>
+</html>

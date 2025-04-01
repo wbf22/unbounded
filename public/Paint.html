@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Component Example</title>
+</head>
+<body>
+    <style>
+        #paintCanvas {
+            background-color: #fdfeff;
+            image-rendering: pixelated;
+
+            position: absolute;
+            left: 40000px;
+            top: 40000px;
+        }
+
+        #paint-background {
+            background-color: #e0e0e0;
+            height: 80000px;
+            width: 80000px;
+
+            /* display: flex;
+            justify-content: center;
+            align-items: center; */
+        }
+    </style>
+    <div id="paint-background">
+        <canvas id="paintCanvas" width={1920} height={1080}></canvas>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('paintCanvas');
+            let windowWidth = window.innerWidth;
+            let windowHeight = window.innerHeight;
+            const dims = getDefaultCanvasDimensions(); // Define this function for your dimensions
+            let width = dims.defaultWidth;
+            let height = dims.defaultHeight;
+            let zoom = 9; // Default zoom level
+            let ctrl = false; // Control flag
+
+            // Set initial canvas size
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+
+            // Center the scroll
+            window.scrollTo(40000 - windowWidth / 2 + width / 2, 40000 - windowHeight / 2 + height / 2);
+            console.log('window:', windowWidth, windowHeight);
+
+            let ctx = canvas.getContext('2d');
+            ctx.fillRect(0, 0, 1, 1); // Initial fill
+
+            const handleKeyDown = (event) => {
+                if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
+                    ctrl = true;
+                }
+            };
+
+            const handleKeyUp = (event) => {
+                if (event.key === 'Control' || event.key === 'Meta') {
+                    ctrl = false;
+                }
+            };
+
+            const handleScroll = (event) => {
+                if (ctrl) {
+                    console.log("zooming");
+                    event.preventDefault(); // Prevent default scroll action
+                    let scrollAmount = event.deltaY;
+                    zoom += scrollAmount / 2000;
+                    if (zoom < 7) zoom = 7; // Minimum zoom
+                    if (zoom > 9) zoom = 9; // Maximum zoom
+
+                    let zoomFactor = 100 * 100 ** (zoom - 9);
+
+                    // Modify canvas size
+                    width = dims.defaultWidth * zoomFactor;
+                    height = dims.defaultHeight * zoomFactor;
+                    canvas.style.width = width + 'px';
+                    canvas.style.height = height + 'px';
+
+                    // Center the zoom on mouse position
+                    let mouseX = event.clientX + window.scrollX;
+                    let mouseY = event.clientY + window.scrollY;
+
+                    // Modify scroll position to center zoom (this part can be adjusted based on your needs)
+                    window.scrollTo(mouseX - width / 2, mouseY - height / 2);
+                }
+
+                // otherwise scroll will pan the view by default
+            };
+
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            window.addEventListener('wheel', handleScroll, { passive: false });
+
+
+            // Cleanup function to remove event listeners
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('keyup', handleKeyUp);
+                window.removeEventListener('wheel', handleScroll);
+            };
+        });
+
+        // Function to get default canvas dimensions
+        function getDefaultCanvasDimensions() {
+            
+            let windowWidth = window.innerWidth;
+            let defaultWidth = windowWidth * 0.6;
+            let defaultHeight = defaultWidth * 1080 / 1920;
+        
+            return { defaultWidth, defaultHeight };
+        }
+
+
+        function writeCanvas() {
+            
+            // get the canvas
+            const canvas = document.getElementById('paintCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            console.log(canvas.width, canvas.height);
+            const data = imageData.data; // RGBA values
+
+            // intialize pixels array if empty
+            if (pixels.length == 0) {
+                pixels = new Array(data.length).fill(255);
+            }
+
+            // write pixels to canvas
+            data = pixels;
+
+            ctx.putImageData(imageData, 0, 0); // Update the canvas with the modified pixel data
+
+            setLastUpdate(Date.now());
+        };
+
+    </script>
+</body>
+</html>
