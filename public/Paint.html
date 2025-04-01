@@ -7,6 +7,10 @@
 </head>
 <body>
     <style>
+        body{
+            margin: 0;
+        }
+
         #paintCanvas {
             background-color: #fdfeff;
             image-rendering: pixelated;
@@ -14,23 +18,51 @@
             position: absolute;
             left: 40000px;
             top: 40000px;
+
+            /* transition: width 0.5s ease, height 0.5s ease;  */
         }
 
         #paint-background {
             background-color: #e0e0e0;
             height: 80000px;
             width: 80000px;
+            z-index: 0;
 
-            /* display: flex;
-            justify-content: center;
-            align-items: center; */
+        }
+
+        .menu{
+            position: fixed;
+            height: 100%;
+            z-index: 9999;
+            background-color: #fdfeff;
+            padding: 1rem;
+            /* background-color: #585858; */
         }
     </style>
+    <div class='menu'>
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="3rem"
+            height="3rem"
+            viewBox="0 0 24 24"
+            fill="#585858"
+            stroke="#585858"
+            stroke-width="1"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <polygon points="5 5  15 15  16 18  13 17  3 7" />
+        </svg>
+    </div>
     <div id="paint-background">
-        <canvas id="paintCanvas" width={1920} height={1080}></canvas>
+        <canvas id="paintCanvas"></canvas>
     </div>
 
     <script>
+        const CANVAS_X = 40000; 
+        const CANVAS_Y = 40000; 
+
+
         document.addEventListener('DOMContentLoaded', () => {
             const canvas = document.getElementById('paintCanvas');
             let windowWidth = window.innerWidth;
@@ -38,19 +70,46 @@
             const dims = getDefaultCanvasDimensions(); // Define this function for your dimensions
             let width = dims.defaultWidth;
             let height = dims.defaultHeight;
-            let zoom = 9; // Default zoom level
             let ctrl = false; // Control flag
 
             // Set initial canvas size
             canvas.style.width = width + 'px';
             canvas.style.height = height + 'px';
+            canvas.width = width;
+            canvas.height = height;
+
+            // const rect = canvas.getBoundingClientRect();
+            // let canvasX = rect.left + window.scrollX;
+            // let canvasY = rect.top + window.scrollY;
+            // console.log('canvasX', canvasX);
+            // console.log('canvasY', canvasY);
 
             // Center the scroll
-            window.scrollTo(40000 - windowWidth / 2 + width / 2, 40000 - windowHeight / 2 + height / 2);
+            window.scrollTo(CANVAS_X - windowWidth / 2 + width / 2, CANVAS_Y - windowHeight / 2 + height / 2);
             console.log('window:', windowWidth, windowHeight);
+            // console.log('width', width);
+            // console.log('height', height);
+            // console.log('windowWidth', windowWidth);
+            // console.log('windowHeight', windowHeight);
 
             let ctx = canvas.getContext('2d');
-            ctx.fillRect(0, 0, 1, 1); // Initial fill
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            // console.log('canvasWidth', canvasWidth);
+            // console.log('canvasHeight', canvasHeight);
+            const imageData = ctx.createImageData(canvasWidth, canvasHeight);
+            for (let y = 0; y < canvasHeight/2; y++) {
+                for (let x = 0; x < canvasWidth/2; x++) {
+                    const index = (y * canvasWidth + x) * 4; // Calculate index for the pixel
+
+                    // Set the pixel color (R, G, B, A)
+                    imageData.data[index] = 255;     // Red
+                    imageData.data[index + 1] = 0;   // Green
+                    imageData.data[index + 2] = 0;   // Blue
+                    imageData.data[index + 3] = 255; // Alpha (fully opaque)
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
 
             const handleKeyDown = (event) => {
                 if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
@@ -64,37 +123,97 @@
                 }
             };
 
+            let zoom = 8; // Default zoom level
             const handleScroll = (event) => {
-                if (ctrl) {
-                    console.log("zooming");
-                    event.preventDefault(); // Prevent default scroll action
-                    let scrollAmount = event.deltaY;
-                    zoom += scrollAmount / 2000;
-                    if (zoom < 7) zoom = 7; // Minimum zoom
-                    if (zoom > 9) zoom = 9; // Maximum zoom
+                // determine mouse location on canvas
+                let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
+                let mouseY = event.clientY;
+                const canvas_location_x_percent = (mouseX + window.scrollX - CANVAS_X) / width;
+                const canvas_location_y_percent = (mouseY + window.scrollY - CANVAS_Y) / height;
+                // console.log('canvas_location_x_percent', canvas_location_x_percent);
+                // console.log('canvas_location_y_percent', canvas_location_y_percent);
 
-                    let zoomFactor = 100 * 100 ** (zoom - 9);
 
-                    // Modify canvas size
-                    width = dims.defaultWidth * zoomFactor;
-                    height = dims.defaultHeight * zoomFactor;
-                    canvas.style.width = width + 'px';
-                    canvas.style.height = height + 'px';
 
-                    // Center the zoom on mouse position
-                    let mouseX = event.clientX + window.scrollX;
-                    let mouseY = event.clientY + window.scrollY;
+                // console.log("zooming");
+                event.preventDefault(); // Prevent default scroll action
+                let scrollAmount = event.deltaY;
+                zoom += scrollAmount / 1200;
+                if (zoom < 8) zoom = 8; // Minimum zoom
+                if (zoom > 9) zoom = 9; // Maximum zoom
 
-                    // Modify scroll position to center zoom (this part can be adjusted based on your needs)
-                    window.scrollTo(mouseX - width / 2, mouseY - height / 2);
+                let zoomFactor = 100 * 100 ** (zoom - 9);
+                // console.log('zoomFactor', zoomFactor);
+
+                // Modify canvas size
+                width = dims.defaultWidth * zoomFactor;
+                height = dims.defaultHeight * zoomFactor;
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+
+                // Center the zoom on mouse position
+                // console.log('mouseX', mouseX);
+                // console.log('mouseY', mouseY);
+                // console.log('width', width);
+                // console.log('height', height);
+
+                /*
+
+                    determine pixel where mouse is
+                    determine same pixel in new canvas
+
+                    determine mouse distance from center screen
+                */
+
+                const canvas_location_x = canvas_location_x_percent * width;
+                const canvas_location_y = canvas_location_y_percent * height;
+                const mouse_offset_x = mouseX;
+                const mouse_offset_y = mouseY;
+                // console.log('mouse_offset_x', mouse_offset_x);
+                // console.log('mouse_offset_y', mouse_offset_y);
+
+                window.scrollTo({
+                    left: 40000 - mouse_offset_x + canvas_location_x,   // X position
+                    top: 40000 - mouse_offset_y + canvas_location_y,    // Y position
+                    // behavior: 'smooth' // Enables smooth scroll
+                });
+            };
+
+            let is_draw_mode = false;
+            let is_dragging = false;
+            let drag_x, drag_y;
+            const handleMouseDown = (event) => {
+                is_dragging = true; // Set dragging to true
+                drag_x = event.clientX; // Get the starting X coordinate
+                drag_y = event.clientY; // Get the starting Y coordinate
+            };
+
+            const handleMouseMove = (event) => {
+                if (is_dragging) {
+                    const delta_x = event.clientX - drag_x;
+                    const delta_y = event.clientY - drag_y;
+                    // console.log('delta_x', delta_x);
+                    // console.log('delta_y', delta_y);
+                    // console.log('event.clientX', event.clientX);
+                    // console.log('event.clientY', event.clientY);
+                    // console.log('drag_x', drag_x);
+                    // console.log('drag_y', drag_y);
+                    window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
+                    drag_x = event.clientX;
+                    drag_y = event.clientY;
                 }
+            };
 
-                // otherwise scroll will pan the view by default
+            const handleMouseUp = (event) => {
+                is_dragging = false;
             };
 
             window.addEventListener('keydown', handleKeyDown);
             window.addEventListener('keyup', handleKeyUp);
             window.addEventListener('wheel', handleScroll, { passive: false });
+            window.addEventListener('mousedown', handleMouseDown);
+            window.addEventListener('mousemove', handleMouseMove);
+            window.addEventListener('mouseup', handleMouseUp);
 
 
             // Cleanup function to remove event listeners
