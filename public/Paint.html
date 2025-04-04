@@ -35,32 +35,75 @@
             height: 100%;
             z-index: 9999;
             background-color: #fdfeff;
-            padding: 1rem;
             /* background-color: #585858; */
         }
+
+        #draw-button {
+            padding: .5rem;
+        }
+
+        
+
     </style>
     <div class='menu'>
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="3rem"
-            height="3rem"
-            viewBox="0 0 24 24"
-            fill="#585858"
-            stroke="#585858"
-            stroke-width="1"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <div
+            id="draw-button"
+            onclick="drawButtonClick()"
         >
-            <polygon points="5 5  15 15  16 18  13 17  3 7" />
-        </svg>
+            <svg
+                id="draw-svg"
+                xmlns="http://www.w3.org/2000/svg"
+                width="3rem"
+                height="3rem"
+                viewBox="0 0 24 24"
+                fill="#585858"
+                stroke="#585858"
+                stroke-width="1"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+            >
+                <polygon points="7 5  17 15  18 18  15 17  5 7" />
+            </svg>
+        </div>
+        
     </div>
     <div id="paint-background">
         <canvas id="paintCanvas"></canvas>
     </div>
 
+    <!-- DRAWING -->
+    <script>
+
+        /*
+            pixels is an array of pixel objects with an x, y, and rgba color value
+        */
+        function set_pixels(canvas, pixels) {
+            let ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            pixels.forEach((pixel) => {
+
+                if (pixel.x < canvas.width && pixel.y < canvas.height) {
+                    const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
+
+                    // Set the pixel color (R, G, B, A)
+                    imageData.data[index] = pixel.r;     // Red
+                    imageData.data[index + 1] = pixel.g;   // Green
+                    imageData.data[index + 2] = pixel.b;   // Blue
+                    imageData.data[index + 3] = pixel.a; // Alpha (fully opaque)
+
+                    // console.log("x:", pixel.x, "y:", pixel.y);
+                }
+            });
+            ctx.putImageData(imageData, 0, 0);
+        }
+    </script>
+
+    <!-- INPUT HANDLING -->
     <script>
         const CANVAS_X = 40000; 
         const CANVAS_Y = 40000; 
+        let drawMode = false;
 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -92,24 +135,24 @@
             // console.log('windowWidth', windowWidth);
             // console.log('windowHeight', windowHeight);
 
-            let ctx = canvas.getContext('2d');
-            const canvasWidth = canvas.width;
-            const canvasHeight = canvas.height;
-            // console.log('canvasWidth', canvasWidth);
-            // console.log('canvasHeight', canvasHeight);
-            const imageData = ctx.createImageData(canvasWidth, canvasHeight);
-            for (let y = 0; y < canvasHeight/2; y++) {
-                for (let x = 0; x < canvasWidth/2; x++) {
-                    const index = (y * canvasWidth + x) * 4; // Calculate index for the pixel
-
-                    // Set the pixel color (R, G, B, A)
-                    imageData.data[index] = 255;     // Red
-                    imageData.data[index + 1] = 0;   // Green
-                    imageData.data[index + 2] = 0;   // Blue
-                    imageData.data[index + 3] = 255; // Alpha (fully opaque)
-                }
-            }
-            ctx.putImageData(imageData, 0, 0);
+            // const canvasWidth = canvas.width;
+            // const canvasHeight = canvas.height;
+            // let pixels = [];
+            // for (let y = 0; y < canvasHeight/2; y++) {
+            //     for (let x = 0; x < canvasWidth/2; x++) {
+                    
+            //         let pixel = {
+            //             x: x,
+            //             y: y,
+            //             r: 255,
+            //             g: 0,
+            //             b: 0,
+            //             a: 255
+            //         };
+            //         pixels.push(pixel);
+            //     }
+            // }
+            // set_pixels(canvas, pixels);
 
             const handleKeyDown = (event) => {
                 if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
@@ -190,15 +233,60 @@
 
             const handleMouseMove = (event) => {
                 if (is_dragging) {
-                    const delta_x = event.clientX - drag_x;
-                    const delta_y = event.clientY - drag_y;
-                    // console.log('delta_x', delta_x);
-                    // console.log('delta_y', delta_y);
-                    // console.log('event.clientX', event.clientX);
-                    // console.log('event.clientY', event.clientY);
-                    // console.log('drag_x', drag_x);
-                    // console.log('drag_y', drag_y);
-                    window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
+                    if (!drawMode) {
+                        const delta_x = event.clientX - drag_x;
+                        const delta_y = event.clientY - drag_y;
+                        window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
+                    }
+                    else {
+                        let mouse_x = event.clientX + window.scrollX - CANVAS_X + 0.5;
+                        let mouse_y = event.clientY + window.scrollY - CANVAS_Y + 0.5;
+                        let mouse_drag_x = drag_x + window.scrollX - CANVAS_X + 0.5;
+                        let mouse_drag_y = drag_y + window.scrollY - CANVAS_Y + 0.5;
+
+                        const canvas_width = parseFloat(canvas.style.width);
+                        const zoom_factor = canvas_width / dims.defaultWidth;
+
+                        // draw line from previous point to new point
+                        let pixels = [];
+                        // let dist_x = mouse_x - mouse_drag_x;
+                        // let dist_y = mouse_y - mouse_drag_y;
+                        // let max_dist = Math.max(dist_x, dist_y);
+                        // let step_x = dist_x / max_dist;
+                        // let step_y = dist_y / max_dist;
+                        // for (let i = 0; i < max_dist; i++) {
+                        //     const pixel = {
+                        //         x: step_x * i + mouse_drag_x,
+                        //         y: step_y * i + mouse_drag_y,
+                        //         r: 255,
+                        //         g: 0,
+                        //         b: 0,
+                        //         a: 255
+                        //     };
+                        //     pixels.push(pixel);
+                        // }
+                        const pixel = {
+                            x: Math.round(mouse_x / zoom_factor),
+                            y:  Math.round(mouse_y / zoom_factor),
+                            r: 255,
+                            g: 0,
+                            b: 0,
+                            a: 255
+                        };
+                        pixels.push(pixel);
+
+                        set_pixels(canvas, pixels);
+
+
+                        // console.log("dims.defaultWidth", dims.defaultWidth);
+                        // console.log("canvas_width", canvas_width);
+                        // console.log("zoom_factor", zoom_factor);
+                        // console.log("event.clientX:", event.clientX, "event.clientY:", event.clientY);
+                        // console.log("window.scrollX:", window.scrollX, "window.scrollY:", window.scrollY);
+                        // console.log("adj x:", event.clientX + window.scrollX, "adj y", event.clientY + window.scrollY);
+                        // console.log("x:", mouse_x, "y:", mouse_y);
+                    }
+
                     drag_x = event.clientX;
                     drag_y = event.clientY;
                 }
@@ -235,28 +323,27 @@
         }
 
 
-        function writeCanvas() {
+        function drawButtonClick() {
+            console.log("clicked");
+
+            drawMode = !drawMode;
+
+            const draw_button = document.getElementById("draw-button");
+            const draw_svg = document.getElementById("draw-svg");
             
-            // get the canvas
-            const canvas = document.getElementById('paintCanvas');
-            const ctx = canvas.getContext('2d');
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            console.log(canvas.width, canvas.height);
-            const data = imageData.data; // RGBA values
-
-            // intialize pixels array if empty
-            if (pixels.length == 0) {
-                pixels = new Array(data.length).fill(255);
+            if (drawMode) {
+                draw_button.style.backgroundColor = '#2b2b2b';
+                draw_svg.setAttribute('fill', '#ffffff');
+                draw_svg.setAttribute('stroke', '#ffffff');
             }
-
-            // write pixels to canvas
-            data = pixels;
-
-            ctx.putImageData(imageData, 0, 0); // Update the canvas with the modified pixel data
-
-            setLastUpdate(Date.now());
-        };
+            else {
+                draw_button.style.backgroundColor = '#ffffff';
+                draw_svg.setAttribute('fill', '#2b2b2b');
+                draw_svg.setAttribute('stroke', '#2b2b2b');
+            }
+            // draw_button.classList.remove("draw-button-selected");
+        }
 
     </script>
 </body>
