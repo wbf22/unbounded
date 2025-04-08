@@ -3,16 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Component Example</title>
+    <title>monet</title>
+
+    <link rel="stylesheet" href="colors.css">
+
+    <link rel="icon" type="image/png" href="assets/favicon/android-chrome-192x192.png">
+    <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
+    <link rel="icon" sizes="32x32" href="assets/favicon/favicon-32x32.png">
+    <link rel="icon" sizes="16x16" href="assets/favicon/favicon-16x16.png">
+    <link rel="manifest" href="assets/favicon/manifest.json">
 </head>
 <body>
     <style>
+
         body{
             margin: 0;
+            display: inline-block;
         }
 
         #paintCanvas {
-            background-color: #fdfeff;
+            background-color: var(--secondary-color);
             image-rendering: pixelated;
 
             position: absolute;
@@ -33,21 +43,172 @@
         .menu{
             position: fixed;
             height: 100%;
-            z-index: 9999;
-            background-color: #fdfeff;
+            z-index: 1;
+            background-color: var(--secondary-color);
             /* background-color: #585858; */
         }
 
-        #draw-button {
+        #draw_button {
             padding: .5rem;
         }
 
-        
+        #draw_button_sub_menu {
+            display: none;
+            position: absolute;
+            background-color: var(--accent-color);
+            padding: 8px;
+            z-index: 10; /* Make sure it appears above other content */
+            border-radius: 4px;
+
+            flex-direction: column;
+        }
+
+        /* Show the hidden div when hovering over either div */
+        #draw_button:hover #draw_button_sub_menu {
+            display: block;
+        }
+
+        #color_icon {
+            width: 40rem;
+            height: 3rem;
+            background-color: var(--primary-color);
+        }
+
+        #color_choice {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu_text {
+            color: var(--accent-color);
+        }
+
+        .color-picker {
+            text-align: center;
+        }
+
+        .slider_thumb::-webkit-slider-thumb, .slider_thumb::-moz-range-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px; 
+            height: 20px; 
+            background: white; 
+            border: 2px solid #ccc; 
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        #hue_slider {
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            appearance: none; /* Remove default styling for other browsers */
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, 
+                hsl(0, 100%, 50%),
+                hsl(30, 100%, 50%),
+                hsl(60, 100%, 50%),
+                hsl(90, 100%, 50%),
+                hsl(120, 100%, 50%),
+                hsl(150, 100%, 50%),
+                hsl(180, 100%, 50%),
+                hsl(210, 100%, 50%),
+                hsl(240, 100%, 50%),
+                hsl(270, 100%, 50%),
+                hsl(300, 100%, 50%),
+                hsl(330, 100%, 50%)
+            );
+            border-radius: 15px;
+            outline: none;
+        }
+
+        #saturation_slider {
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            appearance: none; /* Remove default styling for other browsers */
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, 
+                hsl(30, 0%, 50%),
+                hsl(30, 50%, 50%),
+                hsl(30, 100%, 50%)
+            );
+            border-radius: 10px;
+            outline: none;
+        }
+
+        #lightness_slider {
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            appearance: none; /* Remove default styling for other browsers */
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, 
+                hsl(30, 100%, 0%),
+                hsl(30, 100%, 10%),
+                hsl(30, 100%, 20%),
+                hsl(30, 100%, 30%),
+                hsl(30, 100%, 40%),
+                hsl(30, 100%, 50%),
+                hsl(30, 100%, 60%),
+                hsl(30, 100%, 70%),
+                hsl(30, 100%, 80%),
+                hsl(30, 100%, 90%),
+                hsl(30, 100%, 100%)
+            );
+            border-radius: 15px;
+            outline: none;
+        }
+
+        #alpha_slider {
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            appearance: none; /* Remove default styling for other browsers */
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to right, 
+                hsl(30, 100%, 50%, 0%),
+                hsl(30, 100%, 50%, 10%),
+                hsl(30, 100%, 50%, 20%),
+                hsl(30, 100%, 50%, 30%),
+                hsl(30, 100%, 50%, 40%),
+                hsl(30, 100%, 50%, 50%),
+                hsl(30, 100%, 50%, 60%),
+                hsl(30, 100%, 50%, 70%),
+                hsl(30, 100%, 50%, 80%),
+                hsl(30, 100%, 50%, 90%),
+                hsl(30, 100%, 50%, 100%)
+            );
+            border-radius: 15px;
+            outline: none;
+        }
+
+        #alpha_back {
+            background-color: var(--background-color);
+            width: 100%;
+            height: 20px;
+            border-radius: 15px;
+            outline: none;
+        }
 
     </style>
+    
+    <!-- draw sub menu -->
+    <div id='draw_button_sub_menu'>
+        <div id='color_choice'>
+            <div id='color_icon'></div>
+            <span class='menu_text'>color</span>
+            <input type="range" id="hue_slider" class='slider_thumb' min="0" max="330" value="0">
+            <input type="range" id="saturation_slider" class='slider_thumb' min="0" max="100" value="0">
+            <input type="range" id="lightness_slider" class='slider_thumb' min="0" max="100" value="0">
+            <input type="range" id="alpha_slider" class='slider_thumb' min="0" max="100" value="0">
+            <!-- <div id="alpha_back">
+                <input type="range" id="alpha_slider" class='slider_thumb' min="0" max="100" value="0">
+            </div> -->
+
+        </div>
+    </div>
+
+    <!-- side menu -->
     <div class='menu'>
         <div
-            id="draw-button"
+            id="draw_button"
             onclick="drawButtonClick()"
         >
             <svg
@@ -65,13 +226,19 @@
                 <polygon points="7 5  17 15  18 18  15 17  5 7" />
             </svg>
         </div>
-        
     </div>
+
+    <!-- background and canvas -->
     <div id="paint-background">
         <canvas id="paintCanvas"></canvas>
     </div>
 
-    <!-- DRAWING -->
+    <!-- REUSED VARAIBLES -->
+    <script>
+        let dims = null;
+    </script>
+
+    <!-- LAYERS AND CANVAS RENDERING -->
     <script>
 
         /*
@@ -99,7 +266,214 @@
         }
     </script>
 
-    <!-- INPUT HANDLING -->
+    <!-- DRAW MODE MENUS -->
+    <script>
+        const canvas = document.getElementById('paintCanvas');
+
+
+        function draw(client_x_start, client_x_end, client_y_start, client_y_end) {
+            let mouse_x = client_x_start + window.scrollX - CANVAS_X;
+            let mouse_y = client_y_start + window.scrollY - CANVAS_Y;
+            let mouse_drag_x = client_x_end + window.scrollX - CANVAS_X;
+            let mouse_drag_y = client_y_end + window.scrollY - CANVAS_Y;
+
+            const canvas_width = parseFloat(canvas.style.width);
+            const zoom_factor = canvas_width / dims.defaultWidth;
+
+            // draw line from previous point to new point
+            let pixels = [];
+            let dist_x = mouse_x - mouse_drag_x;
+            let dist_y = mouse_y - mouse_drag_y;
+            let max_dist = Math.max(Math.abs(dist_x), Math.abs(dist_y));
+            let step_x = dist_x / max_dist;
+            let step_y = dist_y / max_dist;
+            for (let i = 0; i < max_dist; i++) {
+                let x = step_x * i + mouse_drag_x;
+                let y = step_y * i + mouse_drag_y;
+                const pixel = {
+                    x: Math.floor(x / zoom_factor),
+                    y: Math.floor(y / zoom_factor),
+                    r: color.r,
+                    g: color.g,
+                    b: color.b,
+                    a: color.a
+                };
+                pixels.push(pixel);
+            }
+            const pixel = {
+                x: Math.floor(mouse_x / zoom_factor),
+                y:  Math.floor(mouse_y / zoom_factor),
+                r: color.r,
+                g: color.g,
+                b: color.b,
+                a: color.a
+            };
+            pixels.push(pixel);
+
+            set_pixels(canvas, pixels);
+
+
+            // console.log("dims.defaultWidth", dims.defaultWidth);
+            // console.log("canvas_width", canvas_width);
+            // console.log("zoom_factor", zoom_factor);
+            // console.log("event.clientX:", event.clientX, "event.clientY:", event.clientY);
+            // console.log("window.scrollX:", window.scrollX, "window.scrollY:", window.scrollY);
+            // console.log("adj x:", event.clientX + window.scrollX, "adj y", event.clientY + window.scrollY);
+            // console.log("x:", mouse_x, "y:", mouse_y);
+        }
+
+
+        const color_icon = document.getElementById('color_icon');
+        let hue = 26;
+        let saturation = 100;
+        let lightness = 57;
+        let alpha = 100;
+
+
+        const hue_slider = document.getElementById('hue_slider');
+        const saturation_slider = document.getElementById('saturation_slider');
+        const lightness_slider = document.getElementById('lightness_slider');
+        const alpha_slider = document.getElementById('alpha_slider');
+
+        function update_hue_slider() {
+            hue_slider.style.background = `linear-gradient(to right, 
+                hsl(0, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(30, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(60, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(90, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(120, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(150, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(180, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(210, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(240, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(270, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(300, ${saturation}%, ${lightness}%, ${alpha}%),
+                hsl(330, ${saturation}%, ${lightness}%, ${alpha}%)
+            )`;
+        }
+
+        function update_saturation_slider() {
+            saturation_slider.style.background = `linear-gradient(to right, 
+                hsl(${hue}, 0%, ${lightness}%, ${alpha}%),
+                hsl(${hue}, 50%, ${lightness}%, ${alpha}%),
+                hsl(${hue}, 100%, ${lightness}%, ${alpha}%)
+            )`;
+        }
+
+        function update_lightness_slider() {
+            lightness_slider.style.background = `linear-gradient(to right, 
+                hsl(${hue}, ${saturation}%, 0%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 10%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 20%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 30%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 40%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 50%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 60%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 70%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 80%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 90%, ${alpha}%),
+                hsl(${hue}, ${saturation}%, 100%, ${alpha}%)
+            )`;
+        }
+
+        function update_alpha_slider() {
+            alpha_slider.style.background = `linear-gradient(to right, 
+                hsl(${hue}, ${saturation}%, ${lightness}%, 0%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 10%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 20%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 30%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 40%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 50%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 60%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 70%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 80%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 90%),
+                hsl(${hue}, ${saturation}%, ${lightness}%, 100%)
+            )`;
+        }
+
+        hue_slider.addEventListener('input', () => {
+            hue = hue_slider.value;
+            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            update_saturation_slider();
+            update_lightness_slider();
+            update_alpha_slider();
+        });
+
+        saturation_slider.addEventListener('input', () => {
+            saturation = saturation_slider.value;
+            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            update_hue_slider();
+            update_lightness_slider();
+            update_alpha_slider();
+        });
+
+        lightness_slider.addEventListener('input', () => {
+            lightness = lightness_slider.value;
+            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            update_hue_slider();
+            update_saturation_slider();
+            update_alpha_slider();
+        });
+
+        alpha_slider.addEventListener('input', () => {
+            alpha = alpha_slider.value;
+            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            update_hue_slider();
+            update_saturation_slider();
+            update_lightness_slider();
+        });
+
+
+
+        function drawButtonClick() {
+            console.log("clicked");
+
+            drawMode = !drawMode;
+
+            const draw_button = document.getElementById("draw_button");
+            const draw_svg = document.getElementById("draw-svg");
+            
+
+            if (drawMode) {
+                draw_button.style.backgroundColor = 'var(--accent-color)';
+                draw_svg.setAttribute('fill', 'var(--secondary-color)');
+                draw_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                draw_button.style.backgroundColor = 'var(--secondary-color)';
+                draw_svg.setAttribute('fill', 'var(--accent-color)');
+                draw_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+            toggle_draw_sub_menu();
+            // draw_button.classList.remove("draw_button-selected");
+        }
+
+        function toggle_draw_sub_menu() {
+            if (drawMode) {
+                const draw_button = document.getElementById('draw_button');
+                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
+                draw_sub_menu.style.display = 'flex';
+
+                const rect = draw_button.getBoundingClientRect();
+                draw_sub_menu.style.top = (rect.top + window.scrollY) + 'px';
+                draw_sub_menu.style.left = (rect.right + window.scrollX + 5) + 'px';
+
+                hue_slider.value = hue;
+                saturation_slider.value = saturation;
+                lightness_slider.value = lightness;
+                alpha_slider.value = alpha;
+            }
+            else {
+                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
+                draw_sub_menu.style.display = 'none';
+            }
+        }
+
+
+    </script>
+
+    <!-- GENERAL INPUT HANDLING -->
     <script>
         const CANVAS_X = 40000; 
         const CANVAS_Y = 40000; 
@@ -107,10 +481,9 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('paintCanvas');
             let windowWidth = window.innerWidth;
             let windowHeight = window.innerHeight;
-            const dims = getDefaultCanvasDimensions(); // Define this function for your dimensions
+            dims = getDefaultCanvasDimensions(); // Define this function for your dimensions
             let width = dims.defaultWidth;
             let height = dims.defaultHeight;
             let ctrl = false; // Control flag
@@ -134,25 +507,6 @@
             // console.log('height', height);
             // console.log('windowWidth', windowWidth);
             // console.log('windowHeight', windowHeight);
-
-            // const canvasWidth = canvas.width;
-            // const canvasHeight = canvas.height;
-            // let pixels = [];
-            // for (let y = 0; y < canvasHeight/2; y++) {
-            //     for (let x = 0; x < canvasWidth/2; x++) {
-                    
-            //         let pixel = {
-            //             x: x,
-            //             y: y,
-            //             r: 255,
-            //             g: 0,
-            //             b: 0,
-            //             a: 255
-            //         };
-            //         pixels.push(pixel);
-            //     }
-            // }
-            // set_pixels(canvas, pixels);
 
             const handleKeyDown = (event) => {
                 if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
@@ -222,13 +576,16 @@
                 });
             };
 
-            let is_draw_mode = false;
             let is_dragging = false;
             let drag_x, drag_y;
             const handleMouseDown = (event) => {
                 is_dragging = true; // Set dragging to true
                 drag_x = event.clientX; // Get the starting X coordinate
                 drag_y = event.clientY; // Get the starting Y coordinate
+
+                if (drawMode) {
+                    draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                }
             };
 
             const handleMouseMove = (event) => {
@@ -239,52 +596,7 @@
                         window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
                     }
                     else {
-                        let mouse_x = event.clientX + window.scrollX - CANVAS_X + 0.5;
-                        let mouse_y = event.clientY + window.scrollY - CANVAS_Y + 0.5;
-                        let mouse_drag_x = drag_x + window.scrollX - CANVAS_X + 0.5;
-                        let mouse_drag_y = drag_y + window.scrollY - CANVAS_Y + 0.5;
-
-                        const canvas_width = parseFloat(canvas.style.width);
-                        const zoom_factor = canvas_width / dims.defaultWidth;
-
-                        // draw line from previous point to new point
-                        let pixels = [];
-                        // let dist_x = mouse_x - mouse_drag_x;
-                        // let dist_y = mouse_y - mouse_drag_y;
-                        // let max_dist = Math.max(dist_x, dist_y);
-                        // let step_x = dist_x / max_dist;
-                        // let step_y = dist_y / max_dist;
-                        // for (let i = 0; i < max_dist; i++) {
-                        //     const pixel = {
-                        //         x: step_x * i + mouse_drag_x,
-                        //         y: step_y * i + mouse_drag_y,
-                        //         r: 255,
-                        //         g: 0,
-                        //         b: 0,
-                        //         a: 255
-                        //     };
-                        //     pixels.push(pixel);
-                        // }
-                        const pixel = {
-                            x: Math.round(mouse_x / zoom_factor),
-                            y:  Math.round(mouse_y / zoom_factor),
-                            r: 255,
-                            g: 0,
-                            b: 0,
-                            a: 255
-                        };
-                        pixels.push(pixel);
-
-                        set_pixels(canvas, pixels);
-
-
-                        // console.log("dims.defaultWidth", dims.defaultWidth);
-                        // console.log("canvas_width", canvas_width);
-                        // console.log("zoom_factor", zoom_factor);
-                        // console.log("event.clientX:", event.clientX, "event.clientY:", event.clientY);
-                        // console.log("window.scrollX:", window.scrollX, "window.scrollY:", window.scrollY);
-                        // console.log("adj x:", event.clientX + window.scrollX, "adj y", event.clientY + window.scrollY);
-                        // console.log("x:", mouse_x, "y:", mouse_y);
+                        draw(event.clientX, drag_x, event.clientY, drag_y);
                     }
 
                     drag_x = event.clientX;
@@ -296,12 +608,17 @@
                 is_dragging = false;
             };
 
+
             window.addEventListener('keydown', handleKeyDown);
             window.addEventListener('keyup', handleKeyUp);
             window.addEventListener('wheel', handleScroll, { passive: false });
             window.addEventListener('mousedown', handleMouseDown);
             window.addEventListener('mousemove', handleMouseMove);
             window.addEventListener('mouseup', handleMouseUp);
+            
+
+            // DELETE THIS
+            drawButtonClick();
 
 
             // Cleanup function to remove event listeners
@@ -309,6 +626,9 @@
                 window.removeEventListener('keydown', handleKeyDown);
                 window.removeEventListener('keyup', handleKeyUp);
                 window.removeEventListener('wheel', handleScroll);
+                window.removeEventListener('mousedown', handleMouseDown);
+                window.removeEventListener('mousemove', handleMouseMove);
+                window.removeEventListener('mouseup', handleMouseUp);
             };
         });
 
@@ -323,28 +643,9 @@
         }
 
 
-        function drawButtonClick() {
-            console.log("clicked");
-
-            drawMode = !drawMode;
-
-            const draw_button = document.getElementById("draw-button");
-            const draw_svg = document.getElementById("draw-svg");
-            
-
-            if (drawMode) {
-                draw_button.style.backgroundColor = '#2b2b2b';
-                draw_svg.setAttribute('fill', '#ffffff');
-                draw_svg.setAttribute('stroke', '#ffffff');
-            }
-            else {
-                draw_button.style.backgroundColor = '#ffffff';
-                draw_svg.setAttribute('fill', '#2b2b2b');
-                draw_svg.setAttribute('stroke', '#2b2b2b');
-            }
-            // draw_button.classList.remove("draw-button-selected");
-        }
+        
 
     </script>
+
 </body>
 </html>
