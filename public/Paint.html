@@ -21,7 +21,7 @@
             display: inline-block;
         }
 
-        #paintCanvas {
+        #paint_canvas {
             background-color: var(--secondary-color);
             image-rendering: pixelated;
 
@@ -29,7 +29,8 @@
             left: 40000px;
             top: 40000px;
 
-            /* transition: width 0.5s ease, height 0.5s ease;  */
+            border: 1px solid white;
+            background-color: rgba(255, 255, 255, 0);            
         }
 
         #paint-background {
@@ -48,19 +49,20 @@
             /* background-color: #585858; */
         }
 
-        #draw_button {
+        .menu_button {
             padding: .5rem;
         }
 
         #draw_button_sub_menu {
             display: none;
-            position: absolute;
-            background-color: var(--accent-color);
+            position: fixed;
+            background-color: var(--secondary-color);
             padding: 8px;
             z-index: 10; /* Make sure it appears above other content */
             border-radius: 4px;
 
             flex-direction: column;
+            box-shadow: 0px 0px 10px 0 var(--shadow);
         }
 
         /* Show the hidden div when hovering over either div */
@@ -72,6 +74,8 @@
             width: 40rem;
             height: 3rem;
             background-color: var(--primary-color);
+            box-shadow: 0px 0px 10px 0 var(--shadow);
+            margin: .3rem;
         }
 
         #color_choice {
@@ -87,7 +91,13 @@
             text-align: center;
         }
 
-        .slider_thumb::-webkit-slider-thumb, .slider_thumb::-moz-range-thumb {
+        .slider {
+
+            box-shadow: 0px 0px 10px 0 var(--shadow);
+            margin: .3rem;
+        }
+
+        .slider::-webkit-slider-thumb, .slider::-moz-range-thumb {
             -webkit-appearance: none;
             appearance: none;
             width: 20px; 
@@ -101,7 +111,7 @@
         #hue_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 100%;
+            width: 40rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(0, 100%, 50%),
@@ -124,7 +134,7 @@
         #saturation_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 100%;
+            width: 40rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 0%, 50%),
@@ -138,7 +148,7 @@
         #lightness_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 100%;
+            width: 40rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 100%, 0%),
@@ -160,7 +170,7 @@
         #alpha_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 100%;
+            width: 40rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 100%, 50%, 0%),
@@ -181,10 +191,42 @@
 
         #alpha_back {
             background-color: var(--background-color);
-            width: 100%;
+            width: 40rem;
             height: 20px;
             border-radius: 15px;
             outline: none;
+        }
+
+        .color_value_text {
+            color: var(--text);
+            border: 1px solid var(--accent-color); 
+            border-radius: 3px;
+            font-size: 1rem;
+            text-align: center;
+        }
+
+        .color_format_label {
+            color: var(--text);
+        }
+
+        #color_format_grid {
+            display: grid;
+            grid-template-columns: .1fr 1fr;
+            grid-gap: .3rem;
+            margin: .3rem;
+        }
+
+        #color_format_grid > * {
+            padding: .5rem;
+        }
+
+        #move_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
     </style>
@@ -193,13 +235,20 @@
     <div id='draw_button_sub_menu'>
         <div id='color_choice'>
             <div id='color_icon'></div>
-            <span class='menu_text'>color</span>
-            <input type="range" id="hue_slider" class='slider_thumb' min="0" max="330" value="0">
-            <input type="range" id="saturation_slider" class='slider_thumb' min="0" max="100" value="0">
-            <input type="range" id="lightness_slider" class='slider_thumb' min="0" max="100" value="0">
-            <input type="range" id="alpha_slider" class='slider_thumb' min="0" max="100" value="0">
+            <div id="color_format_grid">
+                <span class="color_format_label">HEX</span>
+                <input type="text" id='hex_value_text' class="color_value_text" value="">
+                <span class="color_format_label">HSL</span>
+                <input type="text" id='hsl_value_text' class="color_value_text" value="">
+                <span class="color_format_label">RGBA</span>
+                <input type="text" id='rgba_value_text'class="color_value_text" value="">
+            </div>
+            <input type="range" id="hue_slider" class='slider' min="0" max="330" value="0">
+            <input type="range" id="saturation_slider" class='slider' min="0" max="100" value="0">
+            <input type="range" id="lightness_slider" class='slider' min="0" max="100" value="0">
+            <input type="range" id="alpha_slider" class='slider' min="0" max="100" value="0">
             <!-- <div id="alpha_back">
-                <input type="range" id="alpha_slider" class='slider_thumb' min="0" max="100" value="0">
+                <input type="range" id="alpha_slider" class='slider' min="0" max="100" value="0">
             </div> -->
 
         </div>
@@ -209,6 +258,7 @@
     <div class='menu'>
         <div
             id="draw_button"
+            class="menu_button"
             onclick="drawButtonClick()"
         >
             <svg
@@ -226,40 +276,154 @@
                 <polygon points="7 5  17 15  18 18  15 17  5 7" />
             </svg>
         </div>
+        <div
+            id="move_button"
+            class="menu_button"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" width="2rem" height="2rem" fill="currentColor" class="bi bi-arrows-move" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10M.146 8.354a.5.5 0 0 1 0-.708l2-2a.5.5 0 1 1 .708.708L1.707 7.5H5.5a.5.5 0 0 1 0 1H1.707l1.147 1.146a.5.5 0 0 1-.708.708zM10 8a.5.5 0 0 1 .5-.5h3.793l-1.147-1.146a.5.5 0 0 1 .708-.708l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L14.293 8.5H10.5A.5.5 0 0 1 10 8"/>
+              </svg>
+        </div>
     </div>
 
     <!-- background and canvas -->
     <div id="paint-background">
-        <canvas id="paintCanvas"></canvas>
+        <canvas id="paint_canvas"></canvas>
     </div>
+
+
+
+
+    
+    <!-- 
+        
+        SCRIPTS
+
+    -->
 
     <!-- REUSED VARAIBLES -->
     <script>
         let dims = null;
+        const canvas = document.getElementById('paint_canvas');
     </script>
 
     <!-- LAYERS AND CANVAS RENDERING -->
     <script>
+        let layers = [
+            {
+                strokes: []
+            }
+        ];
+        let current_layer = 0;
+        let pixel_to_strokes = new Map();
+        let stroke = {
+            pixels: []
+        };
+        let pixel_checker = new Set(); // make sure duplicate pixels aren't in stroke
+        let canvas_background = {
+            r: 255,
+            g: 255,
+            b: 255,
+            a: 255
+        };
+        function init_canvas() {
+            let ctx = canvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            for (let x = 0; x < canvas.width; x++) {
+                for (let y = 0; y < canvas.width; y++) {
+                    const index = Math.round(y * canvas.width + x) * 4; // Calculate index for the pixel
+                    imageData.data[index] = canvas_background.r;     // Red
+                    imageData.data[index + 1] = canvas_background.g;   // Green
+                    imageData.data[index + 2] = canvas_background.b;   // Blue
+                    imageData.data[index + 3] = canvas_background.a; // Alpha
+                }
+            }
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function finish_stroke() {
+
+            console.log("stroke", stroke);
+            layers[current_layer].strokes.push(stroke);
+            stroke = {
+                pixels: []
+            };
+            pixel_checker.clear();
+
+        }
+
+        function re_draw() {
+            const start = performance.now();
+            init_canvas();
+            for (let layer of layers) {
+                for (let stroke of layer.strokes) {
+                    set_pixels(stroke.pixels);
+                }
+            }
+            console.log("completed re-draw", performance.now() - start, "ms");
+        }
+
+        function add_to_stroke(pixels) {
+
+            // console.log("pixels before", pixels);
+
+            //remove any duplicates
+            pixels = pixels.filter(pixel => {
+                const tag = `${pixel.x} ${pixel.y}`;
+                if (!pixel_checker.has(tag)) {
+                    pixel_checker.add(tag);
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+            // console.log("pixels", pixels);
+
+            stroke.pixels.push(...pixels);
+            
+            set_pixels(pixels);
+        }
 
         /*
             pixels is an array of pixel objects with an x, y, and rgba color value
         */
-        function set_pixels(canvas, pixels) {
+        function set_pixels(pixels) {
             let ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            // console.log("pixels", pixels);
 
             pixels.forEach((pixel) => {
 
                 if (pixel.x < canvas.width && pixel.y < canvas.height) {
                     const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
 
-                    // Set the pixel color (R, G, B, A)
-                    imageData.data[index] = pixel.r;     // Red
-                    imageData.data[index + 1] = pixel.g;   // Green
-                    imageData.data[index + 2] = pixel.b;   // Blue
-                    imageData.data[index + 3] = pixel.a; // Alpha (fully opaque)
+                    // Set the alpha composite pixel color (R, G, B, A)
+                    const r_b = imageData.data[index];
+                    const g_b = imageData.data[index + 1];
+                    const b_b = imageData.data[index + 2];
+                    const a_b = imageData.data[index + 3] / 255;
+                    const r_s = pixel.r;
+                    const g_s = pixel.g;
+                    const b_s = pixel.b;
+                    const a_s = pixel.a / 255;
 
-                    // console.log("x:", pixel.x, "y:", pixel.y);
+                    // Calculate the resulting alpha
+                    const a_r = a_s + (a_b * (1 - a_s));
+
+                    const r_r = (r_s * a_s + r_b * a_b * (1 - a_s)) / a_r;
+                    const g_r = (g_s * a_s + g_b * a_b * (1 - a_s)) / a_r;
+                    const b_r = (b_s * a_s + b_b * a_b * (1 - a_s)) / a_r;
+                    // console.log("r_b", r_b, "g_b", g_b, "b_b", b_b);
+                    // console.log("r_s", r_s, "g_s", g_s, "b_s", b_s);
+                    // console.log("r_r", r_r, "g_r", g_r, "b_r", b_r);
+
+                    // Calculate and set the resulting color
+                    imageData.data[index] = r_r;     // Red
+                    imageData.data[index + 1] = g_r;   // Green
+                    imageData.data[index + 2] = b_r;   // Blue
+                    imageData.data[index + 3] = a_r * 255; // Alpha
+
                 }
             });
             ctx.putImageData(imageData, 0, 0);
@@ -268,10 +432,88 @@
 
     <!-- DRAW MODE MENUS -->
     <script>
-        const canvas = document.getElementById('paintCanvas');
+        let color = {
+            hue: 26,
+            saturation: 100,
+            lightness: 57,
+            alpha: 100
+        };
+        update_color_label();
 
+        function hsla_to_rgba(h, s, l, a) {
+            // Normalize hue to [0, 360]
+            h = h % 360;
+            // Normalize saturation and lightness to [0, 1]
+            s /= 100;
+            l /= 100;
+
+            let r, g, b;
+
+            if (s === 0) {
+                // Achromatic (gray)
+                r = g = b = l * 255;
+            } else {
+                const c = (1 - Math.abs(2 * l - 1)) * s; // Chroma
+                const x = c * (1 - Math.abs((h / 60) % 2 - 1)); // Secondary component
+                const m = l - c / 2; // Match lightness
+
+                // Determine RGB values based on hue
+                if (h >= 0 && h < 60) {
+                    r = c; g = x; b = 0;
+                } else if (h >= 60 && h < 120) {
+                    r = x; g = c; b = 0;
+                } else if (h >= 120 && h < 180) {
+                    r = 0; g = c; b = x;
+                } else if (h >= 180 && h < 240) {
+                    r = 0; g = x; b = c;
+                } else if (h >= 240 && h < 300) {
+                    r = x; g = 0; b = c;
+                } else {
+                    r = c; g = 0; b = x;
+                }
+
+                // Adjust for lightness
+                r = Math.round((r + m) * 255);
+                g = Math.round((g + m) * 255);
+                b = Math.round((b + m) * 255);
+            }
+
+            // Return RGBA values
+            return {
+                r: r,
+                g: g,
+                b: b,
+                a: Math.round(a * 2.55) 
+            };
+        }
+
+        function rgba_to_hex(r, g, b, a) {
+
+            // Ensure R, G, B are in the range [0, 255]
+            r = Math.min(255, Math.max(0, Math.round(r)));
+            g = Math.min(255, Math.max(0, Math.round(g)));
+            b = Math.min(255, Math.max(0, Math.round(b)));
+            
+
+            if (a == 255) {
+                // Convert R, G, B, and A to hex and pad with zeros
+                const hex = (r << 16 | g << 8 | b) >>> 0; // Ensure unsigned
+                return `#${('000000' + hex.toString(16)).slice(-6)}`; // Format as 8-digit hex
+            }
+            else {
+                // Convert R, G, B, and A to hex and pad with zeros
+                const hex = (r << 16 | g << 8 | b | (a << 24)) >>> 0; // Ensure unsigned
+                return `#${('00000000' + hex.toString(16)).slice(-8)}`; // Format as 8-digit hex
+            }
+            
+        }
 
         function draw(client_x_start, client_x_end, client_y_start, client_y_end) {
+
+            let color_rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
+            // console.log("color", color);
+            // console.log("color_rgba", color_rgba);
+
             let mouse_x = client_x_start + window.scrollX - CANVAS_X;
             let mouse_y = client_y_start + window.scrollY - CANVAS_Y;
             let mouse_drag_x = client_x_end + window.scrollX - CANVAS_X;
@@ -293,24 +535,27 @@
                 const pixel = {
                     x: Math.floor(x / zoom_factor),
                     y: Math.floor(y / zoom_factor),
-                    r: color.r,
-                    g: color.g,
-                    b: color.b,
-                    a: color.a
+                    r: color_rgba.r,
+                    g: color_rgba.g,
+                    b: color_rgba.b,
+                    a: color_rgba.a
                 };
                 pixels.push(pixel);
             }
             const pixel = {
                 x: Math.floor(mouse_x / zoom_factor),
                 y:  Math.floor(mouse_y / zoom_factor),
-                r: color.r,
-                g: color.g,
-                b: color.b,
-                a: color.a
+                r: color_rgba.r,
+                g: color_rgba.g,
+                b: color_rgba.b,
+                a: color_rgba.a
             };
             pixels.push(pixel);
 
-            set_pixels(canvas, pixels);
+            // console.log("color", color);
+            // console.log("color_rgba", color_rgba);
+            // console.log("pixels", pixels);
+            add_to_stroke(pixels);
 
 
             // console.log("dims.defaultWidth", dims.defaultWidth);
@@ -324,10 +569,6 @@
 
 
         const color_icon = document.getElementById('color_icon');
-        let hue = 26;
-        let saturation = 100;
-        let lightness = 57;
-        let alpha = 100;
 
 
         const hue_slider = document.getElementById('hue_slider');
@@ -337,97 +578,109 @@
 
         function update_hue_slider() {
             hue_slider.style.background = `linear-gradient(to right, 
-                hsl(0, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(30, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(60, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(90, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(120, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(150, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(180, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(210, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(240, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(270, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(300, ${saturation}%, ${lightness}%, ${alpha}%),
-                hsl(330, ${saturation}%, ${lightness}%, ${alpha}%)
+                hsl(0, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(30, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(60, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(90, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(120, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(150, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(180, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(210, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(240, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(270, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(300, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
+                hsl(330, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)
             )`;
         }
 
         function update_saturation_slider() {
             saturation_slider.style.background = `linear-gradient(to right, 
-                hsl(${hue}, 0%, ${lightness}%, ${alpha}%),
-                hsl(${hue}, 50%, ${lightness}%, ${alpha}%),
-                hsl(${hue}, 100%, ${lightness}%, ${alpha}%)
+                hsl(${color.hue}, 0%, ${color.lightness}%, ${color.alpha}%),
+                hsl(${color.hue}, 50%, ${color.lightness}%, ${color.alpha}%),
+                hsl(${color.hue}, 100%, ${color.lightness}%, ${color.alpha}%)
             )`;
         }
 
         function update_lightness_slider() {
             lightness_slider.style.background = `linear-gradient(to right, 
-                hsl(${hue}, ${saturation}%, 0%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 10%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 20%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 30%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 40%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 50%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 60%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 70%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 80%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 90%, ${alpha}%),
-                hsl(${hue}, ${saturation}%, 100%, ${alpha}%)
+                hsl(${color.hue}, ${color.saturation}%, 0%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 10%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 20%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 30%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 40%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 50%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 60%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 70%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 80%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 90%, ${color.alpha}%),
+                hsl(${color.hue}, ${color.saturation}%, 100%, ${color.alpha}%)
             )`;
         }
 
         function update_alpha_slider() {
             alpha_slider.style.background = `linear-gradient(to right, 
-                hsl(${hue}, ${saturation}%, ${lightness}%, 0%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 10%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 20%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 30%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 40%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 50%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 60%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 70%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 80%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 90%),
-                hsl(${hue}, ${saturation}%, ${lightness}%, 100%)
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 0%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 10%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 20%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 30%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 40%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 50%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 60%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 70%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 80%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 90%),
+                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 100%)
             )`;
         }
 
         hue_slider.addEventListener('input', () => {
-            hue = hue_slider.value;
-            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            color.hue = hue_slider.value;
+            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_saturation_slider();
             update_lightness_slider();
             update_alpha_slider();
+            update_color_label();
         });
 
         saturation_slider.addEventListener('input', () => {
-            saturation = saturation_slider.value;
-            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            color.saturation = saturation_slider.value;
+            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_lightness_slider();
             update_alpha_slider();
+            update_color_label();
         });
 
         lightness_slider.addEventListener('input', () => {
-            lightness = lightness_slider.value;
-            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            color.lightness = lightness_slider.value;
+            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_saturation_slider();
             update_alpha_slider();
+            update_color_label();
         });
 
         alpha_slider.addEventListener('input', () => {
-            alpha = alpha_slider.value;
-            color_icon.style.backgroundColor = `hsl(${hue}, ${saturation}%, ${lightness}%, ${alpha}%)`;
+            color.alpha = alpha_slider.value;
+            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_saturation_slider();
             update_lightness_slider();
+            update_color_label();
         });
 
+        function update_color_label() {
+            const rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
+            document.getElementById("hex_value_text").value = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+
+            document.getElementById("hsl_value_text").value = `${color.hue}°, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%`;
+
+            document.getElementById("rgba_value_text").value = `${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a}`;
+        }
 
 
         function drawButtonClick() {
-            console.log("clicked");
+            // console.log("clicked");
 
             drawMode = !drawMode;
 
@@ -451,23 +704,27 @@
 
         function toggle_draw_sub_menu() {
             if (drawMode) {
-                const draw_button = document.getElementById('draw_button');
-                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
-                draw_sub_menu.style.display = 'flex';
-
-                const rect = draw_button.getBoundingClientRect();
-                draw_sub_menu.style.top = (rect.top + window.scrollY) + 'px';
-                draw_sub_menu.style.left = (rect.right + window.scrollX + 5) + 'px';
-
-                hue_slider.value = hue;
-                saturation_slider.value = saturation;
-                lightness_slider.value = lightness;
-                alpha_slider.value = alpha;
+                place_draw_sub_menu();
             }
             else {
                 const draw_sub_menu = document.getElementById('draw_button_sub_menu');
                 draw_sub_menu.style.display = 'none';
             }
+        }
+
+        function place_draw_sub_menu() {
+            const draw_button = document.getElementById('draw_button');
+            const draw_sub_menu = document.getElementById('draw_button_sub_menu');
+            draw_sub_menu.style.display = 'flex';
+
+            const rect = draw_button.getBoundingClientRect();
+            draw_sub_menu.style.top = (rect.top) + 'px';
+            draw_sub_menu.style.left = (rect.right + 5) + 'px';
+
+            hue_slider.value = color.hue;
+            saturation_slider.value = color.saturation;
+            lightness_slider.value = color.lightness;
+            alpha_slider.value = color.alpha;
         }
 
 
@@ -483,7 +740,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             let windowWidth = window.innerWidth;
             let windowHeight = window.innerHeight;
-            dims = getDefaultCanvasDimensions(); // Define this function for your dimensions
+            dims = get_default_canvas_dims(); // Define this function for your dimensions
             let width = dims.defaultWidth;
             let height = dims.defaultHeight;
             let ctrl = false; // Control flag
@@ -493,6 +750,7 @@
             canvas.style.height = height + 'px';
             canvas.width = width;
             canvas.height = height;
+            init_canvas();
 
             // const rect = canvas.getBoundingClientRect();
             // let canvasX = rect.left + window.scrollX;
@@ -522,6 +780,7 @@
 
             let zoom = 8; // Default zoom level
             const handleScroll = (event) => {
+                
                 // determine mouse location on canvas
                 let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
                 let mouseY = event.clientY;
@@ -574,17 +833,25 @@
                     top: 40000 - mouse_offset_y + canvas_location_y,    // Y position
                     // behavior: 'smooth' // Enables smooth scroll
                 });
+
+                // redraw open menus
+                if (drawMode){
+                    place_draw_sub_menu();
+
+                }
             };
 
             let is_dragging = false;
             let drag_x, drag_y;
             const handleMouseDown = (event) => {
-                is_dragging = true; // Set dragging to true
-                drag_x = event.clientX; // Get the starting X coordinate
-                drag_y = event.clientY; // Get the starting Y coordinate
+                if (event.button == 0) {
+                    is_dragging = true; // Set dragging to true
+                    drag_x = event.clientX; // Get the starting X coordinate
+                    drag_y = event.clientY; // Get the starting Y coordinate
 
-                if (drawMode) {
-                    draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                    if (drawMode && event.target == canvas) {
+                        draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                    }
                 }
             };
 
@@ -595,7 +862,7 @@
                         const delta_y = event.clientY - drag_y;
                         window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
                     }
-                    else {
+                    else if (event.target == canvas) {
                         draw(event.clientX, drag_x, event.clientY, drag_y);
                     }
 
@@ -606,6 +873,9 @@
 
             const handleMouseUp = (event) => {
                 is_dragging = false;
+                if (drawMode) {
+                    finish_stroke();
+                }
             };
 
 
@@ -615,10 +885,6 @@
             window.addEventListener('mousedown', handleMouseDown);
             window.addEventListener('mousemove', handleMouseMove);
             window.addEventListener('mouseup', handleMouseUp);
-            
-
-            // DELETE THIS
-            drawButtonClick();
 
 
             // Cleanup function to remove event listeners
@@ -633,7 +899,7 @@
         });
 
         // Function to get default canvas dimensions
-        function getDefaultCanvasDimensions() {
+        function get_default_canvas_dims() {
             
             let windowWidth = window.innerWidth;
             let defaultWidth = windowWidth * 0.6;
@@ -643,8 +909,8 @@
         }
 
 
-        
-
+        // DELETE THIS sets to start in draw mode
+        drawButtonClick();
     </script>
 
 </body>
