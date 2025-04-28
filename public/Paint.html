@@ -292,6 +292,20 @@
             box-shadow: 0px 0px 10px 0 var(--shadow);
         }
 
+        #download_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #download_button:hover {
+
+            background-color: #f6f6f6;
+
+        }
     </style>
     
     <!-- draw sub menu -->
@@ -365,6 +379,29 @@
             </svg>
             <span id="move_tool_tip" class="tooltip-text">s</span>
         </div>
+
+
+        <div
+            id="download_button"
+            class="menu_button"
+            onclick="download_img()"
+        >
+            
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-download" 
+                viewBox="0 0 16 16"
+            >
+            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+          </svg>
+            <span id="move_tool_tip" class="tooltip-text">s</span>
+        </div>
+
     </div>
 
     <!-- background and canvas -->
@@ -421,6 +458,7 @@
         let width = 0;
         let height = 0;
         const canvas = document.getElementById('paint_canvas');
+        let ctx = canvas.getContext('2d');
         let drag_x, drag_y;
         let color = {
             hue: 26,
@@ -447,7 +485,6 @@
         };
         
         function init_canvas() {
-            let ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             for (let x = 0; x < canvas.width; x++) {
                 for (let y = 0; y < canvas.width; y++) {
@@ -644,7 +681,6 @@
         function set_pixels(pixels) {
             // console.log("set_pixels");
 
-            let ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             // console.log("pixels", pixels);
 
@@ -731,7 +767,6 @@
 
                     // re-draw canvas and save image buffer
                     re_draw();
-                    let ctx = canvas.getContext('2d');
                     canvas_data_without_selected_stroke = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
                     set_pixels(selected_stroke.pixels);
@@ -770,7 +805,6 @@
                 });
 
                 // draw saved canvas
-                let ctx = canvas.getContext('2d');
                 ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
 
                 // // draw selected stroke
@@ -786,7 +820,6 @@
             if (selected_stroke_uuid) {
 
                 // draw saved canvas
-                let ctx = canvas.getContext('2d');
                 ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
 
                 // re-add stroke
@@ -1376,9 +1409,105 @@
         }
     </script>
 
+    <!-- COPY PASTE AND DRAG AND DROP IMAGES -->
+    <script>
+        
+        function load_image(url) {
+            const img = new Image();
+            img.src = url;
+            img.onload = () => {
+
+                // resize canvas to cature image
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0); // Draw the image at coordinates (0, 0)
+                
+                // Get pixel data
+                let added_image_pixels = [];
+                const img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                for (let i = 0; i < img_data.data.length; i+=4) {
+                    // const index = Math.round(pixel.y * canvas.width + pixel.x) * 4;
+                    let pixel_i = Math.floor(i / 4);
+                    let y = Math.floor(pixel_i / img.width);
+                    let x = pixel_i - (y * img.width);
+                    added_image_pixels.push({
+                        x: x,
+                        y: y,
+                        r: img_data.data[i],
+                        g: img_data.data[i+1],
+                        b: img_data.data[i+2],
+                        a: img_data.data[i+3]
+                    });
+                }
+                console.log("added_image_pixels", added_image_pixels);
+
+                // reset canvas
+                canvas.width = dims.defaultWidth;
+                canvas.height = dims.defaultHeight;
+                init_canvas();
+
+                // add image as a stroke
+                add_to_stroke(added_image_pixels);
+                finish_stroke();
+
+            };
+        }
+
+        // Drag and drop handling
+        canvas.addEventListener('dragover', (event) => {
+            event.preventDefault(); // Prevent default to allow drop
+        });
+
+        canvas.addEventListener('drop', (event) => {
+            console.log("drop");
+            event.preventDefault();
+            const files = event.dataTransfer.files;
+
+            if (files.length > 0) {
+                const file = files[0];
+                const reader = new FileReader();
+                
+                reader.onload = (e) => {
+                    load_image(e.target.result); // Load the dropped image
+                };
+                
+                reader.readAsDataURL(file); // Read the image as Data URL
+            }
+        });
+
+        // Paste handling
+        window.addEventListener('paste', (event) => {
+            console.log("paste");
+            const items = event.clipboardData.items;
+            console.log("items", items);
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+
+                if (item.type.startsWith('image/')) {
+                    const file = item.getAsFile();
+                    const reader = new FileReader();
+
+                    reader.onload = (e) => {
+                        load_image(e.target.result); // Load the pasted image
+                    };
+
+                    reader.readAsDataURL(file); // Read the image as Data URL
+                }
+            }
+        });
+
+        // download image
+        function download_img() {
+            const link = document.createElement('a'); // Create a temporary link
+            link.download = 'canvas_image.png'; // Set the desired file name
+            link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
+            link.click(); // Programmatically click the link to trigger download
+        }
+    </script>
 
     <!-- TOOLTIPS PLACEMENTS -->
-
     <script>
         const draw_button = document.getElementById('draw_button');
         const draw_tool_tip = document.getElementById('draw_tool_tip');
