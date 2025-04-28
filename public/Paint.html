@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>monet</title>
 
-    <link rel="stylesheet" href="colors.css">
-
     <link rel="icon" type="image/png" href="assets/favicon/android-chrome-192x192.png">
     <link rel="icon" type="image/x-icon" href="assets/favicon/favicon.ico">
     <link rel="icon" sizes="32x32" href="assets/favicon/favicon-32x32.png">
@@ -15,6 +13,15 @@
 </head>
 <body>
     <style>
+
+        :root {
+            --primary-color: #ff8222; /* Example primary color */
+            --secondary-color: #fdfeff; /* Example secondary color */
+            --accent-color: #2b2b2b; /* Example accent color */
+            --background-color: #e0e0e0; /* Example background color */
+            --text: #2b2b2b;
+            --shadow: rgba(186, 186, 186, 0.5);
+        }
 
         body{
             margin: 0;
@@ -46,6 +53,7 @@
             height: 100%;
             z-index: 1;
             background-color: var(--secondary-color);
+            box-shadow: 0px 0px 10px 0 var(--shadow);
             /* background-color: #585858; */
         }
 
@@ -229,6 +237,61 @@
             align-items: center;
         }
 
+
+        .tooltip-text {
+            visibility: hidden;
+            background-color: var(--secondary-color);
+            box-shadow: 0px 0px 10px 0 var(--shadow);
+            color: var(--text);
+            text-align: center;
+            border-radius: 5px;
+            padding: 5px;
+            position: fixed;
+            z-index: 400;
+            opacity: 0; /* Initially hidden */
+            transition: opacity 0.3s;
+            font-size: 1.2rem;
+        }
+
+        #draw_button:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #move_button:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        #draw_size_grid {
+            display: grid;
+            grid-template-columns: 1fr;
+        }
+
+        #draw_size_label {
+            margin: .3rem;
+            padding: 0.5rem;
+        }
+
+        #draw_size_slider {
+            -webkit-appearance: none; /* Remove default styling for WebKit browsers */
+            appearance: none; /* Remove default styling for other browsers */
+            width: 40rem;
+            height: 10px;
+            background: var(--secondary-color);
+            border-radius: 15px;
+            outline: none;
+        }
+
+        #draw_size_circle {
+            margin: .8rem;
+            background-color: var(--primary-color);
+            width: 10px;
+            height: 10px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px 0 var(--shadow);
+        }
+
     </style>
     
     <!-- draw sub menu -->
@@ -247,10 +310,14 @@
             <input type="range" id="saturation_slider" class='slider' min="0" max="100" value="0">
             <input type="range" id="lightness_slider" class='slider' min="0" max="100" value="0">
             <input type="range" id="alpha_slider" class='slider' min="0" max="100" value="0">
-            <!-- <div id="alpha_back">
-                <input type="range" id="alpha_slider" class='slider' min="0" max="100" value="0">
-            </div> -->
-
+            
+            <div id="draw_size_grid">
+                <span id="draw_size_label">BRUSH SIZE</span>
+                <input type="range" id="draw_size_slider" class='slider' min="1" max="100" value="10">
+                <div>
+                    <div id="draw_size_circle"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -259,7 +326,7 @@
         <div
             id="draw_button"
             class="menu_button"
-            onclick="drawButtonClick()"
+            onclick="draw_button_click()"
         >
             <svg
                 id="draw-svg"
@@ -267,22 +334,36 @@
                 width="3rem"
                 height="3rem"
                 viewBox="0 0 24 24"
-                fill="#585858"
-                stroke="#585858"
+                fill="var(--accent-color)"
+                stroke="var(--accent-color)"
                 stroke-width="1"
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
                 <polygon points="7 5  17 15  18 18  15 17  5 7" />
             </svg>
+            <span id="draw_tool_tip" class="tooltip-text">a</span>
+        
         </div>
+
         <div
             id="move_button"
             class="menu_button"
+            onclick="move_mode_button_click()"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" width="2rem" height="2rem" fill="currentColor" class="bi bi-arrows-move" viewBox="0 0 16 16">
+            <svg
+                id="move_svg" 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-arrows-move" 
+                viewBox="0 0 16 16"
+            >
                 <path fill-rule="evenodd" d="M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10M.146 8.354a.5.5 0 0 1 0-.708l2-2a.5.5 0 1 1 .708.708L1.707 7.5H5.5a.5.5 0 0 1 0 1H1.707l1.147 1.146a.5.5 0 0 1-.708.708zM10 8a.5.5 0 0 1 .5-.5h3.793l-1.147-1.146a.5.5 0 0 1 .708-.708l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L14.293 8.5H10.5A.5.5 0 0 1 10 8"/>
-              </svg>
+            </svg>
+            <span id="move_tool_tip" class="tooltip-text">s</span>
         </div>
     </div>
 
@@ -301,31 +382,70 @@
 
     -->
 
-    <!-- REUSED VARAIBLES -->
+
+    <!-- UTIL -->
     <script>
+
+        // CRYPTO RANDOM
+        function random_crypto(min, max) {
+            // Create a Uint32Array to hold the random value
+            const randomBuffer = new Uint32Array(1);
+            
+            // Fill the array with random values
+            window.crypto.getRandomValues(randomBuffer);
+            
+            // Scale the random value to the desired range and convert to float
+            return (randomBuffer[0] / (0xFFFFFFFF + 1)) * (max - min) + min;
+        }
+
+        // UUID
+        function uuidV4() {
+            const uuid = new Array(36);
+            for (let i = 0; i < 36; i++) {
+                uuid[i] = Math.floor(random_crypto(0, 16));
+            }
+            uuid[14] = 4; // set bits 12-15 of time-high-and-version to 0100
+            uuid[19] = uuid[19] &= ~(1 << 2); // set bit 6 of clock-seq-and-reserved to zero
+            uuid[19] = uuid[19] |= (1 << 3); // set bit 7 of clock-seq-and-reserved to one
+            uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
+            return uuid.map((x) => x.toString(16)).join('');
+        }
+
+    </script>
+
+    <!-- GENERAL VARAIBLES -->
+    <script>
+        let draw_mode = false;
+        let move_mode = false;
         let dims = null;
+        let width = 0;
+        let height = 0;
         const canvas = document.getElementById('paint_canvas');
+        let drag_x, drag_y;
+        let color = {
+            hue: 26,
+            saturation: 100,
+            lightness: 57,
+            alpha: 100
+        };
+        let brush_radius = 10;
+        
     </script>
 
     <!-- LAYERS AND CANVAS RENDERING -->
     <script>
-        let layers = [
-            {
-                strokes: []
-            }
-        ];
-        let current_layer = 0;
-        let pixel_to_strokes = new Map();
-        let stroke = {
-            pixels: []
-        };
-        let pixel_checker = new Set(); // make sure duplicate pixels aren't in stroke
+        let layers = new Map();
+        let uuid_to_stroke = new Map(); // uuid to stoke with pixel data
+        let pixel_x_y_to_strokes = new Map();
+        let current_layer = uuidV4();
+
         let canvas_background = {
             r: 255,
             g: 255,
             b: 255,
             a: 255
         };
+        
         function init_canvas() {
             let ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -341,61 +461,196 @@
             ctx.putImageData(imageData, 0, 0);
         }
 
-        function finish_stroke() {
-
-            console.log("stroke", stroke);
-            layers[current_layer].strokes.push(stroke);
-            stroke = {
-                pixels: []
-            };
-            pixel_checker.clear();
-
-        }
-
         function re_draw() {
+
             const start = performance.now();
             init_canvas();
-            for (let layer of layers) {
-                for (let stroke of layer.strokes) {
-                    set_pixels(stroke.pixels);
+            for (const [layer_uuid, layer] of layers.entries()) {
+                for (let stroke_uuid of layer.strokes) {
+                    set_pixels(uuid_to_stroke.get(stroke_uuid).pixels);
                 }
             }
             console.log("completed re-draw", performance.now() - start, "ms");
+            // console.log("layers", layers);
         }
 
-        function add_to_stroke(pixels) {
+        function mouse_x_to_canvas_x(x) {
+            const canvas_width = parseFloat(canvas.style.width);
+            const zoom_factor = canvas_width / dims.defaultWidth;
+            x = x + window.scrollX - CANVAS_X;
+            return Math.floor(x / zoom_factor);
+        }
+
+        function mouse_y_to_canvas_y(y) {
+            const canvas_width = parseFloat(canvas.style.width);
+            const zoom_factor = canvas_width / dims.defaultWidth;
+            y = y + window.scrollY - CANVAS_Y;
+            return Math.floor(y / zoom_factor);
+        }
+    
+
+
+        // DRAWING STROKES
+        let stroke_uuid = uuidV4();
+        let stroke_path_checker = new Set();
+        let pixel_checker = new Set();
+        let stroke = {
+            layer_uuid: current_layer,
+            pixels: []
+        };
+        function finish_stroke() {
+
+            if (layers.has(current_layer)) {
+                layers.get(current_layer).strokes.push(stroke_uuid);
+            }
+            else {
+                layers.set(
+                    current_layer, 
+                    {
+                        strokes: [stroke_uuid]
+                    }
+                );
+            }
+
+
+            uuid_to_stroke.set(stroke_uuid, {
+                layer_uuid: current_layer,
+                pixels: []
+            });
+            
+            for (const pixel of stroke.pixels) {
+                uuid_to_stroke.get(stroke_uuid).pixels.push(
+                    {
+                        x: pixel.x,
+                        y: pixel.y,
+                        r: pixel.r,
+                        g: pixel.g,
+                        b: pixel.b,
+                        a: pixel.a
+                    }
+                );
+            }
+            // console.log("new stroke", stroke_uuid, uuid_to_stroke);
+
+
+            // reset temp vars
+            stroke_uuid = uuidV4();
+            stroke = {
+                layer_uuid: current_layer,
+                pixels: []
+            };
+            stroke_path_checker.clear();
+            pixel_checker.clear();
+
+
+
+        }
+
+        function add_to_stroke(pixels, apply_radius) {
 
             // console.log("pixels before", pixels);
 
-            //remove any duplicates
+            // remove any duplicates
             pixels = pixels.filter(pixel => {
-                const tag = `${pixel.x} ${pixel.y}`;
-                if (!pixel_checker.has(tag)) {
-                    pixel_checker.add(tag);
+                const tag = `${pixel.x}_${pixel.y}`;
+                if (!stroke_path_checker.has(tag)) {
+                    stroke_path_checker.add(tag);
+                    if (pixel_x_y_to_strokes.has(tag)) {
+                        pixel_x_y_to_strokes.get(tag).push(stroke_uuid);
+                    }
+                    else {
+                        pixel_x_y_to_strokes.set(tag, [stroke_uuid]);
+                    }
                     return true;
                 }
                 else {
                     return false;
                 }
             });
+            
+
+            // add stroke radius
+            // console.log("brush_radius", brush_radius);
             // console.log("pixels", pixels);
+            let brush_pixels = [];
+            const half_radius = Math.floor(brush_radius / 2);
+            for (let x = -half_radius; x < half_radius; x++) {
+                for (let y = -half_radius; y < half_radius; y++) {
+
+                    let dist = Math.sqrt(
+                        Math.pow(x, 2) +
+                        Math.pow(y, 2)
+                    );
+                    if (dist < half_radius) {
+                        brush_pixels.push({
+                            x: x,
+                            y: y
+                        });
+                    }
+                    
+                }
+            }
+            if (apply_radius) {
+                pixels = pixels.flatMap(pixel => {
+                    const start_x = pixel.x - brush_radius;
+                    const end_x = pixel.x + brush_radius;
+                    const start_y = pixel.y - brush_radius;
+                    const end_y = pixel.y + brush_radius;
+
+                    let radius_pixels = [];
+                    let tag = `${pixel.x}_${pixel.y}`;
+                    if (!pixel_checker.has(tag)) {
+                        radius_pixels.push(pixel);
+                    }
+                    for (const brush_pixel of brush_pixels) {
+                        const x = pixel.x + brush_pixel.x;
+                        const y = pixel.y + brush_pixel.y;
+                        tag = `${x}_${y}`;
+                        if (!pixel_checker.has(tag) && !stroke_path_checker.has(tag)) {
+                            pixel_checker.add(tag);
+                            radius_pixels.push({
+                                x: x,
+                                y: y,
+                                r: pixel.r,
+                                g: pixel.g,
+                                b: pixel.b,
+                                a: pixel.a
+                            });
+
+                            if (pixel_x_y_to_strokes.has(tag)) {
+                                pixel_x_y_to_strokes.get(tag).push(stroke_uuid);
+                            }
+                            else {
+                                pixel_x_y_to_strokes.set(tag, [stroke_uuid]);
+                            }
+                        }
+                    }
+
+                    return radius_pixels;
+                });
+            }
+            // console.log("pixels after", pixels);
+
 
             stroke.pixels.push(...pixels);
             
             set_pixels(pixels);
         }
 
+
         /*
             pixels is an array of pixel objects with an x, y, and rgba color value
         */
         function set_pixels(pixels) {
+            // console.log("set_pixels");
+
             let ctx = canvas.getContext('2d');
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             // console.log("pixels", pixels);
 
             pixels.forEach((pixel) => {
 
-                if (pixel.x < canvas.width && pixel.y < canvas.height) {
+                if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x > 0 && pixel.y > 0) {
                     const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
 
                     // Set the alpha composite pixel color (R, G, B, A)
@@ -428,17 +683,133 @@
             });
             ctx.putImageData(imageData, 0, 0);
         }
+
+
+        // MOVING STROKES
+        let canvas_data_without_selected_stroke = null;
+        let selected_stroke_uuid = null;
+        let selected_stroke = null;
+        let delta_x_sum = 0;
+        let delta_y_sum = 0;
+        function save_canvas_and_get_selected_stroke (x, y) {
+
+            console.log("save_canvas_and_get_selected_stroke");
+            // console.log("uuid_to_stroke", uuid_to_stroke);
+
+            // get selected stroke
+            const tag = `${x}_${y}`;
+            const selected_stroke_uuids = pixel_x_y_to_strokes.get(tag);
+
+
+            if (selected_stroke_uuids) {
+                selected_stroke_uuid = selected_stroke_uuids[selected_stroke_uuids.length - 1];
+                // console.log("selected_stroke_uuids", selected_stroke_uuids);
+                // console.log("selected_stroke_uuid", selected_stroke_uuid);
+
+                // console.log("uuid_to_stroke", uuid_to_stroke);
+                selected_stroke =  uuid_to_stroke.get(selected_stroke_uuid);
+                uuid_to_stroke.delete(selected_stroke_uuid);
+
+
+                if (selected_stroke) {
+                    // remove stroke and redraw canvas
+                    current_layer = selected_stroke.layer_uuid;
+                    // console.log('layers', layers);
+                    let other_strokes = layers.get(current_layer).strokes.filter(uuid => uuid != selected_stroke_uuid);
+                    layers.get(current_layer).strokes = other_strokes
+                    // console.log('other_strokes', other_strokes);
+                    // console.log('layers.get(current_layer).strokes', layers.get(current_layer).strokes);
+                    // console.log('layers', layers);
+
+                    selected_stroke.pixels.forEach(pixel => {
+                        const tag = `${pixel.x}_${pixel.y}`;
+                        pixel_x_y_to_strokes.set(
+                            tag, 
+                            pixel_x_y_to_strokes.get(tag).filter(uuid => uuid !== selected_stroke_uuid)
+                        );
+                    });
+
+                    // re-draw canvas and save image buffer
+                    re_draw();
+                    let ctx = canvas.getContext('2d');
+                    canvas_data_without_selected_stroke = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+                    set_pixels(selected_stroke.pixels);
+
+                    return selected_stroke_uuid;
+                }
+
+            }
+
+            return null;
+        }
+    
+        function update_selected_stroke(clientX, clientY) {
+            // console.log("update_selected_stroke");
+            // console.log("selected_stroke_uuid", selected_stroke_uuid);
+
+            if (selected_stroke) {
+                
+                // update stroke pixels
+                const canvas_width = parseFloat(canvas.style.width);
+                const zoom_factor = canvas_width / dims.defaultWidth;
+                // console.log("zoom_factor", zoom_factor);
+                delta_x_sum += (clientX - drag_x) / zoom_factor;
+                delta_y_sum += (clientY - drag_y) / zoom_factor;
+                let delta_x = Math.floor(delta_x_sum);
+                let delta_y = Math.floor(delta_y_sum);
+                delta_x_sum -= delta_x;
+                delta_y_sum -= delta_y;
+
+
+                selected_stroke.pixels = selected_stroke.pixels.map(pixel => {
+                    pixel.x += delta_x;
+                    pixel.y += delta_y;
+
+                    return pixel;
+                });
+
+                // draw saved canvas
+                let ctx = canvas.getContext('2d');
+                ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
+
+                // // draw selected stroke
+                // init_canvas();
+                set_pixels(selected_stroke.pixels);
+
+            }
+        }
+
+        function drop_selected_stroke() {
+            console.log("drop_selected_stroke");
+            
+            if (selected_stroke_uuid) {
+
+                // draw saved canvas
+                let ctx = canvas.getContext('2d');
+                ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
+
+                // re-add stroke
+                add_to_stroke(selected_stroke.pixels, false);
+                finish_stroke();
+
+                // draw stroke
+                // set_pixels(selected_stroke.pixels);
+
+                // reset temp varaibles
+                uuid_to_stroke.delete(selected_stroke_uuid);
+                canvas_data_without_selected_stroke = null;
+                selected_stroke_uuid = null;
+                selected_stroke = null;
+            }
+            
+        }
+    
     </script>
 
     <!-- DRAW MODE MENUS -->
     <script>
-        let color = {
-            hue: 26,
-            saturation: 100,
-            lightness: 57,
-            alpha: 100
-        };
-        update_color_label();
+        
 
         function hsla_to_rgba(h, s, l, a) {
             // Normalize hue to [0, 360]
@@ -555,7 +926,7 @@
             // console.log("color", color);
             // console.log("color_rgba", color_rgba);
             // console.log("pixels", pixels);
-            add_to_stroke(pixels);
+            add_to_stroke(pixels, true);
 
 
             // console.log("dims.defaultWidth", dims.defaultWidth);
@@ -569,6 +940,8 @@
 
 
         const color_icon = document.getElementById('color_icon');
+
+        const draw_size_circle = document.getElementById('draw_size_circle');
 
 
         const hue_slider = document.getElementById('hue_slider');
@@ -635,7 +1008,6 @@
 
         hue_slider.addEventListener('input', () => {
             color.hue = hue_slider.value;
-            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_saturation_slider();
             update_lightness_slider();
             update_alpha_slider();
@@ -644,7 +1016,6 @@
 
         saturation_slider.addEventListener('input', () => {
             color.saturation = saturation_slider.value;
-            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_lightness_slider();
             update_alpha_slider();
@@ -653,7 +1024,6 @@
 
         lightness_slider.addEventListener('input', () => {
             color.lightness = lightness_slider.value;
-            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_saturation_slider();
             update_alpha_slider();
@@ -662,7 +1032,6 @@
 
         alpha_slider.addEventListener('input', () => {
             color.alpha = alpha_slider.value;
-            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             update_hue_slider();
             update_saturation_slider();
             update_lightness_slider();
@@ -670,6 +1039,10 @@
         });
 
         function update_color_label() {
+            color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
+            draw_size_circle.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
+            
+
             const rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
             document.getElementById("hex_value_text").value = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
 
@@ -678,17 +1051,20 @@
             document.getElementById("rgba_value_text").value = `${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a}`;
         }
 
-
-        function drawButtonClick() {
+        function draw_button_click() {
             // console.log("clicked");
 
-            drawMode = !drawMode;
+
+            if (move_mode) {
+                move_mode_button_click();
+            }
+            draw_mode = !draw_mode;
 
             const draw_button = document.getElementById("draw_button");
             const draw_svg = document.getElementById("draw-svg");
             
 
-            if (drawMode) {
+            if (draw_mode) {
                 draw_button.style.backgroundColor = 'var(--accent-color)';
                 draw_svg.setAttribute('fill', 'var(--secondary-color)');
                 draw_svg.setAttribute('stroke', 'var(--secondary-color)');
@@ -703,7 +1079,7 @@
         }
 
         function toggle_draw_sub_menu() {
-            if (drawMode) {
+            if (draw_mode) {
                 place_draw_sub_menu();
             }
             else {
@@ -728,21 +1104,73 @@
         }
 
 
+
+        const draw_size_slider = document.getElementById('draw_size_slider');
+        draw_size_slider.addEventListener('input', () => {
+            brush_radius = draw_size_slider.value;
+            draw_size_circle.style.width = brush_radius + "px";
+            draw_size_circle.style.height = brush_radius + "px";
+            draw_size_circle.style.borderRadius = brush_radius + "px";
+        });
+        draw_size_slider.value = brush_radius;
+
+        update_color_label();
+    </script>
+
+    <!-- MOVE MODE -->
+    <script>
+
+
+        function move_mode_button_click() {
+            // console.log("clicked");
+
+            if (draw_mode) {
+                draw_button_click();
+            }
+            move_mode = !move_mode;
+
+            const move_mode_button = document.getElementById("move_button");
+            const move_svg = document.getElementById("move_svg");
+            
+
+            if (move_mode) {
+                move_mode_button.style.backgroundColor = 'var(--accent-color)';
+                move_svg.setAttribute('fill', 'var(--secondary-color)');
+                move_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                move_mode_button.style.backgroundColor = 'var(--secondary-color)';
+                move_svg.setAttribute('fill', 'var(--accent-color)');
+                move_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+
+
+        }
+
+        function toggle_draw_sub_menu() {
+            if (draw_mode) {
+                place_draw_sub_menu();
+            }
+            else {
+                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
+                draw_sub_menu.style.display = 'none';
+            }
+        }
+
     </script>
 
     <!-- GENERAL INPUT HANDLING -->
     <script>
         const CANVAS_X = 40000; 
         const CANVAS_Y = 40000; 
-        let drawMode = false;
 
 
         document.addEventListener('DOMContentLoaded', () => {
             let windowWidth = window.innerWidth;
             let windowHeight = window.innerHeight;
             dims = get_default_canvas_dims(); // Define this function for your dimensions
-            let width = dims.defaultWidth;
-            let height = dims.defaultHeight;
+            width = dims.defaultWidth;
+            height = dims.defaultHeight;
             let ctrl = false; // Control flag
 
             // Set initial canvas size
@@ -766,137 +1194,150 @@
             // console.log('windowWidth', windowWidth);
             // console.log('windowHeight', windowHeight);
 
-            const handleKeyDown = (event) => {
-                if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
-                    ctrl = true;
-                }
-            };
-
-            const handleKeyUp = (event) => {
-                if (event.key === 'Control' || event.key === 'Meta') {
-                    ctrl = false;
-                }
-            };
-
-            let zoom = 8; // Default zoom level
-            const handleScroll = (event) => {
-                
-                // determine mouse location on canvas
-                let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
-                let mouseY = event.clientY;
-                const canvas_location_x_percent = (mouseX + window.scrollX - CANVAS_X) / width;
-                const canvas_location_y_percent = (mouseY + window.scrollY - CANVAS_Y) / height;
-                // console.log('canvas_location_x_percent', canvas_location_x_percent);
-                // console.log('canvas_location_y_percent', canvas_location_y_percent);
+            // starter_stroke(100, 100);
+            // starter_stroke(300, 100);
 
 
-
-                // console.log("zooming");
-                event.preventDefault(); // Prevent default scroll action
-                let scrollAmount = event.deltaY;
-                zoom += scrollAmount / 1200;
-                if (zoom < 8) zoom = 8; // Minimum zoom
-                if (zoom > 9) zoom = 9; // Maximum zoom
-
-                let zoomFactor = 100 * 100 ** (zoom - 9);
-                // console.log('zoomFactor', zoomFactor);
-
-                // Modify canvas size
-                width = dims.defaultWidth * zoomFactor;
-                height = dims.defaultHeight * zoomFactor;
-                canvas.style.width = width + 'px';
-                canvas.style.height = height + 'px';
-
-                // Center the zoom on mouse position
-                // console.log('mouseX', mouseX);
-                // console.log('mouseY', mouseY);
-                // console.log('width', width);
-                // console.log('height', height);
-
-                /*
-
-                    determine pixel where mouse is
-                    determine same pixel in new canvas
-
-                    determine mouse distance from center screen
-                */
-
-                const canvas_location_x = canvas_location_x_percent * width;
-                const canvas_location_y = canvas_location_y_percent * height;
-                const mouse_offset_x = mouseX;
-                const mouse_offset_y = mouseY;
-                // console.log('mouse_offset_x', mouse_offset_x);
-                // console.log('mouse_offset_y', mouse_offset_y);
-
-                window.scrollTo({
-                    left: 40000 - mouse_offset_x + canvas_location_x,   // X position
-                    top: 40000 - mouse_offset_y + canvas_location_y,    // Y position
-                    // behavior: 'smooth' // Enables smooth scroll
-                });
-
-                // redraw open menus
-                if (drawMode){
-                    place_draw_sub_menu();
-
-                }
-            };
-
-            let is_dragging = false;
-            let drag_x, drag_y;
-            const handleMouseDown = (event) => {
-                if (event.button == 0) {
-                    is_dragging = true; // Set dragging to true
-                    drag_x = event.clientX; // Get the starting X coordinate
-                    drag_y = event.clientY; // Get the starting Y coordinate
-
-                    if (drawMode && event.target == canvas) {
-                        draw(event.clientX, event.clientX, event.clientY, event.clientY);
-                    }
-                }
-            };
-
-            const handleMouseMove = (event) => {
-                if (is_dragging) {
-                    if (!drawMode) {
-                        const delta_x = event.clientX - drag_x;
-                        const delta_y = event.clientY - drag_y;
-                        window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
-                    }
-                    else if (event.target == canvas) {
-                        draw(event.clientX, drag_x, event.clientY, drag_y);
-                    }
-
-                    drag_x = event.clientX;
-                    drag_y = event.clientY;
-                }
-            };
-
-            const handleMouseUp = (event) => {
-                is_dragging = false;
-                if (drawMode) {
-                    finish_stroke();
-                }
-            };
-
-
-            window.addEventListener('keydown', handleKeyDown);
-            window.addEventListener('keyup', handleKeyUp);
-            window.addEventListener('wheel', handleScroll, { passive: false });
-            window.addEventListener('mousedown', handleMouseDown);
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-
-
-            // Cleanup function to remove event listeners
             return () => {
-                window.removeEventListener('keydown', handleKeyDown);
-                window.removeEventListener('keyup', handleKeyUp);
-                window.removeEventListener('wheel', handleScroll);
-                window.removeEventListener('mousedown', handleMouseDown);
-                window.removeEventListener('mousemove', handleMouseMove);
-                window.removeEventListener('mouseup', handleMouseUp);
             };
         });
+
+        const handleKeyDown = (event) => {
+            if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
+                ctrl = true;
+            }
+            else if (!event.ctrlKey && event.key === 'a') {
+                draw_button_click();
+            }
+            else if (!event.ctrlKey && event.key === 's') {
+                move_mode_button_click();
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        
+        const handleKeyUp = (event) => {
+            if (event.key === 'Control' || event.key === 'Meta') {
+                ctrl = false;
+            }
+        };
+        window.addEventListener('keyup', handleKeyUp);
+        
+        let is_dragging = false;
+        const handleMouseDown = (event) => {
+            if (event.button == 0) {
+                is_dragging = true; // Set dragging to true
+                drag_x = event.clientX; // Get the starting X coordinate
+                drag_y = event.clientY; // Get the starting Y coordinate
+
+                if (draw_mode && event.target == canvas) {
+                    draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                }
+                else if (move_mode && event.target == canvas) {
+                    let x = mouse_x_to_canvas_x(event.clientX);
+                    let y = mouse_y_to_canvas_y(event.clientY);
+                    save_canvas_and_get_selected_stroke(x, y);
+                }
+            }
+        };
+        window.addEventListener('mousedown', handleMouseDown);
+        
+        const handleMouseMove = (event) => {
+            if (is_dragging && event.target == canvas) {
+                if (draw_mode) {
+                    draw(event.clientX, drag_x, event.clientY, drag_y);
+                }
+                else if (move_mode) {
+                    update_selected_stroke(event.clientX, event.clientY);
+                }
+                else {
+                    const delta_x = event.clientX - drag_x;
+                    const delta_y = event.clientY - drag_y;
+                    window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
+                }
+
+                drag_x = event.clientX;
+                drag_y = event.clientY;
+            }
+        };
+        window.addEventListener('mousemove', handleMouseMove);
+        
+        const handleMouseUp = (event) => {
+            is_dragging = false;
+            if (event.target == canvas) {
+                if (draw_mode) {
+                    finish_stroke();
+                }
+                else if (move_mode) {
+                    drop_selected_stroke();
+                }
+            }
+        };
+        window.addEventListener('mouseup', handleMouseUp);
+
+        let zoom = 8; // Default zoom level
+        const handleScroll = (event) => {
+            event.preventDefault(); // Prevent default scroll action
+            
+            // determine mouse location on canvas
+            let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
+            let mouseY = event.clientY;
+            const canvas_location_x_percent = (mouseX + window.scrollX - CANVAS_X) / width;
+            const canvas_location_y_percent = (mouseY + window.scrollY - CANVAS_Y) / height;
+            // console.log('canvas_location_x_percent', canvas_location_x_percent);
+            // console.log('canvas_location_y_percent', canvas_location_y_percent);
+
+
+
+            // console.log("zooming");
+            let scrollAmount = -event.deltaY;
+            zoom += scrollAmount / 1200;
+            if (zoom < 8) zoom = 8; // Minimum zoom
+            if (zoom > 9) zoom = 9; // Maximum zoom
+
+            let zoomFactor = 100 * 100 ** (zoom - 9);
+            // console.log('zoomFactor', zoomFactor);
+
+            // Modify canvas size
+            width = dims.defaultWidth * zoomFactor;
+            height = dims.defaultHeight * zoomFactor;
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+
+            // Center the zoom on mouse position
+            // console.log('mouseX', mouseX);
+            // console.log('mouseY', mouseY);
+            // console.log('width', width);
+            // console.log('height', height);
+
+            /*
+
+                determine pixel where mouse is
+                determine same pixel in new canvas
+
+                determine mouse distance from center screen
+            */
+
+            const canvas_location_x = canvas_location_x_percent * width;
+            const canvas_location_y = canvas_location_y_percent * height;
+            const mouse_offset_x = mouseX;
+            const mouse_offset_y = mouseY;
+            // console.log('mouse_offset_x', mouse_offset_x);
+            // console.log('mouse_offset_y', mouse_offset_y);
+
+            window.scrollTo({
+                left: 40000 - mouse_offset_x + canvas_location_x,   // X position
+                top: 40000 - mouse_offset_y + canvas_location_y,    // Y position
+                // behavior: 'smooth' // Enables smooth scroll
+            });
+
+            // redraw open menus
+            if (draw_mode){
+                place_draw_sub_menu();
+
+            }
+        };
+        window.addEventListener('wheel', handleScroll, { passive: false });
+        
 
         // Function to get default canvas dimensions
         function get_default_canvas_dims() {
@@ -909,8 +1350,49 @@
         }
 
 
-        // DELETE THIS sets to start in draw mode
-        drawButtonClick();
+        // DELETE THIS testing stuff
+        draw_button_click();
+
+
+        // TEST
+        function starter_stroke(start_x, start_y) {
+            let pixels = [];
+            for (let x = start_x; x < start_x + 100; x++) {
+                for (let y = start_y; y < start_y + 100; y++) {
+                    const pixel = {
+                        x: x,
+                        y: y,
+                        r: 255,
+                        g: 0,
+                        b: 0,
+                        a: 255
+                    };
+                    pixels.push(pixel);
+                }
+            }
+
+            add_to_stroke(pixels, false);
+            finish_stroke();
+        }
+    </script>
+
+
+    <!-- TOOLTIPS PLACEMENTS -->
+
+    <script>
+        const draw_button = document.getElementById('draw_button');
+        const draw_tool_tip = document.getElementById('draw_tool_tip');
+        let rect = draw_button.getBoundingClientRect();
+        let offset = rect.width * .8;
+        draw_tool_tip.style.top = (rect.top + offset) + 'px';
+        draw_tool_tip.style.left = (rect.left + offset) + 'px';
+
+        const move_button = document.getElementById('move_button');
+        const move_tool_tip = document.getElementById('move_tool_tip');
+        rect = move_button.getBoundingClientRect();
+        offset = rect.width * .8;
+        move_tool_tip.style.top = (rect.top + offset) + 'px';
+        move_tool_tip.style.left = (rect.left + offset) + 'px';
     </script>
 
 </body>
