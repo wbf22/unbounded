@@ -36,8 +36,9 @@
             left: 40000px;
             top: 40000px;
 
-            border: 1px solid white;
-            background-color: rgba(255, 255, 255, 0);            
+            /* border: 1px solid white; */
+            background-color: rgba(255, 255, 255, 0);     
+            box-shadow: 0px 0px 10px 0 var(--shadow);       
         }
 
         #paint-background {
@@ -61,7 +62,7 @@
             padding: .5rem;
         }
 
-        #draw_button_sub_menu {
+        .sub_menu {
             display: none;
             position: fixed;
             background-color: var(--secondary-color);
@@ -73,10 +74,6 @@
             box-shadow: 0px 0px 10px 0 var(--shadow);
         }
 
-        /* Show the hidden div when hovering over either div */
-        #draw_button:hover #draw_button_sub_menu {
-            display: block;
-        }
 
         #color_icon {
             width: 40rem;
@@ -306,10 +303,80 @@
             background-color: #f6f6f6;
 
         }
+
+        #settings_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #settings_button:hover {
+
+            background-color: #f6f6f6;
+
+        }
+
+        .canvas_title {
+            font-size: 1.3rem;
+        }
+
+        #canvas_size_grid {
+            display: grid;
+            grid-template-columns: .3fr 1fr .3fr 1fr;
+            gap: .5rem;
+            margin: .3rem;
+        }
+
+        .canvas_size_text {
+            padding: .5rem;
+        }
+
+        .canvas_size_value {
+            color: var(--text);
+            border: 1px solid var(--accent-color); 
+            border-radius: 3px;
+            font-size: .8rem;
+            text-align: center;
+            margin: .3rem;
+            width: 3rem;
+        }
+
+        #image_background_input {
+            margin: 1rem;
+        }
+        
+        #background_color_grid {
+            display: grid;
+            grid-template-columns: .5fr 1fr;
+            margin: 1rem;
+        }
+        
+        #background_color_view {
+            width: 3rem;
+            height: 3rem;
+            background-color: var(--primary-color);
+            box-shadow: 0px 0px 10px 0 var(--shadow);
+        }
+
+        #background_color_input {
+
+            color: var(--text);
+            border: 1px solid var(--accent-color); 
+            border-radius: 3px;
+            font-size: .8rem;
+            text-align: center;
+            margin: .3rem;
+        }
     </style>
     
     <!-- draw sub menu -->
-    <div id='draw_button_sub_menu'>
+    <div 
+        id='draw_button_sub_menu'
+        class="sub_menu"
+    >
         <div id='color_choice'>
             <div id='color_icon'></div>
             <div id="color_format_grid">
@@ -327,7 +394,7 @@
             
             <div id="draw_size_grid">
                 <span id="draw_size_label">BRUSH SIZE</span>
-                <input type="range" id="draw_size_slider" class='slider' min="1" max="100" value="10">
+                <input type="range" id="draw_size_slider" class='slider' min="1" max="100a" value="10">
                 <div>
                     <div id="draw_size_circle"></div>
                 </div>
@@ -396,11 +463,30 @@
                 class="bi bi-download" 
                 viewBox="0 0 16 16"
             >
-            <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
-            <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
-          </svg>
-            <span id="move_tool_tip" class="tooltip-text">s</span>
+                <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
+            </svg>
         </div>
+
+        <div
+            id="settings_button"
+            class="menu_button"
+            onclick="settings_button_click()"
+        >
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-gear-fill" 
+                viewBox="0 0 16 16"
+            >
+                <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
+            </svg>
+        </div>
+
+       
 
     </div>
 
@@ -409,7 +495,29 @@
         <canvas id="paint_canvas"></canvas>
     </div>
 
+    <!-- settings sub menu -->
+    <div 
+        id='settings_sub_menu'
+        class="sub_menu"
+    >
+        <span class="canvas_title">Canvas Size</span>
+        <div id="canvas_size_grid">
+            <span class="canvas_size_text">width</span>
+            <input type="text" id='canvas_width_input' class="canvas_size_value" value="">
+            <span class="canvas_size_text">height</span>
+            <input type="text" id='canvas_height_input' class="canvas_size_value" value="">
+        </div>
 
+        <span class="canvas_title">Background</span>
+
+        <input type="file" id="image_background_input" accept="image/*">
+
+        <div id="background_color_grid">
+            <div id="background_color_view"></div>
+            <input type="text" id='background_color_input' value="#ffff8324">
+        </div>
+        
+    </div>
 
 
     
@@ -448,13 +556,116 @@
             return uuid.map((x) => x.toString(16)).join('');
         }
 
+        // COLOR CODE CONVERSIONS
+        function hsla_to_rgba(h, s, l, a) {
+            // Normalize hue to [0, 360]
+            h = h % 360;
+            // Normalize saturation and lightness to [0, 1]
+            s /= 100;
+            l /= 100;
+
+            let r, g, b;
+
+            if (s === 0) {
+                // Achromatic (gray)
+                r = g = b = l * 255;
+            } else {
+                const c = (1 - Math.abs(2 * l - 1)) * s; // Chroma
+                const x = c * (1 - Math.abs((h / 60) % 2 - 1)); // Secondary component
+                const m = l - c / 2; // Match lightness
+
+                // Determine RGB values based on hue
+                if (h >= 0 && h < 60) {
+                    r = c; g = x; b = 0;
+                } else if (h >= 60 && h < 120) {
+                    r = x; g = c; b = 0;
+                } else if (h >= 120 && h < 180) {
+                    r = 0; g = c; b = x;
+                } else if (h >= 180 && h < 240) {
+                    r = 0; g = x; b = c;
+                } else if (h >= 240 && h < 300) {
+                    r = x; g = 0; b = c;
+                } else {
+                    r = c; g = 0; b = x;
+                }
+
+                // Adjust for lightness
+                r = Math.round((r + m) * 255);
+                g = Math.round((g + m) * 255);
+                b = Math.round((b + m) * 255);
+            }
+
+            // Return RGBA values
+            return {
+                r: r,
+                g: g,
+                b: b,
+                a: Math.round(a * 2.55) 
+            };
+        }
+
+        function rgba_to_hex(r, g, b, a) {
+
+            // Ensure R, G, B are in the range [0, 255]
+            r = Math.min(255, Math.max(0, Math.round(r)));
+            g = Math.min(255, Math.max(0, Math.round(g)));
+            b = Math.min(255, Math.max(0, Math.round(b)));
+            
+
+            if (a == 255) {
+                // Convert R, G, B, and A to hex and pad with zeros
+                const hex = (r << 16 | g << 8 | b) >>> 0; // Ensure unsigned
+                return `#${('000000' + hex.toString(16)).slice(-6)}`; // Format as 8-digit hex
+            }
+            else {
+                // Convert R, G, B, and A to hex and pad with zeros
+                const hex = (r << 16 | g << 8 | b | (a << 24)) >>> 0; // Ensure unsigned
+                return `#${('00000000' + hex.toString(16)).slice(-8)}`; // Format as 8-digit hex
+            }
+            
+        }
+
+        // #f524fff0
+        // 36, 255, 240
+        function hex_to_rgba(hex) {
+            // Remove the hash at the start if it's there
+            hex = hex.replace(/^#/, '');
+
+            let r, g, b, a = 255; // Default alpha to 1 (fully opaque)
+
+            // Check if the hex code is 8 characters (with alpha)
+            if (hex.length === 8) {
+                a = parseInt(hex.substring(0, 2), 16);
+                r = parseInt(hex.substring(2, 4), 16);
+                g = parseInt(hex.substring(4, 6), 16);
+                b = parseInt(hex.substring(6, 8), 16);
+            } 
+            // Check if the hex code is 6 characters (without alpha)
+            else if (hex.length === 6) {
+                r = parseInt(hex.substring(0, 2), 16);
+                g = parseInt(hex.substring(2, 4), 16);
+                b = parseInt(hex.substring(4, 6), 16);
+            } 
+            // Invalid hex code
+            else {
+                throw new Error('Invalid hex code');
+            }
+
+            return {
+                r: r,
+                g: g,
+                b: b,
+                a: a
+            };
+        }
+
     </script>
 
     <!-- GENERAL VARAIBLES -->
     <script>
         let draw_mode = false;
         let move_mode = false;
-        let dims = null;
+        let dims = { defaultWidth: 1920, defaultHeight: 1080 };
         let width = 0;
         let height = 0;
         const canvas = document.getElementById('paint_canvas');
@@ -477,31 +688,40 @@
         let pixel_x_y_to_strokes = new Map();
         let current_layer = uuidV4();
 
-        let canvas_background = {
+        let canvas_background_img = null;
+        let canvas_background_color = {
             r: 255,
             g: 255,
             b: 255,
             a: 255
         };
+
         
-        function init_canvas() {
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            for (let x = 0; x < canvas.width; x++) {
-                for (let y = 0; y < canvas.width; y++) {
-                    const index = Math.round(y * canvas.width + x) * 4; // Calculate index for the pixel
-                    imageData.data[index] = canvas_background.r;     // Red
-                    imageData.data[index + 1] = canvas_background.g;   // Green
-                    imageData.data[index + 2] = canvas_background.b;   // Blue
-                    imageData.data[index + 3] = canvas_background.a; // Alpha
+        function draw_canvas_background() {
+            if (canvas.width > 0 && canvas.height > 0) {
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                for (let x = 0; x < canvas.width; x++) {
+                    for (let y = 0; y < canvas.height; y++) {
+                        const index = Math.round(y * canvas.width + x) * 4; // Calculate index for the pixel
+                        imageData.data[index] = canvas_background_color.r;     // Red
+                        imageData.data[index + 1] = canvas_background_color.g;   // Green
+                        imageData.data[index + 2] = canvas_background_color.b;   // Blue
+                        imageData.data[index + 3] = canvas_background_color.a; // Alpha
+                    }
                 }
+                ctx.putImageData(imageData, 0, 0);
+
+                if (canvas_background_img != null) {
+                    set_pixels(canvas_background_img);
+                }
+
             }
-            ctx.putImageData(imageData, 0, 0);
         }
 
         function re_draw() {
 
             const start = performance.now();
-            init_canvas();
+            draw_canvas_background();
             for (const [layer_uuid, layer] of layers.entries()) {
                 for (let stroke_uuid of layer.strokes) {
                     set_pixels(uuid_to_stroke.get(stroke_uuid).pixels);
@@ -567,7 +787,7 @@
                     }
                 );
             }
-            // console.log("new stroke", stroke_uuid, uuid_to_stroke);
+            console.log("new stroke", stroke_uuid);
 
 
             // reset temp vars
@@ -666,10 +886,12 @@
                     return radius_pixels;
                 });
             }
-            // console.log("pixels after", pixels);
+            // console.log("pixels", pixels);
 
 
-            stroke.pixels.push(...pixels);
+            for (const pixel of pixels) {
+                stroke.pixels.push(pixel);
+            }
             
             set_pixels(pixels);
         }
@@ -808,7 +1030,7 @@
                 ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
 
                 // // draw selected stroke
-                // init_canvas();
+                // draw_canvas_background();
                 set_pixels(selected_stroke.pixels);
 
             }
@@ -843,74 +1065,6 @@
     <!-- DRAW MODE MENUS -->
     <script>
         
-
-        function hsla_to_rgba(h, s, l, a) {
-            // Normalize hue to [0, 360]
-            h = h % 360;
-            // Normalize saturation and lightness to [0, 1]
-            s /= 100;
-            l /= 100;
-
-            let r, g, b;
-
-            if (s === 0) {
-                // Achromatic (gray)
-                r = g = b = l * 255;
-            } else {
-                const c = (1 - Math.abs(2 * l - 1)) * s; // Chroma
-                const x = c * (1 - Math.abs((h / 60) % 2 - 1)); // Secondary component
-                const m = l - c / 2; // Match lightness
-
-                // Determine RGB values based on hue
-                if (h >= 0 && h < 60) {
-                    r = c; g = x; b = 0;
-                } else if (h >= 60 && h < 120) {
-                    r = x; g = c; b = 0;
-                } else if (h >= 120 && h < 180) {
-                    r = 0; g = c; b = x;
-                } else if (h >= 180 && h < 240) {
-                    r = 0; g = x; b = c;
-                } else if (h >= 240 && h < 300) {
-                    r = x; g = 0; b = c;
-                } else {
-                    r = c; g = 0; b = x;
-                }
-
-                // Adjust for lightness
-                r = Math.round((r + m) * 255);
-                g = Math.round((g + m) * 255);
-                b = Math.round((b + m) * 255);
-            }
-
-            // Return RGBA values
-            return {
-                r: r,
-                g: g,
-                b: b,
-                a: Math.round(a * 2.55) 
-            };
-        }
-
-        function rgba_to_hex(r, g, b, a) {
-
-            // Ensure R, G, B are in the range [0, 255]
-            r = Math.min(255, Math.max(0, Math.round(r)));
-            g = Math.min(255, Math.max(0, Math.round(g)));
-            b = Math.min(255, Math.max(0, Math.round(b)));
-            
-
-            if (a == 255) {
-                // Convert R, G, B, and A to hex and pad with zeros
-                const hex = (r << 16 | g << 8 | b) >>> 0; // Ensure unsigned
-                return `#${('000000' + hex.toString(16)).slice(-6)}`; // Format as 8-digit hex
-            }
-            else {
-                // Convert R, G, B, and A to hex and pad with zeros
-                const hex = (r << 16 | g << 8 | b | (a << 24)) >>> 0; // Ensure unsigned
-                return `#${('00000000' + hex.toString(16)).slice(-8)}`; // Format as 8-digit hex
-            }
-            
-        }
 
         function draw(client_x_start, client_x_end, client_y_start, client_y_end) {
 
@@ -1091,6 +1245,9 @@
             if (move_mode) {
                 move_mode_button_click();
             }
+            if (in_settings) {
+                settings_button_click();
+            }
             draw_mode = !draw_mode;
 
             const draw_button = document.getElementById("draw_button");
@@ -1108,6 +1265,8 @@
                 draw_svg.setAttribute('stroke', 'var(--accent-color)');
             }
             toggle_draw_sub_menu();
+
+            update_draw_size_circle();
             // draw_button.classList.remove("draw_button-selected");
         }
 
@@ -1140,11 +1299,19 @@
 
         const draw_size_slider = document.getElementById('draw_size_slider');
         draw_size_slider.addEventListener('input', () => {
-            brush_radius = draw_size_slider.value;
-            draw_size_circle.style.width = brush_radius + "px";
-            draw_size_circle.style.height = brush_radius + "px";
-            draw_size_circle.style.borderRadius = brush_radius + "px";
+            update_draw_size_circle();
         });
+        function update_draw_size_circle() {
+            brush_radius = draw_size_slider.value;
+
+            // convert to a visual size for the zoom of the canvas
+            const scale_difference = width / dims.defaultWidth;
+            const visual_brush_size = brush_radius * scale_difference;
+
+            draw_size_circle.style.width = visual_brush_size + "px";
+            draw_size_circle.style.height = visual_brush_size + "px";
+            draw_size_circle.style.borderRadius = visual_brush_size + "px";
+        }
         draw_size_slider.value = brush_radius;
 
         update_color_label();
@@ -1159,6 +1326,9 @@
 
             if (draw_mode) {
                 draw_button_click();
+            }
+            if (in_settings) {
+                settings_button_click();
             }
             move_mode = !move_mode;
 
@@ -1180,15 +1350,135 @@
 
         }
 
-        function toggle_draw_sub_menu() {
+
+    </script>
+
+    <!-- SETTINGS MENU -->
+    <script>
+
+        let in_settings = false;
+        function settings_button_click() {
             if (draw_mode) {
-                place_draw_sub_menu();
+                draw_button_click();
+            }
+            if (move_mode) {
+                move_mode_button_click();
+            }
+
+            in_settings = !in_settings;
+            if (in_settings) {
+                place_settings_sub_menu();
             }
             else {
-                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
-                draw_sub_menu.style.display = 'none';
+                const settings_sub_menu = document.getElementById('settings_sub_menu');
+                settings_sub_menu.style.display = 'none';
             }
         }
+
+        function place_settings_sub_menu() {
+            const settings_button = document.getElementById('settings_button');
+            const settings_sub_menu = document.getElementById('settings_sub_menu');
+            settings_sub_menu.style.display = 'flex';
+
+            const rect = settings_button.getBoundingClientRect();
+            settings_sub_menu.style.top = (rect.top) + 'px';
+            settings_sub_menu.style.left = (rect.right + 5) + 'px';
+
+
+            const canvas_width_input = document.getElementById('canvas_width_input');
+            canvas_width_input.value = canvas.width;
+            const canvas_height_input = document.getElementById('canvas_height_input');
+            canvas_height_input.value = canvas.height;
+        }
+
+
+        const canvas_width_input = document.getElementById('canvas_width_input');
+        const canvas_height_input = document.getElementById('canvas_height_input');
+        canvas_width_input.addEventListener('input', () => {
+            canvas_resize();
+        });
+        canvas_height_input.addEventListener('input', () => {
+            canvas_resize();
+        });
+        function canvas_resize() {
+            dims.defaultWidth = parseInt(canvas_width_input.value);
+            dims.defaultHeight = parseInt(canvas_height_input.value);
+
+            draw_canvas_and_center_view();
+        }
+
+
+        const image_background_input = document.getElementById('image_background_input');
+        image_background_input.addEventListener('change', () => {
+            const file = image_background_input.files[0];
+            if (!file) return;
+
+            if (file.type.startsWith('image/') && !file.type.startsWith('image/svg')) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    
+
+                    // scale canvas to image size
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.onload = () => {
+                        // resize canvas
+                        canvas_width_input.value = img.width;
+                        canvas_height_input.value = img.height;
+                        canvas_resize();
+                        
+                        // clear and draw
+                        ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0); // Draw the image at coordinates (0, 0)
+                        
+                        // Get pixel data
+                        canvas_background_img = [];
+                        const img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        for (let i = 0; i < img_data.data.length; i+=4) {
+                            // const index = Math.round(pixel.y * canvas.width + pixel.x) * 4;
+                            let pixel_i = Math.floor(i / 4);
+                            let y = Math.floor(pixel_i / img.width);
+                            let x = pixel_i - (y * img.width);
+                            canvas_background_img.push({
+                                x: x,
+                                y: y,
+                                r: img_data.data[i],
+                                g: img_data.data[i+1],
+                                b: img_data.data[i+2],
+                                a: img_data.data[i+3]
+                            });
+                        }
+
+                        //re draw
+                        re_draw();
+                    };
+
+
+                };
+                reader.readAsDataURL(file);
+
+            }
+            else {
+                alert(file.type + " isn't a supported file type");
+            }
+            
+        });
+    
+        const background_color_input = document.getElementById('background_color_input');
+        const background_color_view = document.getElementById('background_color_view');
+        background_color_input.addEventListener('input', () => {
+
+            canvas_background_color = hex_to_rgba(background_color_input.value);
+            console.log("canvas_background_color", canvas_background_color);
+            background_color_view.style.backgroundColor = `rgba(${canvas_background_color.r}, ${canvas_background_color.g}, ${canvas_background_color.b}, ${canvas_background_color.a / 255})`;
+            
+            re_draw();
+        });
+        background_color_input.value = rgba_to_hex(canvas_background_color.r, canvas_background_color.g, canvas_background_color.b, canvas_background_color.a);
+        background_color_view.style.backgroundColor = `rgba(${canvas_background_color.r}, ${canvas_background_color.g}, ${canvas_background_color.b}, ${canvas_background_color.a / 255})`;
+            
 
     </script>
 
@@ -1199,9 +1489,20 @@
 
 
         document.addEventListener('DOMContentLoaded', () => {
+            
+            draw_canvas_and_center_view();
+
+            // DELETE THIS, JUST A TEST
+            settings_button_click();
+
+            return () => {
+            };
+        });
+
+        function draw_canvas_and_center_view() {
             let windowWidth = window.innerWidth;
             let windowHeight = window.innerHeight;
-            dims = get_default_canvas_dims(); // Define this function for your dimensions
+            
             width = dims.defaultWidth;
             height = dims.defaultHeight;
             let ctrl = false; // Control flag
@@ -1211,7 +1512,7 @@
             canvas.style.height = height + 'px';
             canvas.width = width;
             canvas.height = height;
-            init_canvas();
+            draw_canvas_background();
 
             // const rect = canvas.getBoundingClientRect();
             // let canvasX = rect.left + window.scrollX;
@@ -1229,11 +1530,10 @@
 
             // starter_stroke(100, 100);
             // starter_stroke(300, 100);
+            zoom_to_fit_canvas_to_view();
 
-
-            return () => {
-            };
-        });
+            re_draw();
+        }
 
         const handleKeyDown = (event) => {
             if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
@@ -1307,28 +1607,38 @@
         };
         window.addEventListener('mouseup', handleMouseUp);
 
-        let zoom = 8; // Default zoom level
         const handleScroll = (event) => {
             event.preventDefault(); // Prevent default scroll action
             
             // determine mouse location on canvas
             let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
             let mouseY = event.clientY;
-            const canvas_location_x_percent = (mouseX + window.scrollX - CANVAS_X) / width;
-            const canvas_location_y_percent = (mouseY + window.scrollY - CANVAS_Y) / height;
+            
+            scroll(mouseX, mouseY, event.deltaY)
+
+            if (draw_mode) {
+                update_draw_size_circle();
+            }
+        };
+        let zoom = 8; // Default zoom level
+        const MAX_ZOOM = 10.1;
+        function scroll(x, y, zoom_amount) {
             // console.log('canvas_location_x_percent', canvas_location_x_percent);
             // console.log('canvas_location_y_percent', canvas_location_y_percent);
 
 
-
             // console.log("zooming");
-            let scrollAmount = -event.deltaY;
+            let scrollAmount = -zoom_amount;
             zoom += scrollAmount / 1200;
             if (zoom < 8) zoom = 8; // Minimum zoom
-            if (zoom > 9) zoom = 9; // Maximum zoom
+            if (zoom > MAX_ZOOM) zoom = MAX_ZOOM; // Maximum zoom
 
-            let zoomFactor = 100 * 100 ** (zoom - 9);
-            // console.log('zoomFactor', zoomFactor);
+            let zoomFactor = 100 * 100 ** (zoom - MAX_ZOOM);
+            // console.log('zoom', zoom);a
+
+            const canvas_location_x_percent = (x + window.scrollX - CANVAS_X) / width;
+            const canvas_location_y_percent = (y + window.scrollY - CANVAS_Y) / height;
+
 
             // Modify canvas size
             width = dims.defaultWidth * zoomFactor;
@@ -1352,8 +1662,8 @@
 
             const canvas_location_x = canvas_location_x_percent * width;
             const canvas_location_y = canvas_location_y_percent * height;
-            const mouse_offset_x = mouseX;
-            const mouse_offset_y = mouseY;
+            const mouse_offset_x = x;
+            const mouse_offset_y = y;
             // console.log('mouse_offset_x', mouse_offset_x);
             // console.log('mouse_offset_y', mouse_offset_y);
 
@@ -1366,25 +1676,42 @@
             // redraw open menus
             if (draw_mode){
                 place_draw_sub_menu();
-
             }
-        };
+        }
+        function zoom_to_fit_canvas_to_view() {
+            
+            let windowWidth = window.innerWidth;
+            let desired_width = windowWidth * 0.6;
+            let desired_height = dims.defaultWidth * canvas.width / canvas.height;
+
+            let desired_zoom_factor = desired_width / dims.defaultWidth;
+
+            /*
+                let zoomFactor = 100 * 100 ^ (zoom - MAX_ZOOM) -- see above in the scroll function
+
+                log(zoomFactor / 100) = log(100 ^ (zoom - MAX_ZOOM))
+                
+                log(zoomFactor / 100) = (zoom - MAX_ZOOM) * log(100)
+
+                log(zoomFactor / 100) / log(100) = zoom - MAX_ZOOM
+
+                zoom = log(zoomFactor / 100) / log(100) + MAX_ZOOM
+
+            */
+            let desired_zoom = ( Math.log(desired_zoom_factor / 100) / Math.log(100) ) + MAX_ZOOM;
+            zoom = desired_zoom; // set persistant zoom variable and then just scroll 0 on that below
+
+
+            scroll(window.innerWidth / 2, window.innerHeight / 2, 0);
+            
+        }
         window.addEventListener('wheel', handleScroll, { passive: false });
         
 
-        // Function to get default canvas dimensions
-        function get_default_canvas_dims() {
-            
-            let windowWidth = window.innerWidth;
-            let defaultWidth = windowWidth * 0.6;
-            let defaultHeight = defaultWidth * 1080 / 1920;
-        
-            return { defaultWidth, defaultHeight };
-        }
 
 
         // DELETE THIS testing stuff
-        draw_button_click();
+        // settings_button_click();
 
 
         // TEST
@@ -1412,46 +1739,61 @@
     <!-- COPY PASTE AND DRAG AND DROP IMAGES -->
     <script>
         
-        function load_image(url) {
-            const img = new Image();
-            img.src = url;
-            img.onload = () => {
+        function load_image(file) {
 
-                // resize canvas to cature image
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0); // Draw the image at coordinates (0, 0)
-                
-                // Get pixel data
-                let added_image_pixels = [];
-                const img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                for (let i = 0; i < img_data.data.length; i+=4) {
-                    // const index = Math.round(pixel.y * canvas.width + pixel.x) * 4;
-                    let pixel_i = Math.floor(i / 4);
-                    let y = Math.floor(pixel_i / img.width);
-                    let x = pixel_i - (y * img.width);
-                    added_image_pixels.push({
-                        x: x,
-                        y: y,
-                        r: img_data.data[i],
-                        g: img_data.data[i+1],
-                        b: img_data.data[i+2],
-                        a: img_data.data[i+3]
-                    });
-                }
-                console.log("added_image_pixels", added_image_pixels);
+            if (file.type.startsWith('image/') && !file.type.startsWith('image/svg')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = (e) => {
 
-                // reset canvas
-                canvas.width = dims.defaultWidth;
-                canvas.height = dims.defaultHeight;
-                init_canvas();
+                        const img = new Image();
+                        img.src = reader.result;
+                        img.onload = () => {
 
-                // add image as a stroke
-                add_to_stroke(added_image_pixels);
-                finish_stroke();
+                            // resize canvas to cature image
+                            ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear the canvas
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            ctx.drawImage(img, 0, 0); // Draw the image at coordinates (0, 0)
+                            
+                            // Get pixel data
+                            let added_image_pixels = [];
+                            const img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                            for (let i = 0; i < img_data.data.length; i+=4) {
+                                // const index = Math.round(pixel.y * canvas.width + pixel.x) * 4;
+                                let pixel_i = Math.floor(i / 4);
+                                let y = Math.floor(pixel_i / img.width);
+                                let x = pixel_i - (y * img.width);
+                                added_image_pixels.push({
+                                    x: x,
+                                    y: y,
+                                    r: img_data.data[i],
+                                    g: img_data.data[i+1],
+                                    b: img_data.data[i+2],
+                                    a: img_data.data[i+3]
+                                });
+                            }
+                            console.log("added_image_pixels", added_image_pixels);
 
-            };
+                            // reset canvas
+                            canvas.width = dims.defaultWidth;
+                            canvas.height = dims.defaultHeight;
+                            draw_canvas_background();
+                            re_draw();
+
+                            // add image as a stroke
+                            add_to_stroke(added_image_pixels);
+                            finish_stroke();
+
+                        };
+                    };
+                    
+                    reader.readAsDataURL(file); // Read the image as Data URL
+            }
+            else {
+                alert(file.type + " isn't a supported file type");
+            }
+            
         }
 
         // Drag and drop handling
@@ -1466,13 +1808,7 @@
 
             if (files.length > 0) {
                 const file = files[0];
-                const reader = new FileReader();
-                
-                reader.onload = (e) => {
-                    load_image(e.target.result); // Load the dropped image
-                };
-                
-                reader.readAsDataURL(file); // Read the image as Data URL
+                load_image(file);
             }
         });
 
@@ -1484,16 +1820,9 @@
 
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
-
-                if (item.type.startsWith('image/')) {
-                    const file = item.getAsFile();
-                    const reader = new FileReader();
-
-                    reader.onload = (e) => {
-                        load_image(e.target.result); // Load the pasted image
-                    };
-
-                    reader.readAsDataURL(file); // Read the image as Data URL
+                const file = item.getAsFile();
+                if (file) {
+                    load_image(file);
                 }
             }
         });
