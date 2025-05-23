@@ -250,15 +250,11 @@
             font-size: 1.2rem;
         }
 
-        #draw_button:hover .tooltip-text {
+        .menu_button:hover .tooltip-text {
             visibility: visible;
             opacity: 1;
         }
 
-        #move_button:hover .tooltip-text {
-            visibility: visible;
-            opacity: 1;
-        }
 
         #draw_size_grid {
             display: grid;
@@ -370,6 +366,18 @@
             text-align: center;
             margin: .3rem;
         }
+
+        #select_box {
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.039);   
+            z-index: 100;
+
+            /* left: 300px;
+            top: 300px;
+            width: 300px;
+            height: 300px; */
+        }
+
     </style>
     
     <!-- draw sub menu -->
@@ -466,6 +474,7 @@
                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
                 <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
             </svg>
+            <span id="download_tool_tip" class="tooltip-text">d</span>
         </div>
 
         <div
@@ -474,6 +483,7 @@
             onclick="settings_button_click()"
         >
             <svg 
+                id="settings_svg" 
                 xmlns="http://www.w3.org/2000/svg" 
                 width="2rem" 
                 height="2rem" 
@@ -484,6 +494,7 @@
             >
                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
             </svg>
+            <span id="settings_tool_tip" class="tooltip-text">f</span>
         </div>
 
        
@@ -492,6 +503,7 @@
 
     <!-- background and canvas -->
     <div id="paint-background">
+        <!-- <div id="select_box"></div> -->
         <canvas id="paint_canvas"></canvas>
     </div>
 
@@ -669,6 +681,7 @@
         let width = 0;
         let height = 0;
         const canvas = document.getElementById('paint_canvas');
+        let select_box = document.getElementById("select_box");
         let ctx = canvas.getContext('2d');
         let drag_x, drag_y;
         let color = {
@@ -751,9 +764,12 @@
         let stroke_uuid = uuidV4();
         let stroke_path_checker = new Set();
         let pixel_checker = new Set();
+        let count = 0;
         let stroke = {
             layer_uuid: current_layer,
-            pixels: []
+            uuid: stroke_uuid,
+            pixels: [],
+            order: count
         };
         function finish_stroke() {
 
@@ -770,35 +786,25 @@
             }
 
 
-            uuid_to_stroke.set(stroke_uuid, {
-                layer_uuid: current_layer,
-                pixels: []
-            });
-            
-            for (const pixel of stroke.pixels) {
-                uuid_to_stroke.get(stroke_uuid).pixels.push(
-                    {
-                        x: pixel.x,
-                        y: pixel.y,
-                        r: pixel.r,
-                        g: pixel.g,
-                        b: pixel.b,
-                        a: pixel.a
-                    }
-                );
-            }
-            console.log("new stroke", stroke_uuid);
+            stroke.layer_uuid = current_layer;
+            stroke.uuid = stroke_uuid;
+            stroke.order = count;
+            count++;
+            uuid_to_stroke.set(stroke_uuid, stroke);
 
+            console.log("new stroke", stroke_uuid);
+            add_action(ADD_STROKE, stroke);
 
             // reset temp vars
             stroke_uuid = uuidV4();
             stroke = {
                 layer_uuid: current_layer,
-                pixels: []
+                uuid: stroke_uuid,
+                pixels: [],
+                order: count
             };
             stroke_path_checker.clear();
             pixel_checker.clear();
-
 
 
         }
@@ -944,58 +950,88 @@
 
 
         // MOVING STROKES
-        let canvas_data_without_selected_stroke = null;
-        let selected_stroke_uuid = null;
-        let selected_stroke = null;
+        let canvas_data_without_selected_strokes = null;
+        let selected_stroke_uuids = null;
+        let selected_strokes = null;
         let delta_x_sum = 0;
         let delta_y_sum = 0;
-        function save_canvas_and_get_selected_stroke (x, y) {
+        function save_canvas_and_get_selected_strokes(xy_coordinates) {
 
-            console.log("save_canvas_and_get_selected_stroke");
+            console.log("save_canvas_and_get_selected_strokes ");
             // console.log("uuid_to_stroke", uuid_to_stroke);
 
             // get selected stroke
-            const tag = `${x}_${y}`;
-            const selected_stroke_uuids = pixel_x_y_to_strokes.get(tag);
+            
+            selected_stroke_uuids = new Set();
+            for (const coordinate of xy_coordinates) {
+                let x = coordinate.x;
+                let y = coordinate.y;
+                const tag = `${x}_${y}`;
+                let strokes_at_coor = pixel_x_y_to_strokes.get(tag);
+
+                if (strokes_at_coor) {
+                    // console.log("strokes_at_coor", strokes_at_coor);
+                    for (const stroke_uuid of strokes_at_coor) {
+                        selected_stroke_uuids.add(stroke_uuid);
+                    }
+                }
+            }
 
 
-            if (selected_stroke_uuids) {
-                selected_stroke_uuid = selected_stroke_uuids[selected_stroke_uuids.length - 1];
+            // console.log("selected_stroke_uuids", selected_stroke_uuids);
+            // console.log("selected_stroke_uuids.size", selected_stroke_uuids.size);
+            if (selected_stroke_uuids && selected_stroke_uuids.size > 0) {
                 // console.log("selected_stroke_uuids", selected_stroke_uuids);
-                // console.log("selected_stroke_uuid", selected_stroke_uuid);
 
                 // console.log("uuid_to_stroke", uuid_to_stroke);
-                selected_stroke =  uuid_to_stroke.get(selected_stroke_uuid);
-                uuid_to_stroke.delete(selected_stroke_uuid);
+                selected_strokes = Array.from(selected_stroke_uuids).map(uuid => {
+                    let stroke = uuid_to_stroke.get(uuid);
+                    uuid_to_stroke.delete(uuid);
+                    return stroke;
+                });
+                // console.log("selected_strokes", selected_strokes);
 
 
-                if (selected_stroke) {
-                    // remove stroke and redraw canvas
-                    current_layer = selected_stroke.layer_uuid;
+                if (selected_strokes) {
+                    // remove strokes and redraw canvas
+                    current_layer = selected_strokes[0].layer_uuid;
                     // console.log('layers', layers);
-                    let other_strokes = layers.get(current_layer).strokes.filter(uuid => uuid != selected_stroke_uuid);
+                    let other_strokes = layers.get(current_layer).strokes.filter(uuid => !selected_stroke_uuids.has(uuid));
                     layers.get(current_layer).strokes = other_strokes
                     // console.log('other_strokes', other_strokes);
                     // console.log('layers.get(current_layer).strokes', layers.get(current_layer).strokes);
                     // console.log('layers', layers);
 
-                    selected_stroke.pixels.forEach(pixel => {
-                        const tag = `${pixel.x}_${pixel.y}`;
-                        pixel_x_y_to_strokes.set(
-                            tag, 
-                            pixel_x_y_to_strokes.get(tag).filter(uuid => uuid !== selected_stroke_uuid)
-                        );
+                    console.log("selected_strokes", selected_strokes);
+                    selected_strokes.forEach(selected_stroke => {
+                        selected_stroke.pixels.forEach(pixel => {
+                            const tag = `${pixel.x}_${pixel.y}`;
+                            pixel_x_y_to_strokes.set(
+                                tag, 
+                                pixel_x_y_to_strokes.get(tag).filter(uuid => uuid !== selected_stroke.uuid)
+                            );
+                        });
+
                     });
 
                     // re-draw canvas and save image buffer
                     re_draw();
-                    canvas_data_without_selected_stroke = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    canvas_data_without_selected_strokes = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-                    set_pixels(selected_stroke.pixels);
+                    selected_strokes.forEach(selected_stroke => {
+                        set_pixels(selected_stroke.pixels);
+                    });
 
-                    return selected_stroke_uuid;
+
+
+                    add_action(MOVE_STROKES, selected_strokes);
+
+                    return selected_stroke_uuids;
                 }
 
+            }
+            else {
+                selected_stroke_uuids == null;
             }
 
             return null;
@@ -1005,7 +1041,7 @@
             // console.log("update_selected_stroke");
             // console.log("selected_stroke_uuid", selected_stroke_uuid);
 
-            if (selected_stroke) {
+            if (selected_strokes) {
                 
                 // update stroke pixels
                 const canvas_width = parseFloat(canvas.style.width);
@@ -1018,20 +1054,22 @@
                 delta_x_sum -= delta_x;
                 delta_y_sum -= delta_y;
 
+                selected_strokes.forEach(selected_stroke => {
+                    selected_stroke.pixels = selected_stroke.pixels.map(pixel => {
+                        pixel.x += delta_x;
+                        pixel.y += delta_y;
 
-                selected_stroke.pixels = selected_stroke.pixels.map(pixel => {
-                    pixel.x += delta_x;
-                    pixel.y += delta_y;
-
-                    return pixel;
+                        return pixel;
+                    });
                 });
 
                 // draw saved canvas
-                ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
+                ctx.putImageData(canvas_data_without_selected_strokes, 0, 0);
 
-                // // draw selected stroke
-                // draw_canvas_background();
-                set_pixels(selected_stroke.pixels);
+                // draw selected strokes
+                selected_strokes.forEach(selected_stroke => {
+                    set_pixels(selected_stroke.pixels);
+                });
 
             }
         }
@@ -1039,25 +1077,32 @@
         function drop_selected_stroke() {
             console.log("drop_selected_stroke");
             
-            if (selected_stroke_uuid) {
+            if (selected_stroke_uuids) {
 
                 // draw saved canvas
-                ctx.putImageData(canvas_data_without_selected_stroke, 0, 0);
+                ctx.putImageData(canvas_data_without_selected_strokes, 0, 0);
 
                 // re-add stroke
-                add_to_stroke(selected_stroke.pixels, false);
-                finish_stroke();
+                selected_strokes.forEach(selected_stroke => {
+                    uuid_to_stroke.delete(selected_stroke.uuid);
+                    stroke_uuid = selected_stroke.uuid;
+                    add_to_stroke(selected_stroke.pixels, false);
+                    finish_stroke();
+                });
 
+
+                add_action(DROP_STROKES, selected_strokes.length);
                 // draw stroke
                 // set_pixels(selected_stroke.pixels);
 
                 // reset temp varaibles
-                uuid_to_stroke.delete(selected_stroke_uuid);
-                canvas_data_without_selected_stroke = null;
-                selected_stroke_uuid = null;
-                selected_stroke = null;
+                canvas_data_without_selected_strokes = null;
+                selected_stroke_uuids = null;
+                selected_strokes = null;
+
             }
-            
+
+            // console.log('uuid_to_stroke', uuid_to_stroke);
         }
     
     </script>
@@ -1127,9 +1172,7 @@
 
 
         const color_icon = document.getElementById('color_icon');
-
         const draw_size_circle = document.getElementById('draw_size_circle');
-
 
         const hue_slider = document.getElementById('hue_slider');
         const saturation_slider = document.getElementById('saturation_slider');
@@ -1288,6 +1331,7 @@
             const rect = draw_button.getBoundingClientRect();
             draw_sub_menu.style.top = (rect.top) + 'px';
             draw_sub_menu.style.left = (rect.right + 5) + 'px';
+            // console.log(rect);
 
             hue_slider.value = color.hue;
             saturation_slider.value = color.saturation;
@@ -1320,6 +1364,10 @@
     <!-- MOVE MODE -->
     <script>
 
+        let move_select_start_x = null;
+        let move_select_start_y = null;
+        let move_select_end_x = null;
+        let move_select_end_y = null;
 
         function move_mode_button_click() {
             // console.log("clicked");
@@ -1350,6 +1398,76 @@
 
         }
 
+        function draw_select_box() {
+            console.log("draw_select_box");
+
+            let already_created = true;
+            select_box = document.getElementById("select_box");
+            if (!select_box) {
+                select_box = document.createElement('div');
+                document.getElementById('paint-background').appendChild(select_box);
+            }
+            select_box.id = 'select_box';
+
+            // Set the position of the box (you can change these values)
+            const left = Math.min(move_select_start_x, move_select_end_x) + 'px';
+            const top = Math.min(move_select_start_y, move_select_end_y) + 'px';
+            const box_width = Math.abs(move_select_start_x - move_select_end_x) + 'px';
+            const box_height = Math.abs(move_select_start_y - move_select_end_y) + 'px';
+            select_box.style.left = left; // Position from the left
+            select_box.style.top = top; // Position from the top
+            select_box.style.width = box_width;
+            select_box.style.height = box_height;
+            // draw_sub_menu.style.top = (rect.top) + 'px';
+            // draw_sub_menu.style.left = (rect.right + 5) + 'px';
+            // console.log("left", left);
+            // console.log("top", top);
+            // console.log("box_width", box_width);
+            // console.log("box_height", box_height);
+
+            // select_box.addEventListener('blur', function() {
+            //     select_box.remove(); 
+            // });
+        }
+
+        function select_strokes() {
+            let box_start_x = mouse_x_to_canvas_x(move_select_start_x);
+            let box_start_y = mouse_y_to_canvas_y(move_select_start_y);
+            let box_end_x = mouse_x_to_canvas_x(move_select_end_x);
+            let box_end_y = mouse_y_to_canvas_y(move_select_end_y);
+            // console.log("box_start_x", box_start_x);
+            // console.log("box_start_y", box_start_y);
+            // console.log("box_end_x", box_end_x);
+            // console.log("box_end_y", box_end_y);
+
+            let step_x = box_end_x - box_start_x > 0? 1 : -1;
+            let step_y = box_end_y - box_start_y > 0? 1 : -1;
+            
+
+            let xy_coordinates = [];
+            for(let x = box_start_x; x != box_end_x; x += step_x) {
+                for(let y = box_start_y; y != box_end_y; y += step_y) {
+                    xy_coordinates.push({
+                        x:x,
+                        y:y
+                    });
+                }
+            }
+
+            // console.log("xy_coordinates", xy_coordinates);
+
+            save_canvas_and_get_selected_strokes(xy_coordinates);
+
+        }
+
+        function update_move_draw_select_box(delta_x, delta_y) {
+
+            console.log("update_move_draw_select_box");
+            const top = parseFloat(select_box.style.getPropertyValue('top'));
+            const left = parseFloat(select_box.style.getPropertyValue('left'));
+            select_box.style.top = (top + delta_y) + 'px';
+            select_box.style.left = (left + delta_x) + 'px';
+        }
 
     </script>
 
@@ -1357,6 +1475,9 @@
     <script>
 
         let in_settings = false;
+        const settings_button = document.getElementById('settings_button');
+        const settings_sub_menu = document.getElementById('settings_sub_menu');
+        const settings_svg = document.getElementById('settings_svg');
         function settings_button_click() {
             if (draw_mode) {
                 draw_button_click();
@@ -1367,6 +1488,17 @@
 
             in_settings = !in_settings;
             if (in_settings) {
+                settings_button.style.backgroundColor = 'var(--accent-color)';
+                settings_svg.setAttribute('fill', 'var(--secondary-color)');
+                settings_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                settings_button.style.backgroundColor = 'var(--secondary-color)';
+                settings_svg.setAttribute('fill', 'var(--accent-color)');
+                settings_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+
+            if (in_settings) {
                 place_settings_sub_menu();
             }
             else {
@@ -1376,8 +1508,6 @@
         }
 
         function place_settings_sub_menu() {
-            const settings_button = document.getElementById('settings_button');
-            const settings_sub_menu = document.getElementById('settings_sub_menu');
             settings_sub_menu.style.display = 'flex';
 
             const rect = settings_button.getBoundingClientRect();
@@ -1468,21 +1598,74 @@
     
         const background_color_input = document.getElementById('background_color_input');
         const background_color_view = document.getElementById('background_color_view');
-        background_color_input.addEventListener('input', () => {
-
-            canvas_background_color = hex_to_rgba(background_color_input.value);
+        background_color_input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                set_background_color()
+            }
+        });
+        background_color_input.addEventListener('blur', function() {
+            set_background_color()
+        });
+        function set_background_color() {
+            try {
+                canvas_background_color = hex_to_rgba(background_color_input.value);
+            }
+            catch(error) {
+                background_color_input.value = rgba_to_hex(canvas_background_color.r, canvas_background_color.g, canvas_background_color.b, canvas_background_color.a);
+            }
             console.log("canvas_background_color", canvas_background_color);
             background_color_view.style.backgroundColor = `rgba(${canvas_background_color.r}, ${canvas_background_color.g}, ${canvas_background_color.b}, ${canvas_background_color.a / 255})`;
             
             re_draw();
-        });
+        }
         background_color_input.value = rgba_to_hex(canvas_background_color.r, canvas_background_color.g, canvas_background_color.b, canvas_background_color.a);
         background_color_view.style.backgroundColor = `rgba(${canvas_background_color.r}, ${canvas_background_color.g}, ${canvas_background_color.b}, ${canvas_background_color.a / 255})`;
             
 
     </script>
 
-    <!-- GENERAL INPUT HANDLING -->
+    <!-- UNDO OR CTRL Z -->
+    <script>
+        let actions = [];
+        function add_action(type, data) {
+            actions.push(
+                {
+                    type: type,
+                    data: data
+                }
+            );
+        }
+
+        const ADD_STROKE = "ADD_STROKE";
+        const MOVE_STROKES = "MOVE_STROKES";
+        const DROP_STROKES = "DROP_STROKES";
+        function undo() {
+            if (actions.length == 0) {
+                const action = actions.pop();
+
+                if (action.type == ADD_STROKE) {
+
+                }
+                else if (action.type == MOVE_STROKES) {
+                    const strokes = action.data;
+                    
+                }
+                else if (action.type == DROP_STROKES) {
+                    const num_strokes = action.data;
+                    
+                    // undo all adds from dropping the strokes
+                    for (let i = 0; i < num_strokes; i++) {
+                        undo();
+                    }
+                    // undo one more time for the move storkes action
+                    undo(); // 
+                }
+            }
+        }
+
+    </script>
+
+    <!-- WINDOW INPUT HANDLING -->
     <script>
         const CANVAS_X = 40000; 
         const CANVAS_Y = 40000; 
@@ -1493,7 +1676,7 @@
             draw_canvas_and_center_view();
 
             // DELETE THIS, JUST A TEST
-            settings_button_click();
+            move_mode_button_click();
 
             return () => {
             };
@@ -1545,6 +1728,16 @@
             else if (!event.ctrlKey && event.key === 's') {
                 move_mode_button_click();
             }
+            else if (!event.ctrlKey && event.key === 'd') {
+                download_img();
+            }
+            else if (!event.ctrlKey && event.key === 'f') {
+                settings_button_click();
+            }
+            else if (event.key === ' ') {
+                event.preventDefault();
+                console.log("space");
+            }
         };
         window.addEventListener('keydown', handleKeyDown);
         
@@ -1557,32 +1750,70 @@
         
         let is_dragging = false;
         const handleMouseDown = (event) => {
+            
             if (event.button == 0) {
                 is_dragging = true; // Set dragging to true
                 drag_x = event.clientX; // Get the starting X coordinate
                 drag_y = event.clientY; // Get the starting Y coordinate
 
+
+                // remove box selection if clicking off the box
+                if (select_box && !select_box.contains(event.target)) {
+                    select_box.remove();
+                }
+
                 if (draw_mode && event.target == canvas) {
                     draw(event.clientX, event.clientX, event.clientY, event.clientY);
                 }
-                else if (move_mode && event.target == canvas) {
-                    let x = mouse_x_to_canvas_x(event.clientX);
-                    let y = mouse_y_to_canvas_y(event.clientY);
-                    save_canvas_and_get_selected_stroke(x, y);
+                else if (move_mode) {
+                    let ctrl = event.metaKey || event.ctrlKey;
+
+                    // box select vs single stroke select
+                    if (ctrl) {
+                        move_select_start_x = event.clientX;
+                        move_select_start_y = event.clientY;
+                        move_select_end_x = event.clientX;
+                        move_select_end_y = event.clientY;
+                    }
+                    else if (event.target == select_box) {
+                        select_strokes();
+                        // console.log("selected_strokes", selected_strokes);
+                    }
+                    else if (event.target == canvas) {
+                        let x = mouse_x_to_canvas_x(event.clientX);
+                        let y = mouse_y_to_canvas_y(event.clientY);
+                        save_canvas_and_get_selected_strokes([
+                            {
+                                x:x, 
+                                y:y
+                            }
+                        ]);
+                    }
                 }
+
+
             }
         };
         window.addEventListener('mousedown', handleMouseDown);
         
         const handleMouseMove = (event) => {
-            if (is_dragging && event.target == canvas) {
-                if (draw_mode) {
+            if (is_dragging) {
+                if (draw_mode && event.target == canvas) {
                     draw(event.clientX, drag_x, event.clientY, drag_y);
                 }
-                else if (move_mode) {
+                else if (move_mode && selected_strokes && (event.target == canvas || event.target == select_box)) {
                     update_selected_stroke(event.clientX, event.clientY);
+                    const delta_x = event.clientX - drag_x;
+                    const delta_y = event.clientY - drag_y;
+                    update_move_draw_select_box(delta_x, delta_y);
+                }
+                else if (move_mode && move_select_start_x && move_select_start_y) {
+                    move_select_end_x = event.clientX;
+                    move_select_end_y = event.clientY;
+                    draw_select_box();
                 }
                 else {
+                    console.log("move");
                     const delta_x = event.clientX - drag_x;
                     const delta_y = event.clientY - drag_y;
                     window.scrollTo(window.scrollX - delta_x, window.scrollY - delta_y);
@@ -1601,7 +1832,14 @@
                     finish_stroke();
                 }
                 else if (move_mode) {
-                    drop_selected_stroke();
+                    if (move_select_start_x && move_select_start_y) {
+                        select_strokes();
+                        move_select_start_x = null;
+                        move_select_start_y = null;
+                    }
+                    else if (move_mode && selected_strokes){
+                        drop_selected_stroke();
+                    }
                 }
             }
         };
@@ -1709,9 +1947,17 @@
         
 
 
+        // download image
+        function download_img() {
+            const link = document.createElement('a'); // Create a temporary link
+            link.download = 'canvas_image.png'; // Set the desired file name
+            link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
+            link.click(); // Programmatically click the link to trigger download
+        }
+    
 
         // DELETE THIS testing stuff
-        // settings_button_click();
+        starter_stroke(100, 100);
 
 
         // TEST
@@ -1827,13 +2073,6 @@
             }
         });
 
-        // download image
-        function download_img() {
-            const link = document.createElement('a'); // Create a temporary link
-            link.download = 'canvas_image.png'; // Set the desired file name
-            link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
-            link.click(); // Programmatically click the link to trigger download
-        }
     </script>
 
     <!-- TOOLTIPS PLACEMENTS -->
@@ -1851,6 +2090,19 @@
         offset = rect.width * .8;
         move_tool_tip.style.top = (rect.top + offset) + 'px';
         move_tool_tip.style.left = (rect.left + offset) + 'px';
+
+        const download_button = document.getElementById('download_button');
+        const download_tool_tip = document.getElementById('download_tool_tip');
+        rect = download_button.getBoundingClientRect();
+        offset = rect.width * .8;
+        download_tool_tip.style.top = (rect.top + offset) + 'px';
+        download_tool_tip.style.left = (rect.left + offset) + 'px';
+
+        const settings_tool_tip = document.getElementById('settings_tool_tip');
+        rect = settings_button.getBoundingClientRect();
+        offset = rect.width * .8;
+        settings_tool_tip.style.top = (rect.top + offset) + 'px';
+        settings_tool_tip.style.left = (rect.left + offset) + 'px';
     </script>
 
 </body>

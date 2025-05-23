@@ -14,12 +14,15 @@ An app for drawing and graphics production, as well as document editing.
 - download image
 - canvas resizing
 - canvas background
+- prevent space bar default
 
 
 # Todo
+- ctrl z
 - select multiple with move tool
-- layers
-- scale tool
 - color values can be set by changing text instead of just sliders
 - fill tool
+
+- layers
+- scale tool
 - make general color selector to be used in background color as well
