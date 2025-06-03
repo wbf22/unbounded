@@ -677,6 +677,8 @@
     <script>
         let draw_mode = false;
         let move_mode = false;
+        let draw_box_select = false;
+        let move_box_select = false;
         let dims = { defaultWidth: 1920, defaultHeight: 1080 };
         let width = 0;
         let height = 0;
@@ -1038,7 +1040,7 @@
         }
     
         function update_selected_stroke(clientX, clientY) {
-            // console.log("update_selected_stroke");
+            console.log("update_selected_stroke");
             // console.log("selected_stroke_uuid", selected_stroke_uuid);
 
             if (selected_strokes) {
@@ -1053,6 +1055,9 @@
                 let delta_y = Math.floor(delta_y_sum);
                 delta_x_sum -= delta_x;
                 delta_y_sum -= delta_y;
+                // console.log('delta_x', delta_x);
+                // console.log('delta_y', delta_y);
+                console.log('selected_strokes', selected_strokes);
 
                 selected_strokes.forEach(selected_stroke => {
                     selected_stroke.pixels = selected_stroke.pixels.map(pixel => {
@@ -1077,7 +1082,7 @@
         function drop_selected_stroke() {
             console.log("drop_selected_stroke");
             
-            if (selected_stroke_uuids) {
+            if (selected_strokes) {
 
                 // draw saved canvas
                 ctx.putImageData(canvas_data_without_selected_strokes, 0, 0);
@@ -1099,6 +1104,7 @@
                 canvas_data_without_selected_strokes = null;
                 selected_stroke_uuids = null;
                 selected_strokes = null;
+                console.log("reset");
 
             }
 
@@ -1430,15 +1436,21 @@
             // });
         }
 
+        function remove_select_box() {
+            move_select_start_x = null;
+            move_select_start_y = null;
+            move_select_end_x = null;
+            move_select_end_y = null;
+            select_box.remove();
+        }
+
         function select_strokes() {
+            console.log("select_strokes");
             let box_start_x = mouse_x_to_canvas_x(move_select_start_x);
             let box_start_y = mouse_y_to_canvas_y(move_select_start_y);
             let box_end_x = mouse_x_to_canvas_x(move_select_end_x);
             let box_end_y = mouse_y_to_canvas_y(move_select_end_y);
-            // console.log("box_start_x", box_start_x);
-            // console.log("box_start_y", box_start_y);
-            // console.log("box_end_x", box_end_x);
-            // console.log("box_end_y", box_end_y);
+            // consoa.log("box_end_y", box_end_y);
 
             let step_x = box_end_x - box_start_x > 0? 1 : -1;
             let step_y = box_end_y - box_start_y > 0? 1 : -1;
@@ -1462,7 +1474,7 @@
 
         function update_move_draw_select_box(delta_x, delta_y) {
 
-            console.log("update_move_draw_select_box");
+            // console.log("update_move_draw_select_box");
             const top = parseFloat(select_box.style.getPropertyValue('top'));
             const left = parseFloat(select_box.style.getPropertyValue('left'));
             select_box.style.top = (top + delta_y) + 'px';
@@ -1759,7 +1771,7 @@
 
                 // remove box selection if clicking off the box
                 if (select_box && !select_box.contains(event.target)) {
-                    select_box.remove();
+                    remove_select_box();
                 }
 
                 if (draw_mode && event.target == canvas) {
@@ -1770,12 +1782,14 @@
 
                     // box select vs single stroke select
                     if (ctrl) {
+                        draw_box_select = true;
                         move_select_start_x = event.clientX;
                         move_select_start_y = event.clientY;
                         move_select_end_x = event.clientX;
                         move_select_end_y = event.clientY;
                     }
                     else if (event.target == select_box) {
+                        move_box_select = true;
                         select_strokes();
                         // console.log("selected_strokes", selected_strokes);
                     }
@@ -1801,13 +1815,13 @@
                 if (draw_mode && event.target == canvas) {
                     draw(event.clientX, drag_x, event.clientY, drag_y);
                 }
-                else if (move_mode && selected_strokes && (event.target == canvas || event.target == select_box)) {
+                else if (move_box_select && (event.target == canvas || event.target == select_box)) {
                     update_selected_stroke(event.clientX, event.clientY);
                     const delta_x = event.clientX - drag_x;
                     const delta_y = event.clientY - drag_y;
                     update_move_draw_select_box(delta_x, delta_y);
                 }
-                else if (move_mode && move_select_start_x && move_select_start_y) {
+                else if (draw_box_select) {
                     move_select_end_x = event.clientX;
                     move_select_end_y = event.clientY;
                     draw_select_box();
@@ -1826,20 +1840,22 @@
         window.addEventListener('mousemove', handleMouseMove);
         
         const handleMouseUp = (event) => {
+            console.log("mouseUp");
             is_dragging = false;
-            if (event.target == canvas) {
-                if (draw_mode) {
-                    finish_stroke();
+            if (draw_mode) {
+                finish_stroke();
+            }
+            else if (move_mode) {
+                if (move_box_select) {
+                    drop_selected_stroke();
+                    move_box_select = false;
+                    remove_select_box();
                 }
-                else if (move_mode) {
-                    if (move_select_start_x && move_select_start_y) {
-                        select_strokes();
-                        move_select_start_x = null;
-                        move_select_start_y = null;
-                    }
-                    else if (move_mode && selected_strokes){
-                        drop_selected_stroke();
-                    }
+                else if (draw_box_select) {
+                    draw_box_select = false;
+                }
+                else if (move_mode && selected_strokes){
+                    drop_selected_stroke();
                 }
             }
         };
@@ -1956,8 +1972,8 @@
         }
     
 
-        // DELETE THIS testing stuff
-        starter_stroke(100, 100);
+        // DELETE THIS testing stuffaa
+        // starter_stroke(100, 100);
 
 
         // TEST
