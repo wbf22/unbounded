@@ -1714,13 +1714,10 @@
     <script>
         let actions = [];
         let undone_actions = [];
+        
         function add_action(type, data) {
-            const data_copy = JSON.parse(JSON.stringify(data));
             actions.push(
-                {
-                    type: type,
-                    data: data_copy
-                }
+                make_action(type, data)
             );
 
             const last = actions[actions.length - 1];
@@ -1729,32 +1726,48 @@
             console.log("data", last.data);
         }
 
+        function make_action(type, data) {
+            return {
+                type: type,
+                data: JSON.parse(JSON.stringify(data))
+            };
+        }
+
         const ADD_STROKE = "ADD_STROKE";
         const MOVE_STROKES = "MOVE_STROKES";
         const DROP_STROKES = "DROP_STROKES";
         function undo() {
-            console.log("undo");
             if (actions.length > 0) {
+                console.log("undo");
                 const action = actions.pop();
-                undone_actions.push(action);
 
                 if (action.type == ADD_STROKE) {
                     console.log("undo ADD_STROKE");
                     const stroke = action.data;
-                    console.log("stroke", stroke);
+                    undone_actions.push(
+                        make_action(ADD_STROKE, stroke)
+                    );
+                    // console.log("stroke", stroke);
 
                     remove_stroke(stroke.uuid);
                 }
                 else if (action.type == MOVE_STROKES) {
                     console.log("undo MOVE_STROKES");
                     const strokes = action.data;
-                    console.log("strokes", strokes);
+
+                    // add to undone actions
+                    const strokes_current_pos = strokes.map(moved_stroke => {
+                        return uuid_to_stroke.get(moved_stroke.uuid);
+                    });
+                    undone_actions.push(
+                        make_action(MOVE_STROKES, strokes_current_pos)
+                    );
 
                     strokes.forEach(moved_stroke => {
                         remove_stroke(moved_stroke.uuid);
                         stroke_uuid = moved_stroke.uuid;
                         stroke = moved_stroke;
-                        console.log("moved_stroke", moved_stroke);
+                        // console.log("moved_stroke", moved_stroke);
                         add_stroke(moved_stroke.pixels);
                         finish_stroke(false);
                     });
@@ -1763,7 +1776,42 @@
         }
 
         function redo() {
+            if (undone_actions.length > 0) {
+                console.log("redo");
+                const action = undone_actions.pop();
 
+                if (action.type == ADD_STROKE) {
+                    console.log("redo ADD_STROKE");
+                    const removed_stroke = action.data;
+                    stroke_uuid = removed_stroke.uuid;
+                    stroke = removed_stroke;
+                    // console.log("removed_stroke", removed_stroke);
+                    add_stroke(removed_stroke.pixels);
+                    finish_stroke(true);
+                }
+                else if (action.type == MOVE_STROKES) {
+                    console.log("redo MOVE_STROKES");
+                    console.log("action", action);
+                    const strokes = action.data;
+
+                    // add to actions
+                    const strokes_current_pos = strokes.map(moved_stroke => {
+                        return uuid_to_stroke.get(moved_stroke.uuid);
+                    });
+                    actions.push(
+                        make_action(MOVE_STROKES, strokes_current_pos)
+                    );
+
+                    strokes.forEach(moved_stroke => {
+                        remove_stroke(moved_stroke.uuid);
+                        stroke_uuid = moved_stroke.uuid;
+                        stroke = moved_stroke;
+                        // console.log("moved_stroke", moved_stroke);
+                        add_stroke(moved_stroke.pixels);
+                        finish_stroke(false);
+                    });
+                }
+            }
         }
 
 
@@ -1774,6 +1822,8 @@
     <script>
         const CANVAS_X = 40000; 
         const CANVAS_Y = 40000; 
+        let ctrl = false; // Control flag
+        let shift = false; // Shift flag
 
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -1793,7 +1843,6 @@
             
             width = dims.defaultWidth;
             height = dims.defaultHeight;
-            let ctrl = false; // Control flag
 
             // Set initial canvas size
             canvas.style.width = width + 'px';
@@ -1827,6 +1876,9 @@
             if ((event.ctrlKey && event.key === 'Control') || (event.metaKey && event.key === 'Meta')) {
                 ctrl = true;
             }
+            else if (event.key === 'Shift') {
+                shift = true;
+            }
             else if (!event.ctrlKey && event.key === 'a') {
                 draw_button_click();
             }
@@ -1843,15 +1895,22 @@
                 event.preventDefault();
                 console.log("space");
             }
+            else if (ctrl && shift && event.key == 'z') {
+                redo();
+            }
             else if (ctrl && event.key == 'z') {
                 undo();
             }
+            
         };
         window.addEventListener('keydown', handleKeyDown);
         
         const handleKeyUp = (event) => {
             if (event.key === 'Control' || event.key === 'Meta') {
                 ctrl = false;
+            }
+            else if (event.key === 'Shift') {
+                shift = false;
             }
         };
         window.addEventListener('keyup', handleKeyUp);
