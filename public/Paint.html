@@ -980,16 +980,32 @@
 
 
             // set pixels on canvas
+            console.log("canvas_background_img", canvas_background_img);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             storke_to_remove.pixels.forEach((pixel) => {
 
                 if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x > 0 && pixel.y > 0) {
                     const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
 
-                    let r_image = canvas_background_color.r;
-                    let g_image = canvas_background_color.g;
-                    let b_image = canvas_background_color.b;
-                    let a_image = canvas_background_color.a / 255;
+                    let r_image = 0;
+                    let g_image = 0;
+                    let b_image = 0;
+                    let a_image = 0;
+                    const background_index = pixel.y * canvas.width + pixel.x;
+                    if (canvas_background_img && background_index < canvas_background_img.length) {
+                        const background_pixel = canvas_background_img[background_index];
+                        r_image = background_pixel.r;
+                        g_image = background_pixel.g;
+                        b_image = background_pixel.b;
+                        a_image = background_pixel.a / 255;
+                        // console.log(r_image, g_image, b_image, a_image);
+                    }
+                    else {
+                        r_image = canvas_background_color.r;
+                        g_image = canvas_background_color.g;
+                        b_image = canvas_background_color.b;
+                        a_image = canvas_background_color.a / 255;
+                    }
 
                     // iterate over strokes we're keeping and set pixels
                     const tag = `${pixel.x}_${pixel.y}`;
@@ -1634,6 +1650,12 @@
                 reader.onload = function () {
                     
 
+                    // add for undo
+                    actions.push(
+                        make_action(SET_BACKGROUND, get_background_data_for_undo())
+                    );
+
+
                     // scale canvas to image size
                     const img = new Image();
                     img.src = reader.result;
@@ -1669,6 +1691,8 @@
 
                         //re draw
                         re_draw();
+
+
                     };
 
 
@@ -1735,7 +1759,7 @@
 
         const ADD_STROKE = "ADD_STROKE";
         const MOVE_STROKES = "MOVE_STROKES";
-        const DROP_STROKES = "DROP_STROKES";
+        const SET_BACKGROUND = "SET_BACKGROUND";
         function undo() {
             if (actions.length > 0) {
                 console.log("undo");
@@ -1771,6 +1795,16 @@
                         add_stroke(moved_stroke.pixels);
                         finish_stroke(false);
                     });
+                }
+                else if (action.type == SET_BACKGROUND) {
+                    console.log("undo SET_BACKGROUND");
+                    console.log(uuid_to_stroke);
+
+                    undone_actions.push(
+                        make_action(SET_BACKGROUND, get_background_data_for_undo())
+                    );
+
+                    reset_background(action.data);
                 }
             }
         }
@@ -1811,10 +1845,49 @@
                         finish_stroke(false);
                     });
                 }
+                else if (action.type == SET_BACKGROUND) {
+                    console.log("redo SET_BACKGROUND");
+
+                    actions.push(
+                        make_action(SET_BACKGROUND, get_background_data_for_undo())
+                    );
+
+                    reset_background(action.data);
+                }
             }
         }
 
+        function get_background_data_for_undo() {
+            let data = {};
+            if (canvas_background_img) {
+                data.background_img = canvas_background_img;
+            }
+            else {
+                data.background_color = canvas_background_color;
+            }
 
+            data.canvas_width = parseInt(canvas_width_input.value);
+            data.canvas_height = parseInt(canvas_height_input.value);
+
+            return data;
+        } 
+
+        function reset_background(data) {
+
+            if (data.background_img) {
+                canvas_background_img = data.background_img;
+            }
+            else {
+                canvas_background_color = data.background_color;
+                canvas_background_img = null;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            canvas_width_input.value = data.canvas_width;
+            canvas_height_input.value = data.canvas_height;
+            canvas_resize();
+            re_draw();
+        }
 
     </script>
 
@@ -2131,7 +2204,7 @@
     
 
         // DELETE THIS testing stuffaa
-        starter_stroke(100, 100);
+        // starter_stroke(100, 100);
 
 
         // TEST
