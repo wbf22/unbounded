@@ -10,8 +10,8 @@
     <link rel="icon" sizes="32x32" href="assets/favicon/favicon-32x32.png">
     <link rel="icon" sizes="16x16" href="assets/favicon/favicon-16x16.png">
     <link rel="manifest" href="assets/favicon/manifest.json">
-</head>
-<body>
+
+
     <style>
 
         :root {
@@ -26,6 +26,7 @@
         body{
             margin: 0;
             display: inline-block;
+            overflow: hidden; /* hide scrollbars */
         }
 
         #paint_canvas {
@@ -76,7 +77,7 @@
 
 
         #color_icon {
-            width: 40rem;
+            width: 20 rem;
             height: 3rem;
             background-color: var(--primary-color);
             box-shadow: 0px 0px 10px 0 var(--shadow);
@@ -116,7 +117,7 @@
         #hue_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 40rem;
+            width: 20rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(0, 100%, 50%),
@@ -139,7 +140,7 @@
         #saturation_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 40rem;
+            width: 20 rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 0%, 50%),
@@ -153,7 +154,7 @@
         #lightness_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 40rem;
+            width: 20 rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 100%, 0%),
@@ -175,7 +176,7 @@
         #alpha_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 40rem;
+            width: 20 rem;
             height: 20px;
             background: linear-gradient(to right, 
                 hsl(30, 100%, 50%, 0%),
@@ -196,7 +197,7 @@
 
         #alpha_back {
             background-color: var(--background-color);
-            width: 40rem;
+            width: 20 rem;
             height: 20px;
             border-radius: 15px;
             outline: none;
@@ -269,7 +270,7 @@
         #draw_size_slider {
             -webkit-appearance: none; /* Remove default styling for WebKit browsers */
             appearance: none; /* Remove default styling for other browsers */
-            width: 40rem;
+            width: 20 rem;
             height: 10px;
             background: var(--secondary-color);
             border-radius: 15px;
@@ -378,7 +379,46 @@
             height: 300px; */
         }
 
+
+        #color_wheel_sub_menu {
+            position: fixed;
+            /* display: block; */
+            display: none;
+        }
+
+        #color_wheel {
+            --radius: 32rem;
+            --neg_half_rad: -16rem;
+            position: absolute;
+
+            left: var(--neg_half_rad);
+            top: var(--neg_half_rad);
+
+            width: var(--radius);
+            height: var(--radius);
+            border-radius: 50%;
+            /* background-color: #3498db; */
+        }
+        
+        .color_stick {
+            position: absolute;
+            /* To make sure the squares are centered on their positions: */
+            transform-origin: center;
+
+        }
+
+        .color_square {
+            width: 2rem;
+            height: 2rem;
+            background-color: #e67e22;
+            margin: 1rem;
+
+        }
+
+
     </style>
+</head>
+<body>
     
     <!-- draw sub menu -->
     <div 
@@ -408,6 +448,70 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- draw wheel picker -->
+    <div id='color_wheel_sub_menu'>
+        <div id ='color_wheel'>
+            <div class='color_stick'>
+                <div class='color_square' style="background-color: #5b5b5b;"></div>
+                <div class='color_square' style="background-color: #2b2b2b;"></div>
+                <div class='color_square' style="background-color: #202020;"></div>
+                <div class='color_square' style="background-color: #000000;"></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+            <div class='color_stick'>
+                <div class='color_square'></div>
+            </div>
+        </div>
+        
     </div>
 
     <!-- side menu -->
@@ -1207,6 +1311,8 @@
     <script>
         
 
+        const draw_sub_menu = document.getElementById('draw_button_sub_menu');
+
         function draw(client_x_start, client_x_end, client_y_start, client_y_end) {
 
             let color_rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
@@ -1414,14 +1520,12 @@
                 place_draw_sub_menu();
             }
             else {
-                const draw_sub_menu = document.getElementById('draw_button_sub_menu');
                 draw_sub_menu.style.display = 'none';
             }
         }
 
         function place_draw_sub_menu() {
             const draw_button = document.getElementById('draw_button');
-            const draw_sub_menu = document.getElementById('draw_button_sub_menu');
             draw_sub_menu.style.display = 'flex';
 
             const rect = draw_button.getBoundingClientRect();
@@ -1455,6 +1559,37 @@
         draw_size_slider.value = brush_radius;
 
         update_color_label();
+
+
+
+
+        const color_wheel = document.getElementById('color_wheel');
+        let color_wheel_scroll_offset = 0;
+
+        function display_color_wheel() {
+            const numDivs = color_wheel.children.length; // Number of squares
+            const radius = color_wheel.offsetWidth * 0.5 * 0.8; // Radius in pixels
+            let centerX = color_wheel.offsetWidth / 2;
+            let centerY = color_wheel.offsetHeight / 2;
+
+            for (let i = 0; i < numDivs; i++) {
+                const div = color_wheel.children[i];
+                let angle = (i / numDivs) * 2 * Math.PI;
+                angle += color_wheel_scroll_offset;
+
+                // Position
+                const x = centerX + radius * Math.cos(angle);
+                const y = centerY + radius * Math.sin(angle);
+                div.style.left = `${x}px`;
+                div.style.top = `${y}px`;
+
+                // Rotate the square so that it's tangent to the circle at that point
+                // The tangent is perpendicular to the radius, so add 90°
+                const rotationDeg = (angle * 180 / Math.PI) + 90;
+                div.style.transform = `translate(-50%, -50%) rotate(${rotationDeg}deg)`;
+            }
+        }
+        display_color_wheel();
     </script>
 
     <!-- MOVE MODE -->
@@ -2057,7 +2192,7 @@
                 else if (move_mode && selected_strokes && event.target == canvas) {
                     update_selected_stroke(event.clientX, event.clientY);
                 }
-                else {
+                else if (!draw_sub_menu.contains(event.target)){
                     // console.log("move");
                     const delta_x = event.clientX - drag_x;
                     const delta_y = event.clientY - drag_y;
@@ -2094,16 +2229,23 @@
 
         const handleScroll = (event) => {
             event.preventDefault(); // Prevent default scroll action
-            
-            // determine mouse location on canvas
-            let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
-            let mouseY = event.clientY;
-            
-            scroll(mouseX, mouseY, event.deltaY)
 
-            if (draw_mode) {
-                update_draw_size_circle();
+            if (color_wheel.contains(event.target)) {
+                color_wheel_scroll_offset += event.deltaY * 0.002;
+                display_color_wheel();
             }
+            else {
+                // determine mouse location on canvas
+                let mouseX = event.clientX; // gets absolute mouse pos not just in viewport
+                let mouseY = event.clientY;
+                
+                scroll(mouseX, mouseY, event.deltaY)
+
+                if (draw_mode) {
+                    update_draw_size_circle();
+                }
+            }
+            
         };
         let zoom = 8; // Default zoom level
         const MAX_ZOOM = 10.1;
