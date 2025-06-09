@@ -235,6 +235,15 @@
             align-items: center;
         }
 
+        #erase_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
 
         .tooltip-text {
             visibility: hidden;
@@ -415,6 +424,20 @@
 
         }
 
+        #color_picker_section {
+            width: 100%;
+            display: flex;
+            justify-content: end;
+        }
+
+        #color_picker {
+            padding: 0.5rem;
+            border-radius: 10px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
     </style>
 </head>
@@ -445,6 +468,25 @@
                 <input type="range" id="draw_size_slider" class='slider' min="1" max="100a" value="10">
                 <div>
                     <div id="draw_size_circle"></div>
+                </div>
+            </div>
+            <div id="color_picker_section">
+                <div
+                    id="color_picker"
+                    onclick="color_picker_click()"
+                >
+                    <svg 
+                        id="color_picker_svg"
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="1rem" 
+                        height="1rem" 
+                        fill="var(--accent-color)" 
+                        stroke="var(--accent-color)" 
+                        class="bi bi-eyedropper" 
+                        viewBox="0 0 16 16"
+                    >
+                        <path d="M13.354.646a1.207 1.207 0 0 0-1.708 0L8.5 3.793l-.646-.647a.5.5 0 1 0-.708.708L8.293 5l-7.147 7.146A.5.5 0 0 0 1 12.5v1.793l-.854.853a.5.5 0 1 0 .708.707L1.707 15H3.5a.5.5 0 0 0 .354-.146L11 7.707l1.146 1.147a.5.5 0 0 0 .708-.708l-.647-.646 3.147-3.146a1.207 1.207 0 0 0 0-1.708zM2 12.707l7-7L10.293 7l-7 7H2z"/>
+                    </svg>
                 </div>
             </div>
         </div>
@@ -572,6 +614,25 @@
             <span id="move_tool_tip" class="tooltip-text">s</span>
         </div>
 
+        <div
+            id="erase_button"
+            class="menu_button"
+            onclick="erase_button_click()"
+        >
+            <svg 
+                id="erase_svg" 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-eraser-fill" 
+                viewBox="0 0 16 16"
+            >
+                <path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm.66 11.34L3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/>
+            </svg>
+            <span id="erase_tool_tip" class="tooltip-text">d</span>
+        </div>
 
         <div
             id="download_button"
@@ -591,7 +652,7 @@
                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
                 <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
             </svg>
-            <span id="download_tool_tip" class="tooltip-text">d</span>
+            <span id="download_tool_tip" class="tooltip-text">f</span>
         </div>
 
         <div
@@ -611,7 +672,7 @@
             >
                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
             </svg>
-            <span id="settings_tool_tip" class="tooltip-text">f</span>
+            <span id="settings_tool_tip" class="tooltip-text">g</span>
         </div>
 
        
@@ -733,6 +794,56 @@
             };
         }
 
+        function rgba_to_hsla(r, g, b, a) {
+            // Convert RGB values from 0-255 to 0-1
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            a /= 255;
+            a *= 100;
+
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l;
+
+            // Compute lightness
+            l = (max + min) / 2;
+
+            if (max === min) {
+                // Achromatic case (gray)
+                h = 0;
+                s = 0;
+            } else {
+                const delta = max - min;
+
+                // Saturation
+                s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+
+                // Hue
+                switch (max) {
+                case r:
+                    h = ((g - b) / delta + (g < b ? 6 : 0));
+                    break;
+                case g:
+                    h = ((b - r) / delta + 2);
+                    break;
+                case b:
+                    h = ((r - g) / delta + 4);
+                    break;
+                }
+
+                h /= 6; // Convert to range 0-1
+            }
+
+            // Convert hue to degrees, saturation and lightness to percentages
+            return {
+                hue: Math.round(h * 360),
+                saturation: Math.round(s * 100),
+                lightness: Math.round(l * 100),
+                alpha: a
+            };
+        }
+
         function rgba_to_hex(r, g, b, a) {
 
             // Ensure R, G, B are in the range [0, 255]
@@ -794,6 +905,11 @@
     <script>
         let draw_mode = false;
         let move_mode = false;
+        let erase_mode = false;
+        let in_settings = false;
+
+        let drawing = false;
+        let color_pick = false;
         let draw_box_select = false;
         let move_box_select = false;
         let dims = { defaultWidth: 1920, defaultHeight: 1080 };
@@ -1281,8 +1397,11 @@
                 // draw saved canvas
                 ctx.putImageData(canvas_data_without_selected_strokes, 0, 0);
 
-                // re-add stroke
-                selected_strokes.forEach(selected_stroke => {
+                // re-add strokes
+                selected_strokes.sort((a, b) => {
+                    // sorting by added order
+                    return a.order - b.order;
+                }).forEach(selected_stroke => {
                     uuid_to_stroke.delete(selected_stroke.uuid);
                     stroke_uuid = selected_stroke.uuid;
                     add_to_stroke(selected_stroke.pixels, false);
@@ -1305,6 +1424,29 @@
             // console.log('uuid_to_stroke', uuid_to_stroke);
         }
     
+        function get_most_recent_stroke_at_xy(clientX, clientY) {
+
+            // get stroke at click point
+            let x = mouse_x_to_canvas_x(clientX);
+            let y = mouse_y_to_canvas_y(clientY);
+            const tag = `${x}_${y}`;
+            let strokes_at_coor = pixel_x_y_to_strokes.get(tag);
+
+            // get the stroke placed most recently (XXX: repect layers here)
+            if (strokes_at_coor && strokes_at_coor.length > 0) {
+                let most_recent;
+                let most_recent_order = -1;
+                strokes_at_coor.forEach(uuid => {
+                    let stroke = uuid_to_stroke.get(uuid);
+                    if (stroke.order > most_recent_order) {
+                        most_recent = stroke;
+                        most_recent_order = stroke.order;
+                    }
+                });
+                return most_recent;
+            }
+            return null;
+        }
     </script>
 
     <!-- DRAW MODE MENUS -->
@@ -1314,6 +1456,7 @@
         const draw_sub_menu = document.getElementById('draw_button_sub_menu');
 
         function draw(client_x_start, client_x_end, client_y_start, client_y_end) {
+            console.log("draw");
 
             let color_rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
             // console.log("color", color);
@@ -1383,58 +1526,58 @@
 
         function update_hue_slider() {
             hue_slider.style.background = `linear-gradient(to right, 
-                hsl(0, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(30, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(60, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(90, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(120, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(150, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(180, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(210, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(240, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(270, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(300, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%),
-                hsl(330, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)
+                hsl(0, 100%, 57%, 100%),
+                hsl(30, 100%, 57%, 100%),
+                hsl(60, 100%, 57%, 100%),
+                hsl(90, 100%, 57%, 100%),
+                hsl(120, 100%, 57%, 100%),
+                hsl(150, 100%, 57%, 100%),
+                hsl(180, 100%, 57%, 100%),
+                hsl(210, 100%, 57%, 100%),
+                hsl(240, 100%, 57%, 100%),
+                hsl(270, 100%, 57%, 100%),
+                hsl(300, 100%, 57%, 100%),
+                hsl(330, 100%, 57%, 100%)
             )`;
         }
 
         function update_saturation_slider() {
             saturation_slider.style.background = `linear-gradient(to right, 
-                hsl(${color.hue}, 0%, ${color.lightness}%, ${color.alpha}%),
-                hsl(${color.hue}, 50%, ${color.lightness}%, ${color.alpha}%),
-                hsl(${color.hue}, 100%, ${color.lightness}%, ${color.alpha}%)
+                hsl(${color.hue}, 0%, 57%, 100%),
+                hsl(${color.hue}, 50%, 57%, 100%),
+                hsl(${color.hue}, 100%, 57%, 100%)
             )`;
         }
 
         function update_lightness_slider() {
             lightness_slider.style.background = `linear-gradient(to right, 
-                hsl(${color.hue}, ${color.saturation}%, 0%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 10%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 20%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 30%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 40%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 50%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 60%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 70%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 80%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 90%, ${color.alpha}%),
-                hsl(${color.hue}, ${color.saturation}%, 100%, ${color.alpha}%)
+                hsl(${color.hue}, 100%, 0%, 100%),
+                hsl(${color.hue}, 100%, 10%, 100%),
+                hsl(${color.hue}, 100%, 20%, 100%),
+                hsl(${color.hue}, 100%, 30%, 100%),
+                hsl(${color.hue}, 100%, 40%, 100%),
+                hsl(${color.hue}, 100%, 50%, 100%),
+                hsl(${color.hue}, 100%, 60%, 100%),
+                hsl(${color.hue}, 100%, 70%, 100%),
+                hsl(${color.hue}, 100%, 80%, 100%),
+                hsl(${color.hue}, 100%, 90%, 100%),
+                hsl(${color.hue}, 100%, 100%, 100%)
             )`;
         }
 
         function update_alpha_slider() {
             alpha_slider.style.background = `linear-gradient(to right, 
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 0%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 10%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 20%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 30%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 40%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 50%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 60%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 70%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 80%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 90%),
-                hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, 100%)
+                hsl(${color.hue}, 100%, 57%, 0%),
+                hsl(${color.hue}, 100%, 57%, 10%),
+                hsl(${color.hue}, 100%, 57%, 20%),
+                hsl(${color.hue}, 100%, 57%, 30%),
+                hsl(${color.hue}, 100%, 57%, 40%),
+                hsl(${color.hue}, 100%, 57%, 50%),
+                hsl(${color.hue}, 100%, 57%, 60%),
+                hsl(${color.hue}, 100%, 57%, 70%),
+                hsl(${color.hue}, 100%, 57%, 80%),
+                hsl(${color.hue}, 100%, 57%, 90%),
+                hsl(${color.hue}, 100%, 57%, 100%)
             )`;
         }
 
@@ -1487,12 +1630,7 @@
             // console.log("clicked");
 
 
-            if (move_mode) {
-                move_mode_button_click();
-            }
-            if (in_settings) {
-                settings_button_click();
-            }
+            turn_off_other_modes("draw");
             draw_mode = !draw_mode;
 
             const draw_button = document.getElementById("draw_button");
@@ -1503,25 +1641,25 @@
                 draw_button.style.backgroundColor = 'var(--accent-color)';
                 draw_svg.setAttribute('fill', 'var(--secondary-color)');
                 draw_svg.setAttribute('stroke', 'var(--secondary-color)');
+                place_draw_sub_menu();
             }
             else {
-                draw_button.style.backgroundColor = 'var(--secondary-color)';
-                draw_svg.setAttribute('fill', 'var(--accent-color)');
-                draw_svg.setAttribute('stroke', 'var(--accent-color)');
+                turn_off_draw_mode();
             }
-            toggle_draw_sub_menu();
 
             update_draw_size_circle();
             // draw_button.classList.remove("draw_button-selected");
         }
 
-        function toggle_draw_sub_menu() {
-            if (draw_mode) {
-                place_draw_sub_menu();
-            }
-            else {
-                draw_sub_menu.style.display = 'none';
-            }
+        function turn_off_draw_mode() {
+            draw_mode = false;
+            const draw_button = document.getElementById("draw_button");
+            const draw_svg = document.getElementById("draw-svg");
+            draw_button.style.backgroundColor = 'var(--secondary-color)';
+            draw_svg.setAttribute('fill', 'var(--accent-color)');
+            draw_svg.setAttribute('stroke', 'var(--accent-color)');
+            draw_sub_menu.style.display = 'none';
+
         }
 
         function place_draw_sub_menu() {
@@ -1538,8 +1676,6 @@
             lightness_slider.value = color.lightness;
             alpha_slider.value = color.alpha;
         }
-
-
 
         const draw_size_slider = document.getElementById('draw_size_slider');
         draw_size_slider.addEventListener('input', () => {
@@ -1560,6 +1696,38 @@
 
         update_color_label();
 
+
+        function color_picker_click() {
+            color_pick = !color_pick;
+
+            const color_picker = document.getElementById("color_picker");
+            const color_picker_svg = document.getElementById("color_picker_svg");
+            
+
+            if (color_pick) {
+                color_picker.style.backgroundColor = 'var(--accent-color)';
+                color_picker_svg.setAttribute('fill', 'var(--secondary-color)');
+                color_picker_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                color_picker.style.backgroundColor = 'var(--secondary-color)';
+                color_picker_svg.setAttribute('fill', 'var(--accent-color)');
+                color_picker_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+
+
+        }
+
+        function set_color(r, g, b, a) {
+            color = rgba_to_hsla(r, g, b, a);
+
+            update_hue_slider();
+            update_saturation_slider();
+            update_lightness_slider();
+            update_alpha_slider();
+
+            update_color_label();
+        }
 
 
 
@@ -1603,12 +1771,7 @@
         function move_mode_button_click() {
             // console.log("clicked");
 
-            if (draw_mode) {
-                draw_button_click();
-            }
-            if (in_settings) {
-                settings_button_click();
-            }
+            turn_off_other_modes("move");
             move_mode = !move_mode;
 
             const move_mode_button = document.getElementById("move_button");
@@ -1621,12 +1784,19 @@
                 move_svg.setAttribute('stroke', 'var(--secondary-color)');
             }
             else {
-                move_mode_button.style.backgroundColor = 'var(--secondary-color)';
-                move_svg.setAttribute('fill', 'var(--accent-color)');
-                move_svg.setAttribute('stroke', 'var(--accent-color)');
+                turn_off_move_mode();
             }
 
 
+        }
+
+        function turn_off_move_mode() {
+            move_mode = false;
+            const move_mode_button = document.getElementById("move_button");
+            const move_svg = document.getElementById("move_svg");
+            move_mode_button.style.backgroundColor = 'var(--secondary-color)';
+            move_svg.setAttribute('fill', 'var(--accent-color)');
+            move_svg.setAttribute('stroke', 'var(--accent-color)');
         }
 
         function draw_select_box() {
@@ -1711,37 +1881,33 @@
     <!-- SETTINGS MENU -->
     <script>
 
-        let in_settings = false;
         const settings_button = document.getElementById('settings_button');
         const settings_sub_menu = document.getElementById('settings_sub_menu');
         const settings_svg = document.getElementById('settings_svg');
         function settings_button_click() {
-            if (draw_mode) {
-                draw_button_click();
-            }
-            if (move_mode) {
-                move_mode_button_click();
-            }
-
+            turn_off_other_modes("settings")
             in_settings = !in_settings;
             if (in_settings) {
                 settings_button.style.backgroundColor = 'var(--accent-color)';
                 settings_svg.setAttribute('fill', 'var(--secondary-color)');
                 settings_svg.setAttribute('stroke', 'var(--secondary-color)');
-            }
-            else {
-                settings_button.style.backgroundColor = 'var(--secondary-color)';
-                settings_svg.setAttribute('fill', 'var(--accent-color)');
-                settings_svg.setAttribute('stroke', 'var(--accent-color)');
-            }
-
-            if (in_settings) {
                 place_settings_sub_menu();
             }
             else {
-                const settings_sub_menu = document.getElementById('settings_sub_menu');
-                settings_sub_menu.style.display = 'none';
+                turn_off_settings();
             }
+
+        }
+
+        function turn_off_settings() {
+            const settings_button = document.getElementById('settings_button');
+            const settings_sub_menu = document.getElementById('settings_sub_menu');
+            const settings_svg = document.getElementById('settings_svg');
+            settings_button.style.backgroundColor = 'var(--secondary-color)';
+            settings_svg.setAttribute('fill', 'var(--accent-color)');
+            settings_svg.setAttribute('stroke', 'var(--accent-color)');
+            settings_sub_menu.style.display = 'none';
+
         }
 
         function place_settings_sub_menu() {
@@ -1759,6 +1925,19 @@
         }
 
 
+
+        function set_canvas_resize() {
+
+            let resize = {
+                width: dims.defaultWidth, 
+                height: dims.defaultHeight 
+            };
+            add_action(
+                RESIZE_CANVAS, 
+                resize
+            );
+        }
+
         const canvas_width_input = document.getElementById('canvas_width_input');
         const canvas_height_input = document.getElementById('canvas_height_input');
         canvas_width_input.addEventListener('input', () => {
@@ -1767,7 +1946,15 @@
         canvas_height_input.addEventListener('input', () => {
             canvas_resize();
         });
+        canvas_width_input.addEventListener('focus', () => {
+            set_canvas_resize();
+        });
+        canvas_height_input.addEventListener('focus', () => {
+            set_canvas_resize();
+        });
+
         function canvas_resize() {
+
             dims.defaultWidth = parseInt(canvas_width_input.value);
             dims.defaultHeight = parseInt(canvas_height_input.value);
 
@@ -1852,6 +2039,12 @@
             set_background_color()
         });
         function set_background_color() {
+
+            // add for undo
+            actions.push(
+                make_action(SET_BACKGROUND, get_background_data_for_undo())
+            );
+
             try {
                 canvas_background_color = hex_to_rgba(background_color_input.value);
             }
@@ -1868,6 +2061,41 @@
             
 
     </script>
+
+    <!-- Erase -->
+     <script>
+
+        function erase_button_click() {
+            // console.log("clicked");
+
+            turn_off_other_modes('erase');
+            erase_mode = !move_mode;
+
+            const erase_button = document.getElementById("erase_button");
+            const erase_svg = document.getElementById("erase_svg");
+            
+
+            if (erase_mode) {
+                erase_button.style.backgroundColor = 'var(--accent-color)';
+                erase_svg.setAttribute('fill', 'var(--secondary-color)');
+                erase_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                turn_off_erase_mode();
+            }
+
+
+        }
+
+        function turn_off_erase_mode() {
+            const erase_button = document.getElementById("erase_button");
+            const erase_svg = document.getElementById("erase_svg");
+            erase_button.style.backgroundColor = 'var(--secondary-color)';
+            erase_svg.setAttribute('fill', 'var(--accent-color)');
+            erase_svg.setAttribute('stroke', 'var(--accent-color)');
+        }
+
+     </script>
 
     <!-- UNDO OR CTRL Z -->
     <script>
@@ -1895,7 +2123,10 @@
         const ADD_STROKE = "ADD_STROKE";
         const MOVE_STROKES = "MOVE_STROKES";
         const SET_BACKGROUND = "SET_BACKGROUND";
+        const ERASE_STROKE = "ERASE_STROKE";
+        const RESIZE_CANVAS = "RESIZE_CANVAS";
         function undo() {
+
             if (actions.length > 0) {
                 console.log("undo");
                 const action = actions.pop();
@@ -1933,7 +2164,6 @@
                 }
                 else if (action.type == SET_BACKGROUND) {
                     console.log("undo SET_BACKGROUND");
-                    console.log(uuid_to_stroke);
 
                     undone_actions.push(
                         make_action(SET_BACKGROUND, get_background_data_for_undo())
@@ -1941,10 +2171,46 @@
 
                     reset_background(action.data);
                 }
+                else if (action.type == ERASE_STROKE) {
+                    console.log("undo ERASE_STROKE");
+
+                    undone_actions.push(
+                        make_action(ERASE_STROKE, action.data)
+                    );
+
+                    const removed_stroke = action.data;
+                    stroke_uuid = removed_stroke.uuid;
+                    stroke = removed_stroke;
+                    // console.log("removed_stroke", removed_stroke);
+                    add_stroke(removed_stroke.pixels);
+                    finish_stroke(false);
+                }
+                else if (action.type == RESIZE_CANVAS) {
+                    console.log("undo RESIZE_CANVAS");
+
+                    undone_actions.push(
+                        make_action(
+                            RESIZE_CANVAS, 
+                            {
+                                width: dims.defaultWidth, 
+                                height: dims.defaultHeight 
+                            }
+                        )
+                    );
+
+                    canvas_width_input.value = action.data.width;
+                    canvas_height_input.value = action.data.height;
+                    canvas_resize();
+
+                }
+                
+                console.log("actions", actions);
+                console.log("undone_actions", undone_actions);
             }
         }
 
         function redo() {
+
             if (undone_actions.length > 0) {
                 console.log("redo");
                 const action = undone_actions.pop();
@@ -1956,7 +2222,10 @@
                     stroke = removed_stroke;
                     // console.log("removed_stroke", removed_stroke);
                     add_stroke(removed_stroke.pixels);
-                    finish_stroke(true);
+                    finish_stroke(false);
+                    actions.push(
+                        make_action(ADD_STROKE, removed_stroke)
+                    );
                 }
                 else if (action.type == MOVE_STROKES) {
                     console.log("redo MOVE_STROKES");
@@ -1989,6 +2258,28 @@
 
                     reset_background(action.data);
                 }
+                else if (action.type == ERASE_STROKE) {
+                    console.log("redo ERASE_STROKE");
+
+                    const removed_stroke = action.data;
+                    actions.push(
+                        make_action(ERASE_STROKE, removed_stroke)
+                    );
+                    // console.log("stroke", stroke);
+
+                    remove_stroke(removed_stroke.uuid);
+                }
+                else if (action.type == RESIZE_CANVAS) {
+                    console.log("redo RESIZE_CANVAS");
+
+                    canvas_width_input.value = action.data.width;
+                    canvas_height_input.value = action.data.height;
+                    canvas_resize();
+
+                }
+
+                console.log("actions", actions);
+                console.log("undone_actions", undone_actions);
             }
         }
 
@@ -2037,9 +2328,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             
             draw_canvas_and_center_view();
-
-            // DELETE THIS, JUST A TEST
-            move_mode_button_click();
 
             return () => {
             };
@@ -2094,9 +2382,12 @@
                 move_mode_button_click();
             }
             else if (!event.ctrlKey && event.key === 'd') {
-                download_img();
+                erase_button_click();
             }
             else if (!event.ctrlKey && event.key === 'f') {
+                download_img();
+            }
+            else if (!event.ctrlKey && event.key === 'g') {
                 settings_button_click();
             }
             else if (event.key === ' ') {
@@ -2137,8 +2428,19 @@
                     remove_select_box();
                 }
 
-                if (draw_mode && event.target == canvas) {
-                    draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                if (draw_mode) {
+                    if (event.target == canvas) {
+                        if (color_pick) {
+                            console.log("pick color");
+                            const most_recent = get_most_recent_stroke_at_xy(event.clientX, event.clientY);
+                            const first_pixel = most_recent.pixels[0];
+                            set_color(first_pixel.r, first_pixel.g, first_pixel.b, first_pixel.a);
+                        }
+                        else {
+                            drawing = true;
+                            draw(event.clientX, event.clientX, event.clientY, event.clientY);
+                        }
+                    }
                 }
                 else if (move_mode) {
                     let ctrl = event.metaKey || event.ctrlKey;
@@ -2167,6 +2469,11 @@
                         ]);
                     }
                 }
+                else if (erase_mode) {
+                    const most_recent = get_most_recent_stroke_at_xy(event.clientX, event.clientY);
+                    remove_stroke(most_recent.uuid);
+                    add_action(ERASE_STROKE, most_recent);
+                }
 
 
             }
@@ -2192,7 +2499,7 @@
                 else if (move_mode && selected_strokes && event.target == canvas) {
                     update_selected_stroke(event.clientX, event.clientY);
                 }
-                else if (!draw_sub_menu.contains(event.target)){
+                else if (!drawing && !draw_sub_menu.contains(event.target) && !settings_sub_menu.contains(event.target)){
                     // console.log("move");
                     const delta_x = event.clientX - drag_x;
                     const delta_y = event.clientY - drag_y;
@@ -2208,7 +2515,8 @@
         const handleMouseUp = (event) => {
             // console.log("mouseUp");a
             is_dragging = false;
-            if (draw_mode) {
+            if (draw_mode && drawing) {
+                drawing = false;
                 finish_stroke(true);
             }
             else if (move_mode) {
@@ -2346,7 +2654,11 @@
     
 
         // DELETE THIS testing stuffaa
-        // starter_stroke(100, 100);
+        starter_stroke(100, 100);
+        // draw_button_click();
+
+        // console.log("rgba_to_hsla", rgba_to_hsla(255, 234, 123, 234));
+        // console.log("hsla_to_rgba", hsla_to_rgba(50, 100, 74, 91.76));
 
 
         // TEST
@@ -2368,6 +2680,22 @@
 
             add_to_stroke(pixels, false);
             finish_stroke(true);
+        }
+    
+    
+        function turn_off_other_modes(current_mode) {
+            if (move_mode && current_mode != "move") {
+                turn_off_move_mode();
+            }
+            if (draw_mode && current_mode != "draw") {
+                turn_off_draw_mode();
+            }
+            if (in_settings && current_mode != "settings") {
+                turn_off_settings();
+            }
+            if (erase_mode && current_mode != "erase") {
+                turn_off_erase_mode();
+            }
         }
     </script>
 
@@ -2479,6 +2807,13 @@
         offset = rect.width * .8;
         move_tool_tip.style.top = (rect.top + offset) + 'px';
         move_tool_tip.style.left = (rect.left + offset) + 'px';
+
+        const erase_button = document.getElementById('erase_button');
+        const erase_tool_tip = document.getElementById('erase_tool_tip');
+        rect = erase_button.getBoundingClientRect();
+        offset = rect.width * .8;
+        erase_tool_tip.style.top = (rect.top + offset) + 'px';
+        erase_tool_tip.style.left = (rect.left + offset) + 'px';
 
         const download_button = document.getElementById('download_button');
         const download_tool_tip = document.getElementById('download_tool_tip');
