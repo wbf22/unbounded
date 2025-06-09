@@ -751,8 +751,8 @@
             // Normalize hue to [0, 360]
             h = h % 360;
             // Normalize saturation and lightness to [0, 1]
-            s /= 100;
-            l /= 100;
+            s /= 100.0;
+            l /= 100.0;
 
             let r, g, b;
 
@@ -796,11 +796,11 @@
 
         function rgba_to_hsla(r, g, b, a) {
             // Convert RGB values from 0-255 to 0-1
-            r /= 255;
-            g /= 255;
-            b /= 255;
-            a /= 255;
-            a *= 100;
+            r /= 255.0;
+            g /= 255.0;
+            b /= 255.0;
+            a /= 255.0;
+            a *= 100.0;
 
             const max = Math.max(r, g, b);
             const min = Math.min(r, g, b);
@@ -1524,6 +1524,14 @@
         const lightness_slider = document.getElementById('lightness_slider');
         const alpha_slider = document.getElementById('alpha_slider');
 
+        const hex_value_text = document.getElementById("hex_value_text");
+        const hsl_value_text = document.getElementById("hsl_value_text");
+        const rgba_value_text = document.getElementById("rgba_value_text");
+
+        const draw_size_slider = document.getElementById('draw_size_slider');
+
+
+        // slider updates
         function update_hue_slider() {
             hue_slider.style.background = `linear-gradient(to right, 
                 hsl(0, 100%, 57%, 100%),
@@ -1614,18 +1622,165 @@
         });
 
         function update_color_label() {
+            // console.log("color", color);
             color_icon.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             draw_size_circle.style.backgroundColor = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%)`;
             
 
             const rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
-            document.getElementById("hex_value_text").value = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+            hex_value_text.value = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
 
-            document.getElementById("hsl_value_text").value = `${color.hue}°, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%`;
+            hsl_value_text.value = `${color.hue}°, ${color.saturation}%, ${color.lightness}%, ${color.alpha}%`;
 
-            document.getElementById("rgba_value_text").value = `${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a}`;
+            rgba_value_text.value = `${rgba.r}, ${rgba.g}, ${rgba.b}, ${rgba.a}`;
         }
 
+        // draw size slider stuff
+        draw_size_slider.addEventListener('input', () => {
+            update_draw_size_circle();
+        });
+        function update_draw_size_circle() {
+            brush_radius = draw_size_slider.value;
+
+            // convert to a visual size for the zoom of the canvas
+            const scale_difference = width / dims.defaultWidth;
+            const visual_brush_size = brush_radius * scale_difference;
+            // console.log("visual_brush_size", visual_brush_size);
+
+            draw_size_circle.style.width = visual_brush_size + "px";
+            draw_size_circle.style.height = visual_brush_size + "px";
+            draw_size_circle.style.borderRadius = visual_brush_size + "px";
+        }
+
+        // color picker
+        function color_picker_click() {
+            color_pick = !color_pick;
+
+            const color_picker = document.getElementById("color_picker");
+            const color_picker_svg = document.getElementById("color_picker_svg");
+            
+
+            if (color_pick) {
+                color_picker.style.backgroundColor = 'var(--accent-color)';
+                color_picker_svg.setAttribute('fill', 'var(--secondary-color)');
+                color_picker_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                color_picker.style.backgroundColor = 'var(--secondary-color)';
+                color_picker_svg.setAttribute('fill', 'var(--accent-color)');
+                color_picker_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+
+
+        }
+
+        function set_color_rgba(r, g, b, a) {
+            const hsla_con = rgba_to_hsla(r, g, b, a);
+            // console.log("hsla_con", hsla_con);
+            set_color(hsla_con.hue, hsla_con.saturation, hsla_con.lightness, hsla_con.alpha);
+        }
+
+        function set_color(h, s, l, a) {
+            color = {
+                hue: h,
+                saturation: s,
+                lightness: l,
+                alpha: a
+            };
+            // console.log("color", color);
+            // console.log(h, s, l, a);
+
+            update_hue_slider();
+            update_saturation_slider();
+            update_lightness_slider();
+            update_alpha_slider();
+
+            update_color_label();
+        }
+
+        // #bd0f0f
+
+        // color text values
+        hex_value_text.addEventListener('blur', () => {
+
+            try {
+                let hex_value = hex_value_text.value;
+                let rgba_color = hex_to_rgba(hex_value);
+                // console.log("rgba_color", rgba_color);
+
+                let null_vals = rgba_color.r == null || rgba_color.g == null || rgba_color.b == null || rgba_color.a == null;
+                let low = rgba_color.r < 0 || rgba_color.g < 0 || rgba_color.b < 0 || rgba_color.a < 0;
+                let high = rgba_color.r > 255 || rgba_color.g > 255 || rgba_color.b > 255 || rgba_color.a > 255;
+                if (null_vals || low || high) {
+                    throw new Error();
+                }
+                set_color_rgba(rgba_color.r, rgba_color.g, rgba_color.b, rgba_color.a);
+            }
+            catch(error) {
+                alert("Couldn't parse color: '" + hex_value_text.value + "'");
+            }
+        });
+        hsl_value_text.addEventListener('blur', () => {
+            try {
+                let hsla_value = hsl_value_text.value.replace(/\s+/g, '');
+                const hue_and_rest = hsla_value.split('°,');
+                const hue = parseInt(hue_and_rest[0]);
+                hsl_value = hue_and_rest[1];
+                const vals = hsl_value.split('%,');
+                const saturation = parseInt(vals[0]);
+                const lightness = parseInt(vals[1]);
+                let alpha = 100;
+                if (vals.length > 2) {
+                    alpha = parseInt(vals[2].substring(0, vals[2].length-1));
+                }
+
+                let null_vals = hue == null || saturation == null || lightness == null || !alpha == null;
+                let low = hue < 0 || saturation < 0 || lightness < 0 || alpha < 0;
+                let high = hue > 360 || saturation > 100 || lightness > 100 || alpha > 100;
+                if (null_vals || low || high) {
+                    console.log(hue, saturation, lightness, alpha);
+                    console.log(null_vals,low,high);
+                    throw new Error();
+                }
+
+                set_color(hue, saturation, lightness, alpha);
+            }
+            catch(error) {
+                console.log(error);
+                alert("Couldn't parse color: '" + hsl_value_text.value + "'");
+            }
+        });
+        rgba_value_text.addEventListener('blur', () => {
+
+            try {
+                let rgba_value = rgba_value_text.value.replace(/\s+/g, '');
+                const vals = rgba_value.split(',');
+                const r = parseInt(vals[0]);
+                const g = parseInt(vals[1]);
+                const b = parseInt(vals[2]);
+                let a = 255;
+
+                if (vals.length > 3) {
+                    a = parseInt(vals[3]);
+                }
+
+                let null_vals = r == null || g == null || b == null || a == null;
+                let low = r < 0 || g < 0 || b < 0 || a < 0;
+                let high = r > 255 || g > 255 || b > 255 || a > 255;
+                if (null_vals || low || high) {
+                    console.log(r,g,b,a);
+                    throw new Error();
+                }
+                set_color_rgba(r, g, b, a);
+            }
+            catch(error) {
+                console.log(error);
+                alert("Couldn't parse color: '" + rgba_value_text.value + "'");
+            }
+        });
+
+
+        // draw button toggling
         function draw_button_click() {
             // console.log("clicked");
 
@@ -1636,7 +1791,6 @@
             const draw_button = document.getElementById("draw_button");
             const draw_svg = document.getElementById("draw-svg");
             
-
             if (draw_mode) {
                 draw_button.style.backgroundColor = 'var(--accent-color)';
                 draw_svg.setAttribute('fill', 'var(--secondary-color)');
@@ -1647,6 +1801,9 @@
                 turn_off_draw_mode();
             }
 
+            
+            update_color_label();
+            draw_size_slider.value = brush_radius;
             update_draw_size_circle();
             // draw_button.classList.remove("draw_button-selected");
         }
@@ -1676,59 +1833,6 @@
             lightness_slider.value = color.lightness;
             alpha_slider.value = color.alpha;
         }
-
-        const draw_size_slider = document.getElementById('draw_size_slider');
-        draw_size_slider.addEventListener('input', () => {
-            update_draw_size_circle();
-        });
-        function update_draw_size_circle() {
-            brush_radius = draw_size_slider.value;
-
-            // convert to a visual size for the zoom of the canvas
-            const scale_difference = width / dims.defaultWidth;
-            const visual_brush_size = brush_radius * scale_difference;
-
-            draw_size_circle.style.width = visual_brush_size + "px";
-            draw_size_circle.style.height = visual_brush_size + "px";
-            draw_size_circle.style.borderRadius = visual_brush_size + "px";
-        }
-        draw_size_slider.value = brush_radius;
-
-        update_color_label();
-
-
-        function color_picker_click() {
-            color_pick = !color_pick;
-
-            const color_picker = document.getElementById("color_picker");
-            const color_picker_svg = document.getElementById("color_picker_svg");
-            
-
-            if (color_pick) {
-                color_picker.style.backgroundColor = 'var(--accent-color)';
-                color_picker_svg.setAttribute('fill', 'var(--secondary-color)');
-                color_picker_svg.setAttribute('stroke', 'var(--secondary-color)');
-            }
-            else {
-                color_picker.style.backgroundColor = 'var(--secondary-color)';
-                color_picker_svg.setAttribute('fill', 'var(--accent-color)');
-                color_picker_svg.setAttribute('stroke', 'var(--accent-color)');
-            }
-
-
-        }
-
-        function set_color(r, g, b, a) {
-            color = rgba_to_hsla(r, g, b, a);
-
-            update_hue_slider();
-            update_saturation_slider();
-            update_lightness_slider();
-            update_alpha_slider();
-
-            update_color_label();
-        }
-
 
 
         const color_wheel = document.getElementById('color_wheel');
@@ -1973,9 +2077,7 @@
                     
 
                     // add for undo
-                    actions.push(
-                        make_action(SET_BACKGROUND, get_background_data_for_undo())
-                    );
+                    add_action(SET_BACKGROUND, get_background_data_for_undo());
 
 
                     // scale canvas to image size
@@ -2041,9 +2143,7 @@
         function set_background_color() {
 
             // add for undo
-            actions.push(
-                make_action(SET_BACKGROUND, get_background_data_for_undo())
-            );
+            add_action(SET_BACKGROUND, get_background_data_for_undo());
 
             try {
                 canvas_background_color = hex_to_rgba(background_color_input.value);
@@ -2069,7 +2169,7 @@
             // console.log("clicked");
 
             turn_off_other_modes('erase');
-            erase_mode = !move_mode;
+            erase_mode = !erase_mode;
 
             const erase_button = document.getElementById("erase_button");
             const erase_svg = document.getElementById("erase_svg");
@@ -2099,6 +2199,7 @@
 
     <!-- UNDO OR CTRL Z -->
     <script>
+        const MAX_ACTIONS = 200;
         let actions = [];
         let undone_actions = [];
         
@@ -2106,6 +2207,7 @@
             actions.push(
                 make_action(type, data)
             );
+            undone_actions = [];
 
             const last = actions[actions.length - 1];
 
@@ -2328,6 +2430,8 @@
         document.addEventListener('DOMContentLoaded', () => {
             
             draw_canvas_and_center_view();
+
+            // draw_button_click();
 
             return () => {
             };
@@ -2654,11 +2758,10 @@
     
 
         // DELETE THIS testing stuffaa
-        starter_stroke(100, 100);
-        // draw_button_click();
-
-        // console.log("rgba_to_hsla", rgba_to_hsla(255, 234, 123, 234));
-        // console.log("hsla_to_rgba", hsla_to_rgba(50, 100, 74, 91.76));
+        // starter_stroke(100, 100);
+        // #bd0f0f
+        // console.log("rgba_to_hsla", rgba_to_hsla(189, 15, 15, 255));
+        // console.log("hsla_to_rgba", hsla_to_rgba(0, 85, 40, 100));
 
 
         // TEST
@@ -2777,6 +2880,7 @@
 
         // Paste handling
         window.addEventListener('paste', (event) => {
+
             console.log("paste");
             const items = event.clipboardData.items;
             console.log("items", items);
