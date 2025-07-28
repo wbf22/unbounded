@@ -710,12 +710,14 @@
     </div>
 
 
-    
-    <!-- 
-        
-        SCRIPTS
 
-    -->
+
+
+
+
+    <!-- ******* -->
+    <!-- SCRIPTS -->
+    <!-- ******* -->
 
 
     <!-- UTIL -->
@@ -2536,9 +2538,11 @@
                     if (event.target == canvas) {
                         if (color_pick) {
                             console.log("pick color");
-                            const most_recent = get_most_recent_stroke_at_xy(event.clientX, event.clientY);
-                            const first_pixel = most_recent.pixels[0];
-                            set_color(first_pixel.r, first_pixel.g, first_pixel.b, first_pixel.a);
+                            let x = mouse_x_to_canvas_x(event.clientX);
+                            let y = mouse_y_to_canvas_y(event.clientY);
+                            const [r, g, b, a] = ctx.getImageData(x, y, 1, 1).data;
+                            console.log(r, g, b, a);
+                            set_color_rgba(r, g, b, a);
                         }
                         else {
                             drawing = true;
@@ -2763,7 +2767,7 @@
 
         // console.log("rgba_to_hsla", rgba_to_hsla(255, 234, 123, 234));
         // console.log("hsla_to_rgba", hsla_to_rgba(50, 100, 74, 91.76));
-
+        
 
         // TEST
         function starter_stroke(start_x, start_y) {
