@@ -1355,7 +1355,10 @@
                 selected_strokes = Array.from(selected_stroke_uuids).map(uuid => {
                     let stroke = uuid_to_stroke.get(uuid);
                     return stroke;
-                });
+                }).sort((a, b) => {
+                    // sorting by added order
+                    return a.order - b.order;
+                });;
                 // console.log("selected_strokes", selected_strokes);
 
                 if (selected_strokes) {
