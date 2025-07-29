@@ -439,6 +439,33 @@
             align-items: center;
         }
 
+        #download_popup {
+            position: fixed;
+            background-color: rgba(0, 0, 0, 0.166);
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        #download_popup_div {
+            position: fixed;
+            background-color: white;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+            border-radius: 10px;   
+            box-shadow: 0px 0px 10px 0 var(--shadow);   
+        }
+
+        #download_submit_button {
+            border: 0;
+            border-radius: 10px;
+            padding: .5rem 1rem .5rem 1rem;
+        }
     </style>
 </head>
 <body>
@@ -637,7 +664,7 @@
         <div
             id="download_button"
             class="menu_button"
-            onclick="download_img()"
+            onclick="download_dialog()"
         >
             
             <svg 
@@ -711,6 +738,13 @@
 
 
 
+    <div id="download_popup">
+        <div id="download_popup_div">
+            <p>file name</p>
+            <input id="file_name_input" type="text">
+            <button id="download_submit_button" onclick="download_image()">Download</button>
+        </div>
+    </div>
 
 
 
@@ -1549,6 +1583,7 @@
                 hsl(300, 100%, 57%, 100%),
                 hsl(330, 100%, 57%, 100%)
             )`;
+            hue_slider.value = color.hue;
         }
 
         function update_saturation_slider() {
@@ -1557,6 +1592,7 @@
                 hsl(${color.hue}, 50%, 57%, 100%),
                 hsl(${color.hue}, 100%, 57%, 100%)
             )`;
+            saturation_slider.value = color.saturation;
         }
 
         function update_lightness_slider() {
@@ -1573,6 +1609,7 @@
                 hsl(${color.hue}, 100%, 90%, 100%),
                 hsl(${color.hue}, 100%, 100%, 100%)
             )`;
+            lightness_slider.value = color.lightness;
         }
 
         function update_alpha_slider() {
@@ -1589,6 +1626,7 @@
                 hsl(${color.hue}, 100%, 57%, 90%),
                 hsl(${color.hue}, 100%, 57%, 100%)
             )`;
+            alpha_slider.value = color.alpha;
         }
 
         hue_slider.addEventListener('input', () => {
@@ -1678,7 +1716,7 @@
 
         function set_color_rgba(r, g, b, a) {
             const hsla_con = rgba_to_hsla(r, g, b, a);
-            // console.log("hsla_con", hsla_con);
+            console.log("hsla_con", hsla_con);
             set_color(hsla_con.hue, hsla_con.saturation, hsla_con.lightness, hsla_con.alpha);
         }
 
@@ -1689,7 +1727,7 @@
                 lightness: l,
                 alpha: a
             };
-            // console.log("color", color);
+            console.log("color", color);
             // console.log(h, s, l, a);
 
             update_hue_slider();
@@ -1716,6 +1754,7 @@
                 if (null_vals || low || high) {
                     throw new Error();
                 }
+                console.log("rgba_color", rgba_color);
                 set_color_rgba(rgba_color.r, rgba_color.g, rgba_color.b, rgba_color.a);
             }
             catch(error) {
@@ -2421,6 +2460,25 @@
 
     </script>
 
+    <!-- download dialog -->
+     <script>
+        function download_image() {
+            let file_name = document.getElementById("file_name_input").value;
+            file_name = file_name.split('.');
+
+            const link = document.createElement('a'); // Create a temporary link
+            link.download = file_name + '.png'; // Set the desired file name
+            link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
+            link.click(); // Programmatically click the link to trigger download
+
+            document.getElementById("download_popup").style.display = "none";
+        }
+
+        function download_dialog() {
+            document.getElementById("download_popup").style.display = "block";
+        }
+     </script>
+
     <!-- WINDOW INPUT HANDLING -->
     <script>
         const CANVAS_X = 40000; 
@@ -2491,7 +2549,7 @@
                 erase_button_click();
             }
             else if (!event.ctrlKey && event.key === 'f') {
-                download_img();
+                download_dialog();
             }
             else if (!event.ctrlKey && event.key === 'g') {
                 settings_button_click();
@@ -2750,16 +2808,6 @@
         }
         window.addEventListener('wheel', handleScroll, { passive: false });
         
-
-
-        // download image
-        function download_img() {
-            const link = document.createElement('a'); // Create a temporary link
-            link.download = 'canvas_image.png'; // Set the desired file name
-            link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
-            link.click(); // Programmatically click the link to trigger download
-        }
-    
 
         // DELETE THIS testing stuffaa
         // starter_stroke(100, 100);
