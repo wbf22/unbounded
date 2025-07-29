@@ -945,6 +945,7 @@
         let in_settings = false;
 
         let drawing = false;
+        let typing = false;
         let color_pick = false;
         let draw_box_select = false;
         let move_box_select = false;
@@ -1744,6 +1745,9 @@
         // #bd0f0f
 
         // color text values
+        hex_value_text.addEventListener('focus', () => {
+            typing = true;
+        });
         hex_value_text.addEventListener('blur', () => {
 
             try {
@@ -1763,6 +1767,10 @@
             catch(error) {
                 alert("Couldn't parse color: '" + hex_value_text.value + "'");
             }
+            typing = false;
+        });
+        hsl_value_text.addEventListener('focus', () => {
+            typing = true;
         });
         hsl_value_text.addEventListener('blur', () => {
             try {
@@ -1793,6 +1801,10 @@
                 console.log(error);
                 alert("Couldn't parse color: '" + hsl_value_text.value + "'");
             }
+            typing = false;
+        });
+        rgba_value_text.addEventListener('focus', () => {
+            typing = true;
         });
         rgba_value_text.addEventListener('blur', () => {
 
@@ -1821,6 +1833,7 @@
                 console.log(error);
                 alert("Couldn't parse color: '" + rgba_value_text.value + "'");
             }
+            typing = false;
         });
 
 
@@ -2177,11 +2190,14 @@
         const background_color_input = document.getElementById('background_color_input');
         const background_color_view = document.getElementById('background_color_view');
         background_color_input.addEventListener('keydown', function(event) {
+            typing = true;
             if (event.key === 'Enter') {
+                typing = false;
                 set_background_color()
             }
         });
         background_color_input.addEventListener('blur', function() {
+            typing = false;
             set_background_color()
         });
         function set_background_color() {
@@ -2465,6 +2481,7 @@
 
     <!-- download dialog -->
      <script>
+        const download_popup = document.getElementById("download_popup");
         function download_image() {
             let file_name = document.getElementById("file_name_input").value;
             file_name = file_name.split('.');
@@ -2474,12 +2491,32 @@
             link.href = canvas.toDataURL('image/png'); // Convert canvas to PNG data URL
             link.click(); // Programmatically click the link to trigger download
 
-            document.getElementById("download_popup").style.display = "none";
+            close_download_dialog();
         }
 
         function download_dialog() {
-            document.getElementById("download_popup").style.display = "block";
+
+            turn_off_other_modes('none');
+            download_popup.style.display = "block";
+            typing = true;
         }
+
+        function close_download_dialog() {
+            download_popup.style.display = "none";
+            typing = false;
+
+        }
+
+
+        download_popup.addEventListener('click', (event) => {
+            console.log(event.target)
+            if (event.target === download_popup) {
+                close_download_dialog();
+            }
+        });
+        
+        
+
      </script>
 
     <!-- WINDOW INPUT HANDLING -->
@@ -2542,19 +2579,19 @@
             else if (event.key === 'Shift') {
                 shift = true;
             }
-            else if (!event.ctrlKey && event.key === 'a') {
+            else if (!event.ctrlKey && !typing && event.key === 'a') {
                 draw_button_click();
             }
-            else if (!event.ctrlKey && event.key === 's') {
+            else if (!event.ctrlKey && !typing && event.key === 's') {
                 move_mode_button_click();
             }
-            else if (!event.ctrlKey && event.key === 'd') {
+            else if (!event.ctrlKey && !typing && event.key === 'd') {
                 erase_button_click();
             }
-            else if (!event.ctrlKey && event.key === 'f') {
+            else if (!event.ctrlKey && !typing && event.key === 'f') {
                 download_dialog();
             }
-            else if (!event.ctrlKey && event.key === 'g') {
+            else if (!event.ctrlKey && !typing && event.key === 'g') {
                 settings_button_click();
             }
             else if (event.key === ' ') {
@@ -2604,6 +2641,7 @@
                             const [r, g, b, a] = ctx.getImageData(x, y, 1, 1).data;
                             console.log(r, g, b, a);
                             set_color_rgba(r, g, b, a);
+                            color_picker_click();
                         }
                         else {
                             drawing = true;
