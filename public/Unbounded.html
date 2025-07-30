@@ -24,39 +24,6 @@
             border: 1px solid #ccc;
         }
 
-        #attributes_view {
-            border: var(--def_border);
-            background-color: #07002f;
-
-
-            display: flex;
-            flex-direction: column;
-            padding: 1rem;
-        }
-
-        .attribute {
-            margin: 0;
-            display: flex;
-            flex-direction: row;
-        }
-
-        .attribute_input {
-            background-color: #07002f;
-            border: var(--def_border);
-            border-radius: 2px;
-            outline: none;
-            color: #dddddd;
-            /* color: rgba(50, 106, 41, 0.804); */
-            /* color: hsla(116, 62%, 49%, 0.6); */
-            margin-left: 1rem;
-        }
-
-        .attribute_color {
-            margin-left: 1rem;
-            width: 20px;
-            height: 20px;
-            border: var(--def_border);
-        }
 
         #picker.hidden {
             opacity: 0;
@@ -150,6 +117,84 @@
             z-index: -1;
         }
 
+
+        #attributes_view {
+            border: var(--def_border);
+            background-color: #07002f;
+
+
+            display: flex;
+            flex-direction: column;
+            padding: 1rem;
+        }
+
+        .attribute {
+            margin: .1rem;
+            width: 30rem;
+            display: grid;
+            grid-template-columns: .6fr .2fr 2fr;
+            justify-items: start;
+            align-items: start;
+        }
+
+        .attribute > * {
+            width: 100%;
+        }
+
+        .attribute_input {
+            background-color: #07002f;
+            border: var(--def_border);
+            border-radius: 2px;
+            outline: none;
+            color: #dddddd;
+        }
+
+        textarea.attribute_input {
+            resize: none;
+            height: 4rem;
+        }
+
+        select.attribute_input {
+            width: auto;
+        }
+
+        .attribute_color {
+            width: 20px;
+            height: 20px;
+            border: var(--def_border);
+        }
+
+
+        #right_click_menu {
+            display: none; 
+            position: absolute; 
+            background: #07002f; 
+            border-radius: 2px;
+        }
+        .menu-item {
+            font-size: .8rem;
+            padding: 8px 12px;
+            cursor: pointer;
+        }
+
+        .menu-item:hover {
+            background-color: #10006b;
+        }
+
+
+        #hidden_divs_button {
+            margin: 1rem;
+            border: var(--def_border);
+            border-radius: 2px;
+            color: #dddddd;
+            background-color: #07002f;
+            cursor: pointer;
+        }
+
+        #hidden_divs_button:hover {
+            background-color: #241387;
+        }
+
     
     </style>
 </head>
@@ -158,9 +203,13 @@
 
     <iframe id="iframe"></iframe>
 
+    <button id="hidden_divs_button" onclick="show_hidden_divs()">show hidden divs</button>
 
     <div id="attributes_view">
     </div>
+
+
+    <!-- HIDDEN STUFF -->
 
     <div id="picker" tabindex="-1">
         <canvas class="preview" id="color-preview"></canvas>
@@ -173,6 +222,17 @@
             </div>
         </div>
     </div>
+
+    <div id="right_click_menu">
+        <div class="menu-item">add</div>
+        <div class="menu-item">delete</div>
+    </div>
+
+
+
+
+
+
 
 
     <!-- UTIL -->
@@ -429,7 +489,6 @@
         }
     </script>
 
-
     <!-- color picker -->
     <script>
         const picker = document.getElementById('picker');
@@ -542,6 +601,26 @@
         updatePreview();
     </script>
 
+    <!-- other buttons -->
+    <script>
+        function unhide_recursively(element) {
+            if (element.style.display == 'none') {
+                element.style.display = 'block';
+            }
+            for (let child of element.children) {
+                unhide_recursively(child);
+            }
+        }
+
+        function show_hidden_divs() {
+            
+            const iframe = document.getElementById('iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            unhide_recursively(iframeDoc.body);
+            attributes_view.replaceChildren();
+        }
+    </script>
 
     <!-- attribute view -->
     <script>
@@ -550,9 +629,34 @@
         const text_types = new Set(["div", "p", "h1", "h2", "h3"]);
         let current_element = null;
 
+        function create_drop_down_attribiute_div(name, value, drop_down_options, listener) {
 
-        function create_drop_down_attribiute_div(name, drop_down_options) {
+            let attribute_text_content = document.createElement("div");
+            attribute_text_content.className = 'attribute';
 
+            let name_div = document.createElement("div");
+            name_div.textContent = name;
+            attribute_text_content.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_text_content.appendChild(semicolon);
+
+            let select_div = document.createElement("select");
+            select_div.className = 'attribute_input';
+            for(option of drop_down_options) {
+                let option_div = document.createElement("option");
+                option_div.value = option;
+                option_div.textContent = option;
+                select_div.appendChild(option_div);
+            }
+            select_div.value = value;
+            select_div.addEventListener('change', listener);
+            attribute_text_content.appendChild(select_div);
+
+
+            attributes_view.appendChild(attribute_text_content)
         }
 
         function create_color_attribute_div(name, color) {
@@ -561,7 +665,6 @@
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
-            name_div.style = 'margin-right: 1rem;';
             name_div.textContent = name;
             attribute_text_content.appendChild(name_div);
 
@@ -578,6 +681,8 @@
             color_div.addEventListener('click', (event) => {
                 picker.classList.remove('hidden');
                 picker.focus();
+                picker.style.top = event.clientY - 330 + 'px';
+                picker.style.left = event.clientX + 'px';
             });
             pixels = []
 
@@ -629,13 +734,12 @@
 
         }
 
-        function create_input_attribute_div(name, text_content) {
+        function create_input_attribute_div(name, text_content, listener) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
-            name_div.style = 'margin-right: 1rem;';
             name_div.textContent = name;
             attribute_text_content.appendChild(name_div);
 
@@ -644,10 +748,10 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
-            let input_div = document.createElement("input");
-            input_div.type = 'text';
+            let input_div = document.createElement("textarea");
             input_div.className = 'attribute_input';
             input_div.value = text_content;
+            input_div.addEventListener('input', listener);
             attribute_text_content.appendChild(input_div);
 
 
@@ -656,23 +760,12 @@
 
         function setAttributeView(element) {
             
-            const attribute = `
-                <div class="attribute">
-                    <div style="margin-right: 1rem;">position</div>
-                    <div style="color: #13a9c3;">:</div>
-                    <select class="attribute_input" name="fruits">
-                        <option value="apple">Apple</option>
-                        <option value="banana">Banana</option>
-                        <option value="cherry">Cherry</option>
-                    </select>
-                </div>
-            `;
-
-
-
             attributes_view.replaceChildren();
             current_element = element;
 
+            let type = element.tagName.toLowerCase();
+
+            let display = element.style.display;
             let text_content = element.textContent;
             let position = element.style.position;
             let width = element.style.width;
@@ -680,18 +773,47 @@
             let background_color = element.style.background_color;
             let color = element.style.color;
 
-            let type = element.tagName.toLowerCase();
 
             if (text_types.has(type)) {
-                console.log("text_content", text_content);
-                console.log("position", position);
-                console.log("width", width);
-                console.log("height", height);
-                console.log("background_color", background_color);
-                console.log("color", color);
-                console.log(color);
+                // console.log("display", display);
+                // console.log("text_content", text_content);
+                // console.log("position", position);
+                // console.log("width", width);
+                // console.log("height", height);
+                // console.log("background_color", background_color);
+                // console.log("color", color);
 
-                create_input_attribute_div("textContent", text_content);
+                create_drop_down_attribiute_div(
+                    "type", 
+                    type, 
+                    ["div", "a", "p", "h1", "h2", "h3", "img", "input", "select", "canvas"], 
+                    (event) => {
+                        const newEl = document.createElement(event.target.value);
+
+                        // Copy attributes
+                        for (const attr of current_element.attributes) {
+                            newEl.setAttribute(attr.name, attr.value);
+                        }
+
+                        // Copy inner content
+                        newEl.innerHTML = current_element.innerHTML;
+
+                        // Replace in the DOM
+                        current_element.parentNode.replaceChild(newEl, current_element);
+                        setAttributeView(newEl);
+                    }
+                );
+                create_drop_down_attribiute_div(
+                    "display", 
+                    display, 
+                    ["", "none", "flex", "grid", "block"], 
+                    (event) => {
+                        current_element.style.display = event.target.value;
+                    }
+                );
+                create_input_attribute_div("textContent", text_content, (event) => {
+                    current_element.textContent = event.target.value;
+                });
                 create_color_attribute_div("color", color);
 
             }
@@ -769,6 +891,20 @@
                 html_content = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
                 // console.log(html_content);
 
+            });
+
+
+            const right_click_menu = document.getElementById('right_click_menu');
+            iframeDoc.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                console.log(event.target);
+                const iframe_rect = iframe.getBoundingClientRect();
+                right_click_menu.style.top = `${event.clientY + iframe_rect.top}px`;
+                right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
+                right_click_menu.style.display = 'block';
+            });
+            iframeDoc.addEventListener('click', () => {
+                right_click_menu.style.display = 'none';
             });
         });
     </script>
