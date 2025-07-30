@@ -246,6 +246,21 @@
             
         }
 
+        .side_pair {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .side_5 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        }
+
+        .number_input {
+            width: 1rem;
+            margin-right: 1rem;
+        }
+
     
     </style>
 </head>
@@ -583,6 +598,15 @@
             return '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
         }
     
+        function splitNumberAndUnit(input) {
+            const match = input.match(/^([\d.]+)([a-z%]+)$/);
+            if (match) {
+                return [match[1], match[2]];
+            } else {
+                // Handle invalid input
+                return ['', ''];
+        }
+        }
     </script>
 
     <!-- color picker -->
@@ -729,7 +753,7 @@
             attribute_text_content.appendChild(select_div);
 
 
-            attributes_view.appendChild(attribute_text_content)
+            attributes_view.appendChild(attribute_text_content);
         }
 
         function create_color_attribute_div(name, color) {
@@ -828,7 +852,152 @@
             attribute_text_content.appendChild(input_div);
 
 
-            attributes_view.appendChild(attribute_text_content)
+            attributes_view.appendChild(attribute_text_content);
+        }
+
+        function create_measurement_attribiute_div(name, value, style_property) {
+            let split = splitNumberAndUnit(value);
+            console.log(split);
+            let number = split[0];
+            let unit = split[1];
+
+            let attribute_div = document.createElement("div");
+            attribute_div.className = 'attribute';
+
+            let name_div = document.createElement("div");
+            name_div.textContent = name;
+            attribute_div.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_div.appendChild(semicolon);
+
+            let side_pair = document.createElement("div");
+            side_pair.className = 'side_pair';
+
+            let measurement_input = document.createElement("input");
+            measurement_input.className = 'attribute_input number_input';
+            measurement_input.value = number;
+            side_pair.appendChild(measurement_input);
+
+            let select_div = document.createElement("select");
+            select_div.className = 'attribute_input';
+            for(option of ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax']) {
+                let option_div = document.createElement("option");
+                option_div.value = option;
+                option_div.textContent = option;
+                select_div.appendChild(option_div);
+            }
+            select_div.value = unit;
+            side_pair.appendChild(select_div);
+
+            attribute_div.appendChild(side_pair);
+            attributes_view.appendChild(attribute_div);
+
+
+            measurement_input.addEventListener('input', (event) => {
+                current_element.style[style_property] = measurement_input.value + select_div.value;
+            });
+            select_div.addEventListener('change', (event) => {
+                current_element.style[style_property] = measurement_input.value + select_div.value;
+            });
+        }
+
+        function create_quad_input_attribute_div(name, value, style_property) {
+            let numbers = [];
+            let unit = '';
+            let values = value.split(' ');
+            for (let side_val of values) {
+                let split = splitNumberAndUnit(value);
+                numbers.push(split[0]);
+                unit = split[1];
+            }
+
+
+            let attribute_div = document.createElement("div");
+            attribute_div.className = 'attribute';
+
+            let name_div = document.createElement("div");
+            name_div.textContent = name;
+            attribute_div.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_div.appendChild(semicolon);
+
+            let side_5 = document.createElement("div");
+            side_5.className = 'side_quad';
+
+            let top_input = document.createElement("input");
+            top_input.className = 'attribute_input number_input';
+            top_input.value = numbers[0];
+            side_5.appendChild(top_input);
+
+            let right_input = document.createElement("input");
+            right_input.className = 'attribute_input number_input';
+            right_input.value = numbers.length > 1? numbers[1] : '';
+            side_5.appendChild(right_input);
+
+            let bottom_input = document.createElement("input");
+            bottom_input.className = 'attribute_input number_input';
+            bottom_input.value = numbers.length > 2? numbers[2] : '';
+            side_5.appendChild(bottom_input);
+
+            let left_input = document.createElement("input");
+            left_input.className = 'attribute_input number_input';
+            left_input.value = numbers.length > 3? numbers[3] : '';
+            side_5.appendChild(left_input);
+
+            let select_div = document.createElement("select");
+            select_div.className = 'attribute_input';
+            for(option of ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax']) {
+                let option_div = document.createElement("option");
+                option_div.value = option;
+                option_div.textContent = option;
+                select_div.appendChild(option_div);
+            }
+            select_div.value = unit;
+            side_5.appendChild(select_div);
+
+            attribute_div.appendChild(side_5);
+            attributes_view.appendChild(attribute_div);
+
+
+            listener = (event) => {
+                if (top_input.value && right_input.value && bottom_input.value && left_input.value) {
+                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
+                        right_input.value + select_div.value + ' ' +
+                        bottom_input.value + select_div.value + ' ' +
+                        left_input.value + select_div.value + ' ';
+
+                }
+                else if (top_input.value && right_input.value && bottom_input.value) {
+                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
+                        right_input.value + select_div.value + ' ' +
+                        bottom_input.value + select_div.value + ' ';
+                }
+                else if (top_input.value && right_input.value) {
+                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
+                        right_input.value + select_div.value + ' ';
+                }
+                else if (top_input.value) {
+                    current_element.style[style_property] = top_input.value + select_div.value;
+                }
+                else {
+                    current_element.style[style_property] = '';
+                }
+
+                // console.log(top_input.value , right_input.value , bottom_input.value , left_input.value);
+                console.log(current_element.style[style_property]);
+            };
+
+            top_input.addEventListener('input', listener);
+            right_input.addEventListener('input', listener);
+            bottom_input.addEventListener('input', listener);
+            left_input.addEventListener('input', listener);
+            select_div.addEventListener('input', listener);
         }
 
         function setAttributeView(element) {
@@ -847,13 +1016,6 @@
 
 
             if (text_types.has(type)) {
-                // console.log("display", display);
-                // console.log("text_content", text_content);
-                // console.log("position", position);
-                // console.log("width", width);
-                // console.log("height", height);
-                // console.log("background_color", background_color);
-                // console.log("color", color);
 
                 create_drop_down_attribiute_div(
                     "type", 
@@ -889,6 +1051,10 @@
                     current_element.textContent = event.target.value;
                 });
                 create_color_attribute_div("color", color);
+                create_measurement_attribiute_div("width", width, "width");
+                create_measurement_attribiute_div("height", height, "height");
+                create_quad_input_attribute_div('margin', current_element.style.margin, 'margin');
+                create_quad_input_attribute_div('padding', current_element.style.padding, 'padding');
 
             }
             
