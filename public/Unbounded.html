@@ -195,6 +195,57 @@
             background-color: #241387;
         }
 
+        #gray_out {
+            display: none;
+
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.758);
+
+
+            z-index: 1000;
+        }
+
+        #add_element_menu {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
+
+            display: none;
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+
+        }
+
+        #add_element_button {
+            margin-top: 1rem;
+            background-color: #10006b;
+            border: var(--def_border);
+            border-radius: 2px;
+            color: #dddddd;
+            outline: none;
+            
+        }
+
+        #add_element_button:hover {
+            background-color: #1900a9;
+            
+        }
+
+        #add_element_button:focus {
+            background-color: #1900a9;
+            
+        }
+
     
     </style>
 </head>
@@ -224,16 +275,53 @@
     </div>
 
     <div id="right_click_menu">
-        <div class="menu-item">add</div>
-        <div class="menu-item">delete</div>
+        <div class="menu-item" onclick="show_add_element_dialog()">add</div>
+        <div class="menu-item" onclick="delete_element()">delete</div>
+        <div class="menu-item" onclick="moveUp()">move up</div>
+        <div class="menu-item" onclick="moveDown()">move down</div>
+    </div>
+
+    <div id="gray_out"></div>
+
+    <div id="add_element_menu">
+        <h3>Add Element</h3>
+
+        <label>
+            type
+            <select id="add_element_type_select" class="attribute_input">
+                <option>div</option>
+                <option>a</option>
+                <option>p</option>
+                <option>h1</option>
+                <option>h2</option>
+                <option>h3</option>
+                <option>img</option>
+                <option>input</option>
+                <option>select</option>
+                <option>canvas</option>
+            </select>
+        </label>
+
+        <textarea id="new_element_text_area" class="attribute_input" placeholder="new element text"></textarea>
+        <div id="add_element_options">
+        </div>
+
+        <button id="add_element_button" onclick="add_element()">add</button>
+
     </div>
 
 
 
 
 
+    <!-- GENERAL VARIABLES -->
+    <script>
+        let current_element = null;
+        const iframe = document.getElementById('iframe');
+        const gray_out = document.getElementById('gray_out');
+        const text_types = new Set(["div", "p", "h1", "h2", "h3"]);
 
-
+    </script>
 
     <!-- UTIL -->
     <script>
@@ -487,6 +575,14 @@
             }
             ctx.putImageData(imageData, 0, 0);
         }
+    
+    
+        // HTML
+        function get_iframe_html() {
+
+            return '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
+        }
+    
     </script>
 
     <!-- color picker -->
@@ -601,33 +697,10 @@
         updatePreview();
     </script>
 
-    <!-- other buttons -->
-    <script>
-        function unhide_recursively(element) {
-            if (element.style.display == 'none') {
-                element.style.display = 'block';
-            }
-            for (let child of element.children) {
-                unhide_recursively(child);
-            }
-        }
-
-        function show_hidden_divs() {
-            
-            const iframe = document.getElementById('iframe');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
-            unhide_recursively(iframeDoc.body);
-            attributes_view.replaceChildren();
-        }
-    </script>
-
     <!-- attribute view -->
     <script>
 
         const attributes_view = document.getElementById("attributes_view");
-        const text_types = new Set(["div", "p", "h1", "h2", "h3"]);
-        let current_element = null;
 
         function create_drop_down_attribiute_div(name, value, drop_down_options, listener) {
 
@@ -760,7 +833,6 @@
 
         function setAttributeView(element) {
             
-            attributes_view.replaceChildren();
             current_element = element;
 
             let type = element.tagName.toLowerCase();
@@ -801,6 +873,8 @@
                         // Replace in the DOM
                         current_element.parentNode.replaceChild(newEl, current_element);
                         setAttributeView(newEl);
+
+                        console.log(get_iframe_html());
                     }
                 );
                 create_drop_down_attribiute_div(
@@ -826,8 +900,174 @@
 
         }
 
+        function unsetAttributeView() {
+            attributes_view.replaceChildren();
+
+            // take outline off last element
+            if (current_element && current_element.style.outline == 'red dashed 2px') {
+                current_element.style.outline = 'none';
+            }
+
+        }
     </script>
 
+    <!-- other buttons -->
+    <script>
+        function unhide_recursively(element) {
+            if (element.style.display == 'none') {
+                element.style.display = 'block';
+            }
+            for (let child of element.children) {
+                unhide_recursively(child);
+            }
+        }
+
+        function show_hidden_divs() {
+            
+            const iframe = document.getElementById('iframe');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            unhide_recursively(iframeDoc.body);
+            attributes_view.replaceChildren();
+            
+            unsetAttributeView();
+        }
+    </script>
+
+
+    <!-- right click menu -->
+     <script>
+
+        let new_element_text_area = document.getElementById("new_element_text_area");
+        function focus_on_new_element_text() {
+            new_element_text_area.focus();
+        }
+
+        const add_element_type_select = document.getElementById("add_element_type_select");
+        add_element_type_select.addEventListener("change", () => {
+            set_add_element_options();
+            focus_on_new_element_text();
+        });
+
+
+        function set_add_element_options() {
+            let type = add_element_type_select.value;
+            let options = document.getElementById("add_element_options");
+            options.replaceChildren();
+            
+            if (!text_types.has(type)) {
+                new_element_text_area.style.display = "none";
+            }
+            else {
+                new_element_text_area.style.display = "block";
+            }
+
+
+        }
+
+
+        const right_click_menu = document.getElementById('right_click_menu');
+        function show_add_element_dialog() {
+            right_click_menu.style.display = "none";
+            document.getElementById('gray_out').style.display = "block";
+            document.getElementById('add_element_menu').style.display = "flex";
+            focus_on_new_element_text();
+
+            set_add_element_options();
+
+        }
+
+        function hide_add_element_dialog() {
+            document.getElementById('gray_out').style.display = "none";
+            document.getElementById('add_element_menu').style.display = "none";
+
+        }
+
+        function add_element() {
+            let type = add_element_type_select.value;
+            
+            let new_element = null;
+            if (type == "div") {
+                new_element = document.createElement("div");
+            }
+            else if (type == 'a') {
+                new_element = document.createElement("a");
+            }
+            else if (type == 'p') {
+                new_element = document.createElement("p");
+            }
+            else if (type == 'h1') {
+                new_element = document.createElement("h1");
+            }
+            else if (type == 'h2') {
+                new_element = document.createElement("h2");
+            }
+            else if (type == 'h3') {
+                new_element = document.createElement("h3");
+            }
+            else if (type == 'img') {
+                new_element = document.createElement("img");
+            }
+            else if (type == 'input') {
+                new_element = document.createElement("input");
+            }
+            else if (type == 'select') {
+                new_element = document.createElement("select");
+            }
+            else if (type == 'canvas') {
+                new_element = document.createElement("canvas");
+            }
+            
+
+            if (text_types.has(type)) {
+                new_element.textContent = new_element_text_area.value;
+            }
+
+            current_element.appendChild(new_element);
+
+
+            hide_add_element_dialog();
+
+        }
+
+
+        function delete_element() {
+            right_click_menu.style.display = "none";
+
+            if (current_element.tagName.toLowerCase() != "html" && current_element.tagName.toLowerCase() != "body") {
+                current_element.parentNode.removeChild(current_element);
+            }
+            else {
+                alert("Looks like you tried to delete the html or body tag. These are base frames of the page. Shame on you 😠!");
+            }
+        }
+     
+        
+        gray_out.addEventListener('click', (event) => {
+            console.log(event.target)
+            if (event.target === gray_out) {
+                hide_add_element_dialog();
+            }
+        });
+
+
+        function moveUp() {
+            right_click_menu.style.display = "none";
+            const previous = current_element.previousElementSibling;
+            if (previous) {
+                // Insert the element before its previous sibling
+                current_element.parentNode.insertBefore(current_element, previous);
+            }
+        }
+        function moveDown() {
+            right_click_menu.style.display = "none";
+            const next = current_element.nextElementSibling;
+            if (next) {
+                // Insert next sibling before the element (which moves the element down)
+                current_element.parentNode.insertBefore(next, current_element);
+            }
+        }
+     </script>
 
 
     <!-- iframe setup -->
@@ -839,57 +1079,54 @@
     <meta charset="UTF-8">
     <title>Iframe Content</title>
     <style>
-        body { 
-            margin: 0; 
-            height: 100%;
+        html, body { 
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            min-width: 100vw;
             background-color: #dddddd;
+            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+        }
+
+        body {
+            position: fixed;
+            top: 0;
+            left: 0;
         }
     </style>
 </head>
 <body>
-    <div id="test" style="position:absolute; top:100px; left:200px;">Hello</div>
-    <p id="asdf" style="color: hsla(116, 62%, 49%, 0.6);">junk food</p>
+    <h1>My Page</h1>
+    <p>yay me!</p>
 </body>
 </html>
 
         `;
 
-        const iframe = document.getElementById('iframe');
         iframe.srcdoc = html_content;
 
         
 
         iframe.addEventListener('load', () => {
-            const div = iframe.contentDocument.querySelector('#test');
-            const rect = div.getBoundingClientRect();
-            console.log('Top:', rect.top, 'Left:', rect.left);
 
 
             // set click listener on the document
             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
-            let last_element = null;
             iframeDoc.addEventListener('click', (event) => {
 
-                // take outline off last element
-                if (last_element && last_element.style.outline == 'red dashed 2px') {
-                    last_element.style.outline = 'none';
-                }
+                unsetAttributeView();
 
                 // get element and set outline
                 const element = event.target;
-                console.log("style", element.style);
                 console.log("element", element);
 
                 element.style.outline = 'red dashed 2px';
-                last_element = element;
+                current_element = element;
                 
+
                 // set attributes in attribute view
                 setAttributeView(element);
-
-
-                html_content = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
-                // console.log(html_content);
 
             });
 
@@ -897,16 +1134,20 @@
             const right_click_menu = document.getElementById('right_click_menu');
             iframeDoc.addEventListener('contextmenu', (event) => {
                 event.preventDefault();
-                console.log(event.target);
                 const iframe_rect = iframe.getBoundingClientRect();
                 right_click_menu.style.top = `${event.clientY + iframe_rect.top}px`;
                 right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
                 right_click_menu.style.display = 'block';
+
+                current_element = event.target;
+                console.log(current_element);
             });
             iframeDoc.addEventListener('click', () => {
                 right_click_menu.style.display = 'none';
             });
         });
+
     </script>
+
 </body>
 </html>
