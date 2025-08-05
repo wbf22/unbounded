@@ -2,9 +2,8 @@
 
 # Todo
 - css variables
-- color picker tool, show color hex
-- save and upload buttons
-- undo redo
+- color picker tool
+- mobile mode and sized styles
 
 
 | Selector type                    | Specificity score | Example                              |

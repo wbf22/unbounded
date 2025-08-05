@@ -74,6 +74,14 @@
             display: flex;
         }
 
+        #color_hex {
+            background-color: rgba(0, 0, 0, 0);
+            color: #dddddd;
+            border: var(--def_border);
+            outline: none;
+            margin: 1rem;
+        }
+
         #checkboxDiv {
             margin-right: 1rem;
         }
@@ -146,7 +154,7 @@
         }
 
 
-        #attributes_view {
+        .attributes_view {
             border: var(--def_border);
             background-color: #07002f;
 
@@ -306,8 +314,43 @@
             margin-right: 1rem;
         }
 
+        #add_css_variable_dialog {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
 
-    
+            display: none;
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+
+        }
+
+        .css_variable {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr;
+        }
+
+        .css_variable > * {
+            margin: .5rem;
+        }
+
+        .var_list_button {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        #var_list_buttons {
+            width: auto;
+            display: flex;
+
+        }
+
     </style>
 </head>
 <body>
@@ -328,14 +371,18 @@
                 <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
             </svg>
         </button>
-        <button class="control_button" onclick="">save</button>
-        <button class="control_button" onclick="">open</button>
+        <button class="control_button" onclick="save()">download</button>
+        <button class="control_button" onclick="open_file()">
+            open
+            <input type="file" id="file_input" style="display: none;"/>
+        </button>
+        <button class="control_button" onclick="show_add_css_variable_dialog()">edit css variable</button>
         <button class="control_button" onclick="show_hidden_divs()">show hidden divs</button>
         <button class="control_button" onclick="select_parent()">select parent</button>
     </div>
 
 
-    <div id="attributes_view">
+    <div id="attributes_view" class="attributes_view">
     </div>
 
 
@@ -343,6 +390,7 @@
 
     <div id="picker" tabindex="-1">
         <canvas class="preview" id="color-preview"></canvas>
+        <input id="color_hex" type="text"></input>
         <canvas id="sl-canvas" width="200" height="150"></canvas>
         <div id="picker_sliders_section">
             <input id="hue_slider" type="range" min="0" max="360" value="0" autocomplete="off">
@@ -384,6 +432,23 @@
 
     </div>
 
+    <div id="add_css_variable_dialog">
+        <h2>Edit CSS Variable</h2>
+
+        <p>
+            A css variable is a great way to keep things like colors and other styles consistant. 
+            It allows you to define something like a color '#0a85ff' to a name like '--primary-color'.
+            You can then user 'var(--primary-color)' to color an element, and then you can change that value here.
+        </p>
+        <p>This allows you to change the color for your entire website easily without having to change it for every element.</p>
+
+        <div id="css_variable_list" class="attributes_view">
+        </div>
+        <div id="var_list_buttons">
+            <button class="control_button var_list_button" onclick="add_new_variable_to_list()">+</button>
+            <button class="control_button var_list_button" onclick="remove_variable()">-</button>
+        </div>
+    </div>
 
 
 
@@ -394,8 +459,9 @@
         const iframe = document.getElementById('iframe');
         let iframeDoc = null;
         const gray_out = document.getElementById('gray_out');
-        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span"]);
-        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "select", "canvas", "body"];
+        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header"]);
+        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section"];
+        let file_name = "index.html";
 
         let actions = [];
         let undone_actions = [];
@@ -404,6 +470,14 @@
         const DELETE_ELEMENT = "DELETE_ELEMENT";
         const CHANGE_TEXT = "CHANGE_TEXT";
         const MOVE = "MOVE";
+        const TYPE = "TYPE";
+        
+        const css_variables = [
+            {
+                name: '--color-primary',
+                value: '#0a85ff'
+            }
+        ];
 
         let external_style_sheet_warning_given = false;
     </script>
@@ -910,6 +984,7 @@
         const preview_canvas = document.getElementById('color-preview');
         const alpha_background_canvas = document.getElementById('alpha_background_canvas');
         const checkboxDiv = document.getElementById('checkboxDiv');
+        const color_hex = document.getElementById('color_hex');
         const ctx = slCanvas.getContext('2d');
         let color_picker_target_function = null;
 
@@ -965,6 +1040,8 @@
 
             const color = `hsla(${hue}, ${sat}%, ${light}%, ${alpha})`;
             const rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
+            const hex = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+            color_hex.value = hex;
             checker_canvas(preview_canvas);
             composite_color_on_canvas(preview_canvas, rgba.r, rgba.g, rgba.b, rgba.a)
 
@@ -980,7 +1057,7 @@
         }
 
         function update_color() {
-            // console.log(hue, sat, light, alpha);
+            console.log(hue, sat, light, alpha);
 
             hue_slider.value = hue;
             alpha_slider.value = alpha;
@@ -1037,10 +1114,24 @@
             window.addEventListener('mouseup', upHandler);
         });
         
+        color_hex.addEventListener('input', (e) => {
+            console.log("hex change");
+            let hex = e.target.value;
+            const rgba = hex_to_rgba(hex);
+            const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
+            hue = hsla.hue;
+            sat = hsla.saturation;
+            light = hsla.lightness;
+            alpha = hsla.alpha / 100;
+            update_color();
+        });
+
         picker.addEventListener('focusout', (event) => {
             if (!picker.contains(event.relatedTarget)) {
                 picker.classList.add('hidden');
+                checkboxDiv.classList.remove('checked');
                 color_picker_target_function = null;
+                color_hex.value = '';
             }
         });
 
@@ -1491,8 +1582,6 @@
                     // Replace in the DOM
                     current_element.parentNode.replaceChild(newEl, current_element);
                     setAttributeView(newEl);
-
-                    console.log(get_iframe_html());
                 }
             );
             create_drop_down_attribiute_div(
@@ -1579,8 +1668,161 @@
             setAttributeView(parent);
         }
     
-    </script>
+        function save() {
+            const blob = new Blob([get_iframe_html()], { type: 'text/plain' });
 
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = file_name;
+
+            document.body.appendChild(link);  // Required for Firefox
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        const file_input = document.getElementById('file_input');
+        file_input.addEventListener('change', () => {
+            const file = file_input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                const text = event.target.result;
+                console.log('File content:', text);
+                html_content = text;
+                iframe.srcdoc = html_content;
+            };
+
+            reader.readAsText(file);
+        });
+        function open_file() {
+            file_input.click();
+        }
+
+
+        // css variable stuff
+        let selected_var = null;
+        function add_css_variable_to_list(name, value, index) {
+            const css_variable_list = document.getElementById('css_variable_list');
+            let css_variable = document.createElement("div");
+            css_variable.className = 'css_variable';
+            css_variable.addEventListener('click', function() {
+                let already_selected = selected_var && selected_var.element == this;
+
+                if (selected_var)
+                    selected_var.element.style.backgroundColor = ''; 
+                
+                if (already_selected) {
+                    selected_var = null;
+                }
+                else {
+                    selected_var = {
+                        element: this,
+                        name: name,
+                        value: value
+                    };
+                    this.style.backgroundColor = '#241387'; 
+                }
+            });
+
+            let name_input = document.createElement("input");
+            let value_input = document.createElement("input");
+
+            let name_div = document.createElement("div");
+            name_div.textContent = "name";
+            css_variable.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            css_variable.appendChild(semicolon);
+
+            name_input.className = 'attribute_input';
+            name_input.type = 'text';
+            name_input.value = name;
+            name_input.autocomplete = 'off';
+            name_input.addEventListener('input', (event) => {
+                edit_variable(name_input.parentElement, name_input, name_input.value, value_input.value);
+            });
+            css_variable.appendChild(name_input);
+
+            let value_div = document.createElement("div");
+            value_div.textContent = "value";
+            css_variable.appendChild(value_div);
+
+            css_variable.appendChild(semicolon);
+
+            value_input.className = 'attribute_input';
+            value_input.type = 'text';
+            value_input.value = value;
+            value_input.autocomplete = 'off';
+            value_input.addEventListener('input', (event) => {
+                edit_variable(name_input.parentElement, value_input, name_input.value, value_input.value);
+            });
+            css_variable.appendChild(value_input);
+
+            if (index) {
+                css_variable_list.insertBefore(css_variable, css_variable_list.children[index]);
+            }
+            else {
+                css_variable_list.appendChild(css_variable);
+            }
+        }
+        function show_add_css_variable_dialog() {
+            document.getElementById('gray_out').style.display = "block";
+            document.getElementById('add_css_variable_dialog').style.display = "flex"; 
+            
+            const css_variable_list = document.getElementById('css_variable_list');
+            css_variable_list.replaceChildren();
+            for (let css_var of css_variables) {
+                add_css_variable_to_list(css_var.name, css_var.value);
+            }
+        }
+
+        function add_new_variable_to_list() {
+            css_variables.push({
+                name: '--myvar',
+                value: '1rem'
+            });
+            add_css_variable_to_list("--myvar", '1rem');
+        }
+
+        function edit_variable(element, target, name, value) {
+            let index = get_element_index(element);
+            selected_var = {
+                element: element
+            };
+            remove_variable();
+
+            css_variables[index] = {
+                name: name,
+                value: value
+            };
+            add_css_variable_to_list(name, value, index);
+            target.focus();
+        }
+
+        function remove_variable() {
+            if (!selected_var) return;
+
+            let index = get_element_index(selected_var.element);
+            selected_var.element.remove();
+            css_variables.splice(1, index);
+            selected_var = null;
+        }
+
+        gray_out.addEventListener('click', (event) => {
+            console.log(event.target)
+            if (event.target === gray_out) {
+                document.getElementById('gray_out').style.display = "none";
+                hide_add_element_dialog();
+                document.getElementById('add_css_variable_dialog').style.display = "none";  
+            }
+        });
+
+
+    </script>
 
     <!-- right click menu -->
     <script>
@@ -1633,46 +1875,13 @@
         function hide_add_element_dialog() {
             document.getElementById('gray_out').style.display = "none";
             document.getElementById('add_element_menu').style.display = "none";
-
         }
 
         function add_element() {
             let type = add_element_type_select.value;
             
             let new_element = null;
-            if (type == "div") {
-                new_element = document.createElement("div");
-            }
-            else if (type == 'a') {
-                new_element = document.createElement("a");
-            }
-            else if (type == 'p') {
-                new_element = document.createElement("p");
-            }
-            else if (type == 'h1') {
-                new_element = document.createElement("h1");
-            }
-            else if (type == 'h2') {
-                new_element = document.createElement("h2");
-            }
-            else if (type == 'h3') {
-                new_element = document.createElement("h3");
-            }
-            else if (type == 'span') {
-                new_element = document.createElement("span");
-            }
-            else if (type == 'img') {
-                new_element = document.createElement("img");
-            }
-            else if (type == 'input') {
-                new_element = document.createElement("input");
-            }
-            else if (type == 'select') {
-                new_element = document.createElement("select");
-            }
-            else if (type == 'canvas') {
-                new_element = document.createElement("canvas");
-            }
+            new_element = document.createElement(type);
             
 
             if (text_types.has(type)) {
@@ -1724,14 +1933,6 @@
         }
         
         
-        gray_out.addEventListener('click', (event) => {
-            console.log(event.target)
-            if (event.target === gray_out) {
-                hide_add_element_dialog();
-            }
-        });
-
-
         function moveUp() {
             right_click_menu.style.display = "none";
 
