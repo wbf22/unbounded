@@ -215,6 +215,12 @@
             background-color: #10006b;
         }
 
+        #buttons_section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: row;
+        }
 
         .control_button {
             margin: 1rem;
@@ -223,6 +229,11 @@
             color: #dddddd;
             background-color: #07002f;
             cursor: pointer;
+            height: 1.5rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .control_button:hover {
@@ -304,10 +315,25 @@
 
     <iframe id="iframe"></iframe>
 
-    <button class="control_button" onclick="show_hidden_divs()">show hidden divs</button>
-    <button class="control_button" onclick="select_parent()">select parent</button>
-    <button class="control_button" onclick="">save</button>
-    <button class="control_button" onclick="">open</button>
+    <div id="buttons_section">
+        <button class="control_button" onclick="undo()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
+            </svg>
+        </button>
+        <button class="control_button" onclick="redo()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+            </svg>
+        </button>
+        <button class="control_button" onclick="">save</button>
+        <button class="control_button" onclick="">open</button>
+        <button class="control_button" onclick="show_hidden_divs()">show hidden divs</button>
+        <button class="control_button" onclick="select_parent()">select parent</button>
+    </div>
+
 
     <div id="attributes_view">
     </div>
@@ -366,6 +392,7 @@
     <script>
         let current_element = null;
         const iframe = document.getElementById('iframe');
+        let iframeDoc = null;
         const gray_out = document.getElementById('gray_out');
         const text_types = new Set(["p", "h1", "h2", "h3", "a", "span"]);
         const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "select", "canvas", "body"];
@@ -373,6 +400,10 @@
         let actions = [];
         let undone_actions = [];
         const STYLE = "STYLE";
+        const ADD_ELEMENT = "ADD_ELEMENT";
+        const DELETE_ELEMENT = "DELETE_ELEMENT";
+        const CHANGE_TEXT = "CHANGE_TEXT";
+        const MOVE = "MOVE";
 
         let external_style_sheet_warning_given = false;
     </script>
@@ -778,7 +809,6 @@
             }
 
             // check css and get highest specificity styles
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
             let property_to_specifier = {};
             for (const sheet of iframeDoc.styleSheets) {
                 // console.log(sheet.href);
@@ -833,6 +863,10 @@
             }
 
             return styles;
+        }
+
+        function get_element_index(el) {
+            return Array.from(el.parentNode.children).indexOf(el);
         }
 
         // CRYPTO RANDOM
@@ -1044,6 +1078,7 @@
         // color changing functions
 
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
+
             let rgba = null;
             if (hue_t < 0) {
                 current_element.style[style_property] = '';
@@ -1137,6 +1172,7 @@
             color_div.height = 20;
             attribute_text_content.appendChild(color_div);
             color_div.addEventListener('click', (event) => {
+                add_action(STYLE, current_element.id, style_property, current_element.style[style_property]);
 
                 color_picker_target_function = (hue, sat, light, alpha) => {
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
@@ -1494,6 +1530,7 @@
 
             if (text_types.has(type)) {
                 create_input_attribute_div("textContent", get_own_text(current_element), (event) => {
+                    add_action(CHANGE_TEXT, current_element.id, null, get_own_text(current_element));
                     set_own_text(current_element, event.target.value);
                 });
             }
@@ -1528,9 +1565,6 @@
 
         function show_hidden_divs() {
             
-            const iframe = document.getElementById('iframe');
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
             unhide_recursively(iframeDoc.body);
             attributes_view.replaceChildren();
             
@@ -1551,159 +1585,211 @@
     <!-- right click menu -->
     <script>
 
-    let new_element_text_area = document.getElementById("new_element_text_area");
-    function focus_on_new_element_text() {
-        new_element_text_area.focus();
-    }
-
-    const add_element_type_select = document.getElementById("add_element_type_select");
-    for (let type of all_types) {
-        let option_ele = document.createElement("option");
-        option_ele.textContent = type;
-        add_element_type_select.appendChild(option_ele);
-    }
-    add_element_type_select.addEventListener("change", () => {
-        set_add_element_options();
-        focus_on_new_element_text();
-    });
-
-
-
-    function set_add_element_options() {
-        let type = add_element_type_select.value;
-        let options = document.getElementById("add_element_options");
-        options.replaceChildren();
-        
-        if (!text_types.has(type)) {
-            new_element_text_area.style.display = "none";
-        }
-        else {
-            new_element_text_area.style.display = "block";
+        let new_element_text_area = document.getElementById("new_element_text_area");
+        function focus_on_new_element_text() {
+            new_element_text_area.focus();
         }
 
+        const add_element_type_select = document.getElementById("add_element_type_select");
+        for (let type of all_types) {
+            let option_ele = document.createElement("option");
+            option_ele.textContent = type;
+            add_element_type_select.appendChild(option_ele);
+        }
+        add_element_type_select.addEventListener("change", () => {
+            set_add_element_options();
+            focus_on_new_element_text();
+        });
 
-    }
 
 
-    const right_click_menu = document.getElementById('right_click_menu');
-    function show_add_element_dialog() {
-        right_click_menu.style.display = "none";
-        document.getElementById('gray_out').style.display = "block";
-        document.getElementById('add_element_menu').style.display = "flex";
-        focus_on_new_element_text();
+        function set_add_element_options() {
+            let type = add_element_type_select.value;
+            let options = document.getElementById("add_element_options");
+            options.replaceChildren();
+            
+            if (!text_types.has(type)) {
+                new_element_text_area.style.display = "none";
+            }
+            else {
+                new_element_text_area.style.display = "block";
+            }
 
-        set_add_element_options();
 
-    }
-
-    function hide_add_element_dialog() {
-        document.getElementById('gray_out').style.display = "none";
-        document.getElementById('add_element_menu').style.display = "none";
-
-    }
-
-    function add_element() {
-        let type = add_element_type_select.value;
-        
-        let new_element = null;
-        if (type == "div") {
-            new_element = document.createElement("div");
-        }
-        else if (type == 'a') {
-            new_element = document.createElement("a");
-        }
-        else if (type == 'p') {
-            new_element = document.createElement("p");
-        }
-        else if (type == 'h1') {
-            new_element = document.createElement("h1");
-        }
-        else if (type == 'h2') {
-            new_element = document.createElement("h2");
-        }
-        else if (type == 'h3') {
-            new_element = document.createElement("h3");
-        }
-        else if (type == 'span') {
-            new_element = document.createElement("span");
-        }
-        else if (type == 'img') {
-            new_element = document.createElement("img");
-        }
-        else if (type == 'input') {
-            new_element = document.createElement("input");
-        }
-        else if (type == 'select') {
-            new_element = document.createElement("select");
-        }
-        else if (type == 'canvas') {
-            new_element = document.createElement("canvas");
-        }
-        
-
-        if (text_types.has(type)) {
-            new_element.textContent = new_element_text_area.value;
         }
 
 
-        // make empty divs visible
-        if (type == "div" && !new_element.textContent) {
-            console.log("empty_div");
-            new_element.style.width = "10rem";
-            new_element.style.height = "2rem";
-            new_element.style.backgroundColor = "#848484";
+        const right_click_menu = document.getElementById('right_click_menu');
+        function show_add_element_dialog() {
+            right_click_menu.style.display = "none";
+            document.getElementById('gray_out').style.display = "block";
+            document.getElementById('add_element_menu').style.display = "flex";
+            focus_on_new_element_text();
+
+            set_add_element_options();
+
         }
 
+        function hide_add_element_dialog() {
+            document.getElementById('gray_out').style.display = "none";
+            document.getElementById('add_element_menu').style.display = "none";
 
-        new_element.id = uuidV4();
-        current_element.appendChild(new_element);
-
-
-        hide_add_element_dialog();
-
-    }
-
-
-    function delete_element() {
-        right_click_menu.style.display = "none";
-
-        if (current_element.tagName.toLowerCase() != "html" && current_element.tagName.toLowerCase() != "body") {
-            current_element.parentNode.removeChild(current_element);
         }
-        else {
-            alert("Looks like you tried to delete the html or body tag. These are base frames of the page. Shame on you 😠!");
-        }
-    }
-    
-    
-    gray_out.addEventListener('click', (event) => {
-        console.log(event.target)
-        if (event.target === gray_out) {
+
+        function add_element() {
+            let type = add_element_type_select.value;
+            
+            let new_element = null;
+            if (type == "div") {
+                new_element = document.createElement("div");
+            }
+            else if (type == 'a') {
+                new_element = document.createElement("a");
+            }
+            else if (type == 'p') {
+                new_element = document.createElement("p");
+            }
+            else if (type == 'h1') {
+                new_element = document.createElement("h1");
+            }
+            else if (type == 'h2') {
+                new_element = document.createElement("h2");
+            }
+            else if (type == 'h3') {
+                new_element = document.createElement("h3");
+            }
+            else if (type == 'span') {
+                new_element = document.createElement("span");
+            }
+            else if (type == 'img') {
+                new_element = document.createElement("img");
+            }
+            else if (type == 'input') {
+                new_element = document.createElement("input");
+            }
+            else if (type == 'select') {
+                new_element = document.createElement("select");
+            }
+            else if (type == 'canvas') {
+                new_element = document.createElement("canvas");
+            }
+            
+
+            if (text_types.has(type)) {
+                new_element.textContent = new_element_text_area.value;
+            }
+
+
+            // make empty divs visible
+            if (type == "div" && !new_element.textContent) {
+                console.log("empty_div");
+                new_element.style.width = "10rem";
+                new_element.style.height = "2rem";
+                new_element.style.backgroundColor = "#848484";
+            }
+
+
+            new_element.id = uuidV4();
+            current_element.appendChild(new_element);
+
+            add_action(ADD_ELEMENT, new_element.id);
+
+
             hide_add_element_dialog();
+
         }
-    });
 
 
-    function moveUp() {
-        right_click_menu.style.display = "none";
-        const previous = current_element.previousElementSibling;
-        if (previous) {
-            // Insert the element before its previous sibling
-            current_element.parentNode.insertBefore(current_element, previous);
+        function delete_element() {
+            right_click_menu.style.display = "none";
+
+            add_action(
+                DELETE_ELEMENT,
+                current_element.id,
+                null,
+                {
+                    parent: current_element.parentElement,
+                    element: current_element,
+                    index: get_element_index(current_element)
+                }
+            );
+
+            if (current_element.tagName.toLowerCase() != "html" && current_element.tagName.toLowerCase() != "body") {
+                current_element.parentNode.removeChild(current_element);
+            }
+            else {
+                alert("Looks like you tried to delete the html or body tag. These are base frames of the page. Shame on you 😠!");
+            }
+
         }
-    }
-    function moveDown() {
-        right_click_menu.style.display = "none";
-        const next = current_element.nextElementSibling;
-        if (next) {
-            // Insert next sibling before the element (which moves the element down)
-            current_element.parentNode.insertBefore(next, current_element);
+        
+        
+        gray_out.addEventListener('click', (event) => {
+            console.log(event.target)
+            if (event.target === gray_out) {
+                hide_add_element_dialog();
+            }
+        });
+
+
+        function moveUp() {
+            right_click_menu.style.display = "none";
+
+            const previous = current_element.previousElementSibling;
+            if (previous) {
+
+                add_action(
+                    MOVE,
+                    current_element.id,
+                    null,
+                    {
+                        original_parent: current_element.parentElement,
+                        original_index: get_element_index(current_element),
+                        new_parent: current_element.parentElement,
+                        new_index: get_element_index(previous),
+                    }
+                );
+
+                // Insert the element before its previous sibling
+                current_element.parentNode.insertBefore(current_element, previous);
+            }
         }
-    }
+        function moveDown() {
+            right_click_menu.style.display = "none";
+            const next = current_element.nextElementSibling;
+            if (next) {
+
+                add_action(
+                    MOVE,
+                    current_element.id,
+                    null,
+                    {
+                        original_parent: current_element.parentElement,
+                        original_index: get_element_index(current_element),
+                        new_parent: current_element.parentElement,
+                        new_index: get_element_index(next),
+                    }
+                );
+
+                // Insert next sibling before the element (which moves the element down)
+                current_element.parentNode.insertBefore(next, current_element);
+            }
+        }
+        
     </script>
 
     <!-- undo redo -->
     <script>
+
+        function sub_action(action) {
+            actions.push(action);
+            console.log(action);
+
+            // clear undone actions
+            undone_actions = [];
+            console.log(actions, undone_actions);
+
+        }
 
         function add_action(type, element_id, property, value) {
             action = {
@@ -1713,46 +1799,120 @@
                 value: value
             };
 
-            actions.push(action);
-            console.log(action);
-
-            // clear undone actions
-            undone_actions = [];
+            sub_action(action);
         }
 
+
         function undo() {
+            if (actions.length == 0) return;
+
             let action = actions.pop();
             
             // undo the action
-            if (action.type == "STYLE") {
-                const element = document.getElementById(action.element_id);
+            if (action.type == STYLE) {
+                const element = iframeDoc.getElementById(action.element_id);
                 let old_value = element.style[action.property];
                 element.style[action.property] = action.value;
                 action.value = old_value;
             }
+            else if (action.type == ADD_ELEMENT) {
+                const element = iframeDoc.getElementById(action.element_id);
+                action.value = {
+                    parent: element.parentElement,
+                    element: element,
+                    index: get_element_index(element)
+                };
+                element.remove();
+            }
+            else if (action.type == DELETE_ELEMENT) {
+                const parent = action.value.parent;
+                parent.insertBefore(action.value.element, parent.children[action.value.index]);
+            }
+            else if (action.type == CHANGE_TEXT) {
+                const element = iframeDoc.getElementById(action.element_id);
+                const old_text = action.value;
+                action.value = get_own_text(element);
+                set_own_text(element, old_text);
+            }
+            else if (action.type == MOVE) {
+                const element = iframeDoc.getElementById(action.element_id);
+                const original_parent = action.value.original_parent;
+                const original_index = action.value.original_index;
 
+                element.remove();
+                original_parent.insertBefore(element, original_parent.children[original_index]);
+            }
 
+            setAttributeView(current_element);
             undone_actions.push(action);
+            console.log(actions, undone_actions);
         }
 
         function redo() {
+            if (undone_actions.length == 0) return;
+
             let action = undone_actions.pop();
 
             // redo the action
-            if (action.type == "STYLE") {
-                const element = document.getElementById(action.element_id);
+            if (action.type == STYLE) {
+                const element = iframeDoc.getElementById(action.element_id);
                 let new_value = element.style[action.property];
                 element.style[action.property] = action.value;
                 action.value = new_value;
             }
+            else if (action.type == ADD_ELEMENT) {
+                const parent = action.value.parent;
+                parent.insertBefore(action.value.element, parent.children[action.value.index]);
+            }
+            else if (action.type == DELETE_ELEMENT) {
+                const element = iframeDoc.getElementById(action.element_id);
+                element.remove();
+            }
+            else if (action.type == CHANGE_TEXT) {
+                const element = iframeDoc.getElementById(action.element_id);
+                const old_text = action.value;
+                action.value = get_own_text(element);
+                set_own_text(element, old_text);
+            }
+            else if (action.type == MOVE) {
+                const element = iframeDoc.getElementById(action.element_id);
+                const new_parent = action.value.new_parent;
+                const new_index = action.value.new_index;
 
+                element.remove();
+                new_parent.insertBefore(element, new_parent.children[new_index]);
+            }
+
+            setAttributeView(current_element);
             actions.push(action);
+            console.log(actions, undone_actions);
         }
 
     </script>
 
-    <!-- iframe setup -->
+    <!-- iframe main page listeners -->
     <script>
+
+        const key_down_listener = (e) => {
+            const isZ = e.key.toLowerCase() === 'z';
+            const isUndo = isZ && (e.ctrlKey || e.metaKey) && !e.shiftKey;
+            const isRedo = isZ && (e.ctrlKey || e.metaKey) && e.shiftKey;
+
+            if (isUndo) {
+                e.preventDefault();
+                // console.log('Undo detected (Ctrl/Cmd + Z)');
+                undo();
+            }
+
+            if (isRedo) {
+                e.preventDefault();
+                // console.log('Redo detected (Ctrl/Cmd + Shift + Z)');
+                redo();
+            }
+        };
+        document.addEventListener('keydown', key_down_listener);
+
+
 
         function set_current_element(new_current_element) {
 
@@ -1776,6 +1936,10 @@
             }
 
             current_element = new_current_element;
+
+            if (!new_current_element.id) {
+                new_current_element.id = uuidV4();
+            }
         }
 
         function remove_outlines() {
@@ -1935,10 +2099,10 @@
 
         iframe.addEventListener('load', () => {
 
+            iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
 
             // set click listener on the document
-            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
             iframeDoc.addEventListener('click', (event) => {
                 // console.log(event.button);
 
@@ -1964,7 +2128,11 @@
             iframeDoc.addEventListener('click', () => {
                 right_click_menu.style.display = 'none';
             });
+        
+            iframeDoc.addEventListener('keydown', key_down_listener);
         });
+
+
 
     </script>
 
