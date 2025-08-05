@@ -370,6 +370,11 @@
         const text_types = new Set(["p", "h1", "h2", "h3", "a", "span"]);
         const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "select", "canvas", "body"];
 
+        let actions = [];
+        let undone_actions = [];
+        const STYLE = "STYLE";
+
+        let external_style_sheet_warning_given = false;
     </script>
 
     <!-- UTIL -->
@@ -680,13 +685,19 @@
         }
     
         function splitNumberAndUnit(input) {
-            const match = input.match(/^([\d.]+)([a-z%]+)$/);
-            if (match) {
-                return [match[1], match[2]];
-            } else {
-                // Handle invalid input
-                return ['', ''];
-        }
+            
+            input = input.trim();
+            if (is_numeric(input[0])) {
+                let end = 1;
+                while(is_numeric(input.substring(0, end))) end++;
+                end--;
+                let number = input.substring(0, end);
+                let unit = input.substring(end);
+                return [number, unit]; 
+            }
+            else {
+                return [input, '']; 
+            }
         }
     
         function get_own_text(element) {
@@ -707,7 +718,122 @@
             // If no text node exists, add one at the beginning
             element.insertBefore(document.createTextNode(newText), element.firstChild);
         }
+        
+        function getSpecificity(selector) {
+            let a = 0, b = 0, c = 0, d = 0;
 
+            selector = selector.replace(/:not\(([^)]+)\)/g, ' $1'); // ignore :not() content for simplicity
+
+            // Inline styles are not part of the selector string, so 'a' is 0 here
+
+            // Count ID selectors
+            b += (selector.match(/#[\w-]+/g) || []).length;
+
+            // Count class, attribute, and pseudo-class selectors
+            c += (selector.match(/\.[\w-]+/g) || []).length;
+            c += (selector.match(/\[[^\]]+\]/g) || []).length;
+            c += (selector.match(/:[^:][\w-]+/g) || []).length;
+
+            // Count element and pseudo-element selectors
+            d += (selector.match(/(^|[\s>+~])\w+/g) || []).length;
+            d += (selector.match(/::[\w-]+/g) || []).length;
+
+            return [a, b, c, d];
+        }
+
+        function compareSpecificity(selector1, selector2) {
+            if (selector1 == null && selector2 == null) {
+                return 0;
+            }
+            else if (selector1 == null && selector2 != null) {
+                return -1;
+            }
+            else if (selector1 != null && selector2 == null) {
+                return 1;
+            }
+
+            const spec1 = getSpecificity(selector1);
+            const spec2 = getSpecificity(selector2);
+
+            for (let i = 0; i < 4; i++) {
+                if (spec1[i] !== spec2[i]) {
+                    return spec1[i] - spec2[i];
+                }
+            }
+            return 0; // same specificity
+        }
+
+        function get_styles_for_element(element, style_properties){
+            // check for any inline styles
+            let styles = {};
+            let remaining_properties = [];
+            for (let property of style_properties) {
+                // console.log(property, element.style[property]);
+                if (element.style[property]) {
+                    styles[property] = element.style[property];
+                }
+                else {
+                    remaining_properties.push(property);
+                }
+            }
+
+            // check css and get highest specificity styles
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            let property_to_specifier = {};
+            for (const sheet of iframeDoc.styleSheets) {
+                // console.log(sheet.href);
+                // Ignore cross-origin stylesheets
+                try {
+                    for (const rule of sheet.cssRules || []) {
+                        // console.log(rule.selectorText);
+                        if (element.matches(rule.selectorText)) {
+                            for(let property of remaining_properties) {
+                                // console.log(property);
+                                const value = rule.style.getPropertyValue(property);
+                                let set_v = false;
+                                if (styles[property]) {
+                                    let current_specifier = property_to_specifier[property];
+                                    if (compareSpecificity(current_specifier, rule.selectorText) <= 0) {
+                                        set_v = true;
+                                    }
+                                }
+                                else {
+                                    set_v = true;
+                                }
+
+                                if (set_v && value) {
+                                    styles[property] = value.trim();
+                                    current_specifier = rule.selectorText;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Cross-origin stylesheet, skip
+                    if (!external_style_sheet_warning_given) {
+                        let message = [
+                            "Looks like you're referencing an external style sheet (",
+                            sheet.href,
+                            "). This will still work for your website, but we can't access the ",
+                            "styles to show you when you're editing elements."
+                        ]
+                        alert(message);
+                        external_style_sheet_warning_given = true;
+                    }
+                    continue;
+                }
+
+            }
+
+            // set everything else to empty strings
+            for(let property of remaining_properties) {
+                if (!styles[property]) {
+                    styles[property] = '';
+                }
+            }
+
+            return styles;
+        }
 
         // CRYPTO RANDOM
         function random_crypto(min, max) {
@@ -734,6 +860,10 @@
             return uuid.map((x) => x.toString(16)).join('');
         }
     
+        // NUMBERS
+        function is_numeric(str) {
+            return typeof str === 'string' && str.trim() !== '' && !isNaN(str);
+        }
     </script>
 
     <!-- color picker -->
@@ -816,6 +946,8 @@
         }
 
         function update_color() {
+            // console.log(hue, sat, light, alpha);
+
             hue_slider.value = hue;
             alpha_slider.value = alpha;
             updatePreview();
@@ -874,22 +1006,32 @@
         picker.addEventListener('focusout', (event) => {
             if (!picker.contains(event.relatedTarget)) {
                 picker.classList.add('hidden');
+                color_picker_target_function = null;
             }
         });
+
+        function check_inherited() {
+            color_picker_target_function(-1, -1, -1, -1);
+            update_color();
+            checkboxDiv.classList.add('checked');
+            // console.log("checked", checkboxDiv.classList);
+        }
+
+        function un_check_inherited() {
+            color_picker_target_function(0, 100, 50, 1);
+            update_color();
+            // console.log("unchecked", checkboxDiv.classList);
+        }
 
         checkboxDiv.addEventListener('click', () => {
             const is_checked = checkboxDiv.classList.contains('checked');
 
             if (!is_checked) {
-                color_picker_target_function(-1, -1, -1, -1);
+                check_inherited();
             }
-            update_color();
-
-            if (!is_checked) {
-                checkboxDiv.classList.add('checked');
+            else {
+                un_check_inherited();
             }
-            
-            
         });
 
         // Initialize
@@ -905,7 +1047,7 @@
             let rgba = null;
             if (hue_t < 0) {
                 current_element.style[style_property] = '';
-                const computed_color = getComputedStyle(current_element).color;
+                const computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
                 rgba = parse_any_format_to_rgba(computed_color);
 
                 const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
@@ -972,11 +1114,8 @@
             attributes_view.appendChild(attribute_text_content);
         }
 
-        function create_color_attribute_div(name, color, inherited, target_function) {
+        function create_color_attribute_div(name, style_property, target_function) {
 
-            if (inherited) {
-                console.log(color);
-            }
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -990,39 +1129,48 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
-            let color_rgba = parse_any_format_to_rgba(color);
+            let computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+            let color_rgba = parse_any_format_to_rgba(computed_color);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
             color_div.width = 20;
             color_div.height = 20;
             attribute_text_content.appendChild(color_div);
             color_div.addEventListener('click', (event) => {
-                picker.classList.remove('hidden');
-                picker.focus();
-                picker.style.top = event.clientY - 330 + 'px';
-                picker.style.left = event.clientX + 'px';
-                let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
-                hue = color_hsla.hue;
-                sat = color_hsla.saturation;
-                light = color_hsla.lightness;
-                alpha = color_hsla.alpha / 100;
-                update_color();
-            });
 
-
-            attributes_view.appendChild(attribute_text_content);
-            checker_canvas(color_div);
-            composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
-
-
-            color_div.addEventListener('click', (event) => {
                 color_picker_target_function = (hue, sat, light, alpha) => {
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
                     checker_canvas(color_div);
                     composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
                     target_function(hue, sat, light, alpha);
                 };
+                
+                picker.classList.remove('hidden');
+                picker.focus();
+                picker.style.top = event.clientY - 330 + 'px';
+                picker.style.left = event.clientX + 'px';
+                
+                computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+                let inherited = computed_color != current_element.style[style_property];
+                if (inherited) {
+                    checkboxDiv.click();
+                }
+                else {
+                    color_rgba = parse_any_format_to_rgba(computed_color);
+                    let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
+                    hue = color_hsla.hue;
+                    sat = color_hsla.saturation;
+                    light = color_hsla.lightness;
+                    alpha = color_hsla.alpha / 100;
+                    update_color();
+                }
+
             });
+
+
+            attributes_view.appendChild(attribute_text_content);
+            checker_canvas(color_div);
+            composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
 
         }
 
@@ -1118,23 +1266,35 @@
             attributes_view.appendChild(attribute_div);
 
 
-            measurement_input.addEventListener('input', (event) => {
+            let original = null;
+            let on_input = () => {
+                if (!original) original = current_element.style[style_property];
                 current_element.style[style_property] = measurement_input.value + select_div.value;
+            };
+            let on_done = () => {
+                add_action(STYLE, current_element.id, style_property, original);
+                original == null;
+            };
+
+            measurement_input.addEventListener('input', on_input);
+            select_div.addEventListener('change', ()=> {
+                on_input();
+                on_done();
             });
-            select_div.addEventListener('change', (event) => {
-                current_element.style[style_property] = measurement_input.value + select_div.value;
-            });
+            measurement_input.addEventListener('focusout', on_done);
         }
 
         function create_quad_input_attribute_div(name, value, style_property) {
             let numbers = [];
-            let unit = '';
+            let unit = 'px';
             let values = value.split(' ');
             for (let side_val of values) {
-                let split = splitNumberAndUnit(value);
+                let split = splitNumberAndUnit(side_val);
                 numbers.push(split[0]);
-                unit = split[1];
+                if (split[1])
+                    unit = split[1];
             }
+            // console.log("numbers", numbers);
 
 
             let attribute_div = document.createElement("div");
@@ -1191,25 +1351,36 @@
             attributes_view.appendChild(attribute_div);
 
 
-            listener = (event) => {
-                if (top_input.value && right_input.value && bottom_input.value && left_input.value) {
-                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
-                        right_input.value + select_div.value + ' ' +
-                        bottom_input.value + select_div.value + ' ' +
-                        left_input.value + select_div.value + ' ';
+            let original = null;
+            const listener = (event) => {
+                if (!original) original = current_element.style[style_property];
 
+                let top = top_input.value + (is_numeric(top_input.value)? select_div.value : '');
+                let right = right_input.value + (is_numeric(right_input.value)? select_div.value : '');
+                let bottom = bottom_input.value + (is_numeric(bottom_input.value)? select_div.value : '');
+                let left = left_input.value + (is_numeric(left_input.value)? select_div.value : '');
+
+                if (left) {
+                    bottom = bottom? bottom : 0 + select_div.value;
                 }
-                else if (top_input.value && right_input.value && bottom_input.value) {
-                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
-                        right_input.value + select_div.value + ' ' +
-                        bottom_input.value + select_div.value + ' ';
+                if (bottom || left) {
+                    right = right? right : 0 + select_div.value;
                 }
-                else if (top_input.value && right_input.value) {
-                    current_element.style[style_property] = top_input.value + select_div.value + ' ' +
-                        right_input.value + select_div.value + ' ';
+                if (right || bottom || left) {
+                    top = top? top : 0 + select_div.value;
                 }
-                else if (top_input.value) {
-                    current_element.style[style_property] = top_input.value + select_div.value;
+                
+                if (top && right && bottom && left) {
+                    current_element.style[style_property] = top + ' ' + right + ' ' + bottom + ' ' + left;
+                }
+                else if (top && right && bottom) {
+                    current_element.style[style_property] = top + ' ' + right + ' ' + bottom;
+                }
+                else if (top && right) {
+                    current_element.style[style_property] = top + ' ' + right;
+                }
+                else if (top) {
+                    current_element.style[style_property] = top;
                 }
                 else {
                     current_element.style[style_property] = '';
@@ -1218,12 +1389,24 @@
                 // console.log(top_input.value , right_input.value , bottom_input.value , left_input.value);
                 console.log(current_element.style[style_property]);
             };
+            const on_done = () => {
+                add_action(STYLE, current_element.id, style_property, original);
+                original == null;
+            };
 
             top_input.addEventListener('input', listener);
             right_input.addEventListener('input', listener);
             bottom_input.addEventListener('input', listener);
             left_input.addEventListener('input', listener);
-            select_div.addEventListener('input', listener);
+
+            top_input.addEventListener('focusout', on_done);
+            right_input.addEventListener('focusout', on_done);
+            bottom_input.addEventListener('focusout', on_done);
+            left_input.addEventListener('focusout', on_done);
+            select_div.addEventListener('change', (event) => {
+                listener(event);
+                on_done();
+            });
         }
 
         function setAttributeView(element) {
@@ -1232,6 +1415,23 @@
             set_current_element(element);
 
             let type = current_element.tagName.toLowerCase();
+
+            styles = get_styles_for_element(
+                current_element, 
+                [
+                    'display', 
+                    'flex',
+                    'flex-direction',
+                    'grid',
+                    'grid-template-columns',
+                    'width',
+                    'height',
+                    'margin',
+                    'padding',
+                    'color',
+                    'background-color'
+                ]
+            );
 
 
             // create_short_input_attribute_div("id", current_element.id, (event) => {
@@ -1261,30 +1461,33 @@
             );
             create_drop_down_attribiute_div(
                 "display", 
-                current_element.style.display, 
+                styles['display'], 
                 ["", "none", "flex", "grid", "block"], 
                 (event) => {
                     current_element.style.display = event.target.value;
                     setAttributeView(current_element);
+                    add_action(STYLE, current_element.id, 'display', event.target.value);
                 }
             );
 
             if (current_element.style.display == "flex") {
                 create_drop_down_attribiute_div(
                     "flex-direction", 
-                    current_element.style.flexDirection, 
+                    styles['flex-direction'], 
                     ["", "row", "column"], 
                     (event) => {
                         current_element.style.flexDirection = event.target.value;
+                        add_action(STYLE, current_element.id, 'flex-direction', event.target.value);
                     }
                 );
             }
             else if (current_element.style.display == "grid") {
                 create_short_input_attribute_div(
                     "grid-template-columns", 
-                    current_element.style.gridTemplateColumns, 
+                    styles['grid-template-columns'], 
                     (event) => {
                         current_element.style.gridTemplateColumns = event.target.value;
+                        add_action(STYLE, current_element.id, 'grid-template-columns', event.target.value);
                     }
                 );
             }
@@ -1294,18 +1497,13 @@
                     set_own_text(current_element, event.target.value);
                 });
             }
-            create_measurement_attribiute_div("width", current_element.style.width, "width");
-            create_measurement_attribiute_div("height", current_element.style.height, "height");
-            create_quad_input_attribute_div('margin', current_element.style.margin, 'margin');
-            create_quad_input_attribute_div('padding', current_element.style.padding, 'padding');
+            create_measurement_attribiute_div("width", styles['width'], "width");
+            create_measurement_attribiute_div("height", styles['height'], "height");
+            create_quad_input_attribute_div('margin', styles['margin'], 'margin');
+            create_quad_input_attribute_div('padding', styles['padding'], 'padding');
             
-            const computed_color = getComputedStyle(current_element).color;
-            const color_inherited = computed_color != current_element.style.color;
-            create_color_attribute_div("color", computed_color, color_inherited, update_element_color);
-            
-            const computed_background_color = getComputedStyle(current_element).backgroundColor;
-            const background_color_inherited = computed_background_color != current_element.style.backgroundColor;
-            create_color_attribute_div("background-color", computed_background_color, background_color_inherited, update_element_background_color);
+            create_color_attribute_div("color", "color", update_element_color);
+            create_color_attribute_div("background-color", "background-color", update_element_background_color);
         }
 
         function unsetAttributeView() {
@@ -1351,159 +1549,207 @@
 
 
     <!-- right click menu -->
-     <script>
+    <script>
 
-        let new_element_text_area = document.getElementById("new_element_text_area");
-        function focus_on_new_element_text() {
-            new_element_text_area.focus();
-        }
+    let new_element_text_area = document.getElementById("new_element_text_area");
+    function focus_on_new_element_text() {
+        new_element_text_area.focus();
+    }
 
-        const add_element_type_select = document.getElementById("add_element_type_select");
-        for (let type of all_types) {
-            let option_ele = document.createElement("option");
-            option_ele.textContent = type;
-            add_element_type_select.appendChild(option_ele);
-        }
-        add_element_type_select.addEventListener("change", () => {
-            set_add_element_options();
-            focus_on_new_element_text();
-        });
-
-
-
-        function set_add_element_options() {
-            let type = add_element_type_select.value;
-            let options = document.getElementById("add_element_options");
-            options.replaceChildren();
-            
-            if (!text_types.has(type)) {
-                new_element_text_area.style.display = "none";
-            }
-            else {
-                new_element_text_area.style.display = "block";
-            }
+    const add_element_type_select = document.getElementById("add_element_type_select");
+    for (let type of all_types) {
+        let option_ele = document.createElement("option");
+        option_ele.textContent = type;
+        add_element_type_select.appendChild(option_ele);
+    }
+    add_element_type_select.addEventListener("change", () => {
+        set_add_element_options();
+        focus_on_new_element_text();
+    });
 
 
-        }
 
-
-        const right_click_menu = document.getElementById('right_click_menu');
-        function show_add_element_dialog() {
-            right_click_menu.style.display = "none";
-            document.getElementById('gray_out').style.display = "block";
-            document.getElementById('add_element_menu').style.display = "flex";
-            focus_on_new_element_text();
-
-            set_add_element_options();
-
-        }
-
-        function hide_add_element_dialog() {
-            document.getElementById('gray_out').style.display = "none";
-            document.getElementById('add_element_menu').style.display = "none";
-
-        }
-
-        function add_element() {
-            let type = add_element_type_select.value;
-            
-            let new_element = null;
-            if (type == "div") {
-                new_element = document.createElement("div");
-            }
-            else if (type == 'a') {
-                new_element = document.createElement("a");
-            }
-            else if (type == 'p') {
-                new_element = document.createElement("p");
-            }
-            else if (type == 'h1') {
-                new_element = document.createElement("h1");
-            }
-            else if (type == 'h2') {
-                new_element = document.createElement("h2");
-            }
-            else if (type == 'h3') {
-                new_element = document.createElement("h3");
-            }
-            else if (type == 'span') {
-                new_element = document.createElement("span");
-            }
-            else if (type == 'img') {
-                new_element = document.createElement("img");
-            }
-            else if (type == 'input') {
-                new_element = document.createElement("input");
-            }
-            else if (type == 'select') {
-                new_element = document.createElement("select");
-            }
-            else if (type == 'canvas') {
-                new_element = document.createElement("canvas");
-            }
-            
-
-            if (text_types.has(type)) {
-                new_element.textContent = new_element_text_area.value;
-            }
-
-
-            // make empty divs visible
-            if (type == "div" && !new_element.textContent) {
-                console.log("empty_div");
-                new_element.style.width = "10rem";
-                new_element.style.height = "2rem";
-                new_element.style.backgroundColor = "#848484";
-            }
-
-
-            new_element.id = uuidV4();
-            current_element.appendChild(new_element);
-
-
-            hide_add_element_dialog();
-
-        }
-
-
-        function delete_element() {
-            right_click_menu.style.display = "none";
-
-            if (current_element.tagName.toLowerCase() != "html" && current_element.tagName.toLowerCase() != "body") {
-                current_element.parentNode.removeChild(current_element);
-            }
-            else {
-                alert("Looks like you tried to delete the html or body tag. These are base frames of the page. Shame on you 😠!");
-            }
-        }
-     
+    function set_add_element_options() {
+        let type = add_element_type_select.value;
+        let options = document.getElementById("add_element_options");
+        options.replaceChildren();
         
-        gray_out.addEventListener('click', (event) => {
-            console.log(event.target)
-            if (event.target === gray_out) {
-                hide_add_element_dialog();
-            }
-        });
-
-
-        function moveUp() {
-            right_click_menu.style.display = "none";
-            const previous = current_element.previousElementSibling;
-            if (previous) {
-                // Insert the element before its previous sibling
-                current_element.parentNode.insertBefore(current_element, previous);
-            }
+        if (!text_types.has(type)) {
+            new_element_text_area.style.display = "none";
         }
-        function moveDown() {
-            right_click_menu.style.display = "none";
-            const next = current_element.nextElementSibling;
-            if (next) {
-                // Insert next sibling before the element (which moves the element down)
-                current_element.parentNode.insertBefore(next, current_element);
-            }
+        else {
+            new_element_text_area.style.display = "block";
         }
-     </script>
 
+
+    }
+
+
+    const right_click_menu = document.getElementById('right_click_menu');
+    function show_add_element_dialog() {
+        right_click_menu.style.display = "none";
+        document.getElementById('gray_out').style.display = "block";
+        document.getElementById('add_element_menu').style.display = "flex";
+        focus_on_new_element_text();
+
+        set_add_element_options();
+
+    }
+
+    function hide_add_element_dialog() {
+        document.getElementById('gray_out').style.display = "none";
+        document.getElementById('add_element_menu').style.display = "none";
+
+    }
+
+    function add_element() {
+        let type = add_element_type_select.value;
+        
+        let new_element = null;
+        if (type == "div") {
+            new_element = document.createElement("div");
+        }
+        else if (type == 'a') {
+            new_element = document.createElement("a");
+        }
+        else if (type == 'p') {
+            new_element = document.createElement("p");
+        }
+        else if (type == 'h1') {
+            new_element = document.createElement("h1");
+        }
+        else if (type == 'h2') {
+            new_element = document.createElement("h2");
+        }
+        else if (type == 'h3') {
+            new_element = document.createElement("h3");
+        }
+        else if (type == 'span') {
+            new_element = document.createElement("span");
+        }
+        else if (type == 'img') {
+            new_element = document.createElement("img");
+        }
+        else if (type == 'input') {
+            new_element = document.createElement("input");
+        }
+        else if (type == 'select') {
+            new_element = document.createElement("select");
+        }
+        else if (type == 'canvas') {
+            new_element = document.createElement("canvas");
+        }
+        
+
+        if (text_types.has(type)) {
+            new_element.textContent = new_element_text_area.value;
+        }
+
+
+        // make empty divs visible
+        if (type == "div" && !new_element.textContent) {
+            console.log("empty_div");
+            new_element.style.width = "10rem";
+            new_element.style.height = "2rem";
+            new_element.style.backgroundColor = "#848484";
+        }
+
+
+        new_element.id = uuidV4();
+        current_element.appendChild(new_element);
+
+
+        hide_add_element_dialog();
+
+    }
+
+
+    function delete_element() {
+        right_click_menu.style.display = "none";
+
+        if (current_element.tagName.toLowerCase() != "html" && current_element.tagName.toLowerCase() != "body") {
+            current_element.parentNode.removeChild(current_element);
+        }
+        else {
+            alert("Looks like you tried to delete the html or body tag. These are base frames of the page. Shame on you 😠!");
+        }
+    }
+    
+    
+    gray_out.addEventListener('click', (event) => {
+        console.log(event.target)
+        if (event.target === gray_out) {
+            hide_add_element_dialog();
+        }
+    });
+
+
+    function moveUp() {
+        right_click_menu.style.display = "none";
+        const previous = current_element.previousElementSibling;
+        if (previous) {
+            // Insert the element before its previous sibling
+            current_element.parentNode.insertBefore(current_element, previous);
+        }
+    }
+    function moveDown() {
+        right_click_menu.style.display = "none";
+        const next = current_element.nextElementSibling;
+        if (next) {
+            // Insert next sibling before the element (which moves the element down)
+            current_element.parentNode.insertBefore(next, current_element);
+        }
+    }
+    </script>
+
+    <!-- undo redo -->
+    <script>
+
+        function add_action(type, element_id, property, value) {
+            action = {
+                type: type,
+                element_id: element_id,
+                property: property,
+                value: value
+            };
+
+            actions.push(action);
+            console.log(action);
+
+            // clear undone actions
+            undone_actions = [];
+        }
+
+        function undo() {
+            let action = actions.pop();
+            
+            // undo the action
+            if (action.type == "STYLE") {
+                const element = document.getElementById(action.element_id);
+                let old_value = element.style[action.property];
+                element.style[action.property] = action.value;
+                action.value = old_value;
+            }
+
+
+            undone_actions.push(action);
+        }
+
+        function redo() {
+            let action = undone_actions.pop();
+
+            // redo the action
+            if (action.type == "STYLE") {
+                const element = document.getElementById(action.element_id);
+                let new_value = element.style[action.property];
+                element.style[action.property] = action.value;
+                action.value = new_value;
+            }
+
+            actions.push(action);
+        }
+
+    </script>
 
     <!-- iframe setup -->
     <script>
@@ -1551,31 +1797,133 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Iframe Content</title>
-    <style>
-        html, body { 
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-            min-width: 100vw;
-            background-color: #dddddd;
-            font-family: 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Website</title>
+  <base target="_self">
+  <style>
+    :root {
+      --primary-color: #0a84ff;
+      --text-color: #333;
+      --bg-color: #f9f9f9;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-        body {
-            position: fixed;
-            top: 0;
-            left: 0;
-        }
-    </style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      line-height: 1.6;
+    }
+
+    header {
+      background: white;
+      border-bottom: 1px solid #ddd;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    nav a {
+      margin-left: 1.5rem;
+      text-decoration: none;
+      color: var(--text-color);
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      color: var(--primary-color);
+    }
+
+    .hero {
+      padding: 4rem 2rem;
+      text-align: center;
+      background-color: white;
+    }
+
+    .hero h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
+      color: #666;
+    }
+
+    .hero button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .hero button:hover {
+      background-color: #006edc;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    @media (max-width: 600px) {
+      nav a {
+        margin-left: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .hero h2 {
+        font-size: 2rem;
+      }
+
+      .hero p {
+        font-size: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <h1>My Page</h1>
-    <div>
-        <p>yay me!</p>
-        <p>i'm great!</p>
-    </div>
+
+  <header>
+    <h1>MySite</h1>
+    <nav>
+      <a href="/home.html">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Welcome to MySite</h2>
+    <p>Your one-stop solution for professional web design, development, and more.</p>
+    <button>Get Started</button>
+  </section>
+
+  <footer>
+    &copy; 2025 MySite. All rights reserved.
+  </footer>
+
 </body>
 </html>
 
@@ -1592,8 +1940,7 @@
             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
             iframeDoc.addEventListener('click', (event) => {
-
-                unsetAttributeView();
+                // console.log(event.button);
 
                 // get element
                 const element = event.target;
@@ -1612,8 +1959,7 @@
                 right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
                 right_click_menu.style.display = 'block';
 
-                set_current_element(event.target);
-                console.log(current_element);
+                setAttributeView(event.target);
             });
             iframeDoc.addEventListener('click', () => {
                 right_click_menu.style.display = 'none';
