@@ -351,6 +351,80 @@
 
         }
 
+        #open_menu {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
+
+            display: none;
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+
+        }
+
+        #open_text_area {
+            width: 100%;
+            height: 50vh;
+            padding: 0;
+        }
+
+        #file_input {
+            margin-bottom: 1rem;
+        }
+
+        #open_file_done_button {
+            margin-left: 0;
+        }
+
+        #class_editor_menu {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
+
+            width: 80vw;
+            height: 80vh;
+
+            display: none;
+            /* display: flex; */
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+
+
+        }
+
+        #class_attribute_view {
+            flex: 1;
+        }
+
+        #class_list {
+            height: 5rem;
+        }
+
+        .class_list_item {
+            background-color: #07002f;
+            border: none;
+            outline: none;
+            color: #dddddd;
+            padding: .5rem;
+        }
+
+        #new_class_name {
+            height: 1.5rem;
+            margin: 1rem;
+        }
+
     </style>
 </head>
 <body>
@@ -372,10 +446,8 @@
             </svg>
         </button>
         <button class="control_button" onclick="save()">download</button>
-        <button class="control_button" onclick="open_file()">
-            open
-            <input type="file" id="file_input" style="display: none;"/>
-        </button>
+        <button class="control_button" onclick="open_file()">open</button>
+        <button class="control_button" onclick="show_class_editor()">classes</button>
         <button class="control_button" onclick="show_add_css_variable_dialog()">edit css variable</button>
         <button class="control_button" onclick="show_hidden_divs()">show hidden divs</button>
         <button class="control_button" onclick="select_parent()">select parent</button>
@@ -450,6 +522,40 @@
         </div>
     </div>
 
+    <div id="open_menu">
+        <h2>Open</h2>
+
+        <p>
+            You can open a file or paste some html you wish to edit below
+        </p>
+        <input type="file" id="file_input"/>
+        <textarea id="open_text_area" class="attribute_input" autocomplete="off" placeholder="html here"></textarea>
+        <button id="open_file_done_button" class="control_button" onclick="open_file_done_button()">Done</button>
+
+    </div>
+
+    <div id="class_editor_menu">
+        <h3>Edit a Class</h3>
+
+        <p>
+            Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change instead of changing each element. This is very useful 
+            for things like buttons that you want to be consistant on your page.
+        </p>
+
+        <div id="class_list" class="attributes_view"></div>
+        <div id="var_list_buttons">
+            <input id="new_class_name" class="attribute_input" placeholder="new class name" type="text" autocomplete="off"></input>
+            <button class="control_button var_list_button" onclick="add_class()">+</button>
+            <button class="control_button var_list_button" onclick="remove_variable()">-</button>
+        </div>
+
+        <div id="class_attribute_view" class="attributes_view">
+        </div>
+    </div>
+
+
+
+
 
 
 
@@ -479,7 +585,9 @@
             }
         ];
 
+        const all_styles = ['display', 'flex', 'flex-direction', 'grid', 'grid-template-columns', 'width', 'height', 'margin', 'padding', 'color', 'background-color'];
         let external_style_sheet_warning_given = false;
+        let iframe_style = null;
     </script>
 
     <!-- UTIL -->
@@ -785,7 +893,8 @@
     
         // HTML
         function get_iframe_html() {
-
+            remove_outlines();
+            write_style_in_html();
             return '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
         }
     
@@ -868,7 +977,7 @@
             return 0; // same specificity
         }
 
-        function get_styles_for_element(element, style_properties){
+        function get_styles_for_element(element, style_properties, check_css){
             // check for any inline styles
             let styles = {};
             let remaining_properties = [];
@@ -883,48 +992,51 @@
             }
 
             // check css and get highest specificity styles
-            let property_to_specifier = {};
-            for (const sheet of iframeDoc.styleSheets) {
-                // console.log(sheet.href);
-                // Ignore cross-origin stylesheets
-                try {
-                    for (const rule of sheet.cssRules || []) {
-                        // console.log(rule.selectorText);
-                        if (element.matches(rule.selectorText)) {
-                            for(let property of remaining_properties) {
-                                // console.log(property);
-                                const value = rule.style.getPropertyValue(property);
-                                let set_v = false;
-                                if (styles[property]) {
-                                    let current_specifier = property_to_specifier[property];
-                                    if (compareSpecificity(current_specifier, rule.selectorText) <= 0) {
+            if (check_css) {
+                let property_to_specifier = {};
+                for (const sheet of iframeDoc.styleSheets) {
+                    // console.log(sheet.href);
+                    // Ignore cross-origin stylesheets
+                    try {
+                        for (const rule of sheet.cssRules || []) {
+                            // console.log(rule.selectorText);
+                            if (element.matches(rule.selectorText)) {
+                                for(let property of remaining_properties) {
+                                    // console.log(property);
+                                    const value = rule.style.getPropertyValue(property);
+                                    let set_v = false;
+                                    if (styles[property]) {
+                                        let current_specifier = property_to_specifier[property];
+                                        if (compareSpecificity(current_specifier, rule.selectorText) <= 0) {
+                                            set_v = true;
+                                        }
+                                    }
+                                    else {
                                         set_v = true;
                                     }
-                                }
-                                else {
-                                    set_v = true;
-                                }
 
-                                if (set_v && value) {
-                                    styles[property] = value.trim();
-                                    current_specifier = rule.selectorText;
+                                    if (set_v && value) {
+                                        styles[property] = value.trim();
+                                        current_specifier = rule.selectorText;
+                                    }
                                 }
                             }
                         }
+                    } catch (e) {
+                        // Cross-origin stylesheet, skip
+                        if (!external_style_sheet_warning_given) {
+                            let message = [
+                                "Looks like you're referencing an external style sheet (",
+                                sheet.href,
+                                "). This will still work for your website, but we can't access the ",
+                                "styles to show you when you're editing elements."
+                            ]
+                            alert(message.join(""));
+                            external_style_sheet_warning_given = true;
+                        }
+                        continue;
                     }
-                } catch (e) {
-                    // Cross-origin stylesheet, skip
-                    if (!external_style_sheet_warning_given) {
-                        let message = [
-                            "Looks like you're referencing an external style sheet (",
-                            sheet.href,
-                            "). This will still work for your website, but we can't access the ",
-                            "styles to show you when you're editing elements."
-                        ]
-                        alert(message);
-                        external_style_sheet_warning_given = true;
-                    }
-                    continue;
+
                 }
 
             }
@@ -1167,13 +1279,28 @@
     <script>
 
         // color changing functions
+        function get_computer_color(style_property) {
+            let computed_color = null;
+            if (current_element instanceof Element) {
+                computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+            } 
+            // for css classes that aren't elements
+            else {
+                computed_color = current_element.style[style_property];
+                if(!computed_color) {
+                    computed_color = 'rgba(0,0,0,0)';
+                }
+            }
+
+            return computed_color;
+        }
 
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
 
             let rgba = null;
             if (hue_t < 0) {
                 current_element.style[style_property] = '';
-                const computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+                const computed_color = get_computer_color(style_property);
                 rgba = parse_any_format_to_rgba(computed_color);
 
                 const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
@@ -1210,7 +1337,7 @@
 
         const attributes_view = document.getElementById("attributes_view");
 
-        function create_drop_down_attribiute_div(name, value, drop_down_options, listener) {
+        function create_drop_down_attribiute_div(target_attribute_view, name, value, drop_down_options, listener) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -1237,10 +1364,10 @@
             attribute_text_content.appendChild(select_div);
 
 
-            attributes_view.appendChild(attribute_text_content);
+            target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_color_attribute_div(name, style_property, target_function) {
+        function create_color_attribute_div(target_attribute_view, name, style_property, target_function) {
 
 
             let attribute_text_content = document.createElement("div");
@@ -1255,7 +1382,7 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
-            let computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+            let computed_color = get_computer_color(style_property);
             let color_rgba = parse_any_format_to_rgba(computed_color);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
@@ -1277,7 +1404,7 @@
                 picker.style.top = event.clientY - 330 + 'px';
                 picker.style.left = event.clientX + 'px';
                 
-                computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
+                let computed_color = get_computer_color(style_property);
                 let inherited = computed_color != current_element.style[style_property];
                 if (inherited) {
                     checkboxDiv.click();
@@ -1295,13 +1422,13 @@
             });
 
 
-            attributes_view.appendChild(attribute_text_content);
+            target_attribute_view.appendChild(attribute_text_content);
             checker_canvas(color_div);
             composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
 
         }
 
-        function create_input_attribute_div(name, text_content, listener) {
+        function create_input_attribute_div(target_attribute_view, name, text_content, listener) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -1323,10 +1450,10 @@
             attribute_text_content.appendChild(input_div);
 
 
-            attributes_view.appendChild(attribute_text_content);
+            target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_short_input_attribute_div(name, text_content, listener) {
+        function create_short_input_attribute_div(target_attribute_view, name, text_content, listener) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -1348,10 +1475,10 @@
             attribute_text_content.appendChild(input_div);
 
 
-            attributes_view.appendChild(attribute_text_content);
+            target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_measurement_attribiute_div(name, value, style_property) {
+        function create_measurement_attribiute_div(target_attribute_view, name, value, style_property) {
             let split = splitNumberAndUnit(value);
             // console.log(split);
             let number = split[0];
@@ -1390,7 +1517,7 @@
             side_pair.appendChild(select_div);
 
             attribute_div.appendChild(side_pair);
-            attributes_view.appendChild(attribute_div);
+            target_attribute_view.appendChild(attribute_div);
 
 
             let original = null;
@@ -1411,7 +1538,7 @@
             measurement_input.addEventListener('focusout', on_done);
         }
 
-        function create_quad_input_attribute_div(name, value, style_property) {
+        function create_quad_input_attribute_div(target_attribute_view, name, value, style_property) {
             let numbers = [];
             let unit = 'px';
             let values = value.split(' ');
@@ -1475,7 +1602,7 @@
             side_5.appendChild(select_div);
 
             attribute_div.appendChild(side_5);
-            attributes_view.appendChild(attribute_div);
+            target_attribute_view.appendChild(attribute_div);
 
 
             let original = null;
@@ -1545,19 +1672,8 @@
 
             styles = get_styles_for_element(
                 current_element, 
-                [
-                    'display', 
-                    'flex',
-                    'flex-direction',
-                    'grid',
-                    'grid-template-columns',
-                    'width',
-                    'height',
-                    'margin',
-                    'padding',
-                    'color',
-                    'background-color'
-                ]
+                all_styles,
+                true
             );
 
 
@@ -1565,6 +1681,7 @@
             //     current_element.id = event.target.value;
             // });
             create_drop_down_attribiute_div(
+                attributes_view,
                 "type", 
                 type, 
                 all_types, 
@@ -1585,6 +1702,7 @@
                 }
             );
             create_drop_down_attribiute_div(
+                attributes_view,
                 "display", 
                 styles['display'], 
                 ["", "none", "flex", "grid", "block"], 
@@ -1597,6 +1715,7 @@
 
             if (current_element.style.display == "flex") {
                 create_drop_down_attribiute_div(
+                    attributes_view,
                     "flex-direction", 
                     styles['flex-direction'], 
                     ["", "row", "column"], 
@@ -1608,6 +1727,7 @@
             }
             else if (current_element.style.display == "grid") {
                 create_short_input_attribute_div(
+                    attributes_view,
                     "grid-template-columns", 
                     styles['grid-template-columns'], 
                     (event) => {
@@ -1618,18 +1738,18 @@
             }
 
             if (text_types.has(type)) {
-                create_input_attribute_div("textContent", get_own_text(current_element), (event) => {
+                create_input_attribute_div(attributes_view, "textContent", get_own_text(current_element), (event) => {
                     add_action(CHANGE_TEXT, current_element.id, null, get_own_text(current_element));
                     set_own_text(current_element, event.target.value);
                 });
             }
-            create_measurement_attribiute_div("width", styles['width'], "width");
-            create_measurement_attribiute_div("height", styles['height'], "height");
-            create_quad_input_attribute_div('margin', styles['margin'], 'margin');
-            create_quad_input_attribute_div('padding', styles['padding'], 'padding');
+            create_measurement_attribiute_div(attributes_view, "width", styles['width'], "width");
+            create_measurement_attribiute_div(attributes_view, "height", styles['height'], "height");
+            create_quad_input_attribute_div(attributes_view, 'margin', styles['margin'], 'margin');
+            create_quad_input_attribute_div(attributes_view, 'padding', styles['padding'], 'padding');
             
-            create_color_attribute_div("color", "color", update_element_color);
-            create_color_attribute_div("background-color", "background-color", update_element_background_color);
+            create_color_attribute_div(attributes_view, "color", "color", update_element_color);
+            create_color_attribute_div(attributes_view, "background-color", "background-color", update_element_background_color);
         }
 
         function unsetAttributeView() {
@@ -1638,6 +1758,131 @@
             // take outline off last element
             remove_outlines();
 
+        }
+    </script>
+
+    <!-- class editing -->
+    <script>
+        const class_editor_menu = document.getElementById("class_editor_menu");
+        const class_attribute_view = document.getElementById("class_attribute_view");
+        const class_list = document.getElementById("class_list");
+        const new_class_name = document.getElementById("new_class_name");
+        let selected_class = null;
+        function add_class() {
+            const class_name = new_class_name.value;
+
+            if (!iframe_style.sheet) { // check if style.sheet is available
+                set_style_div();
+            }
+
+            // add new class to iframe
+            iframe_style.sheet.insertRule(`.${class_name} {}`, iframe_style.sheet.cssRules.length);
+
+
+            // add to list
+            let class_item = document.createElement("div");
+            class_item.addEventListener('click', function() {
+                let already_selected = selected_class && selected_class.class_name == class_item.textContent;
+
+                if (selected_class)
+                    selected_class.element.style.backgroundColor = ''; 
+                if (already_selected) {
+                    selected_class = null;
+                }
+                else {
+                    selected_class = {
+                        element: this,
+                        class_name: class_item.textContent
+                    };
+                    this.style.backgroundColor = '#241387'; 
+                }
+
+            });
+
+            class_item.className = 'class_list_item';
+            class_item.textContent = class_name;
+            class_list.appendChild(class_item);
+            class_item.click();
+
+
+            set_class_attribute_view();
+        }
+
+        function set_class_attribute_view() {
+            class_attribute_view.replaceChildren();
+
+            if (selected_class) {
+                const styles_elements = iframeDoc.querySelectorAll('style');
+                styles_elements.forEach((styleEl) => {
+                    if (styleEl.sheet) {
+                        const rules = styleEl.sheet.cssRules;
+                        for (let i = 0; i < rules.length; i++) {
+                            const rule = rules[i];
+                            if (rule.selectorText && rule.selectorText === `.${selected_class.class_name}`) {
+                                current_element = rule;
+                            }
+                        }
+                    }
+                });
+
+                const styles = get_styles_for_element(
+                    current_element, 
+                    all_styles,
+                    false
+                );
+
+
+                create_drop_down_attribiute_div(
+                    class_attribute_view,
+                    "display", 
+                    styles['display'], 
+                    ["", "none", "flex", "grid", "block"], 
+                    (event) => {
+                        current_element.style.display = event.target.value;
+                        set_class_attribute_view();
+                        add_action(STYLE, current_element.id, 'display', event.target.value);
+                    }
+                );
+
+                if (current_element.style.display == "flex") {
+                    create_drop_down_attribiute_div(
+                        class_attribute_view,
+                        "flex-direction", 
+                        styles['flex-direction'], 
+                        ["", "row", "column"], 
+                        (event) => {
+                            current_element.style.flexDirection = event.target.value;
+                            add_action(STYLE, current_element.id, 'flex-direction', event.target.value);
+                        }
+                    );
+                }
+                else if (current_element.style.display == "grid") {
+                    create_short_input_attribute_div(
+                        class_attribute_view,
+                        "grid-template-columns", 
+                        styles['grid-template-columns'], 
+                        (event) => {
+                            current_element.style.gridTemplateColumns = event.target.value;
+                            add_action(STYLE, current_element.id, 'grid-template-columns', event.target.value);
+                        }
+                    );
+                }
+
+                create_measurement_attribiute_div(class_attribute_view, "width", styles['width'], "width");
+                create_measurement_attribiute_div(class_attribute_view, "height", styles['height'], "height");
+                create_quad_input_attribute_div(class_attribute_view, 'margin', styles['margin'], 'margin');
+                create_quad_input_attribute_div(class_attribute_view, 'padding', styles['padding'], 'padding');
+                
+                create_color_attribute_div(class_attribute_view, "color", "color", update_element_color);
+                create_color_attribute_div(class_attribute_view, "background-color", "background-color", update_element_background_color);   
+
+            }
+            
+        }
+
+        function show_class_editor() {
+            document.getElementById('gray_out').style.display = "block";
+            class_editor_menu.style.display = 'flex';
         }
     </script>
 
@@ -1680,6 +1925,8 @@
             document.body.removeChild(link);
         }
 
+        const open_menu = document.getElementById('open_menu');
+        const open_text_area = document.getElementById('open_text_area');
         const file_input = document.getElementById('file_input');
         file_input.addEventListener('change', () => {
             const file = file_input.files[0];
@@ -1689,15 +1936,22 @@
 
             reader.onload = function(event) {
                 const text = event.target.result;
-                console.log('File content:', text);
-                html_content = text;
-                iframe.srcdoc = html_content;
+                open_text_area.value = text;
             };
 
             reader.readAsText(file);
         });
         function open_file() {
-            file_input.click();
+            document.getElementById('gray_out').style.display = "block";
+            document.getElementById('open_menu').style.display = "block";
+            open_text_area.value = get_iframe_html();
+        }
+
+        function open_file_done_button() {
+            iframe.srcdoc = open_text_area.value;
+
+            document.getElementById('gray_out').style.display = "none";
+            open_menu.style.display = 'none';
         }
 
 
@@ -1818,6 +2072,8 @@
                 document.getElementById('gray_out').style.display = "none";
                 hide_add_element_dialog();
                 document.getElementById('add_css_variable_dialog').style.display = "none";  
+                open_menu.style.display = "none";
+                class_editor_menu.style.display = 'none';
             }
         });
 
@@ -1983,8 +2239,15 @@
     <script>
 
         function sub_action(action) {
+            
+            // add action
             actions.push(action);
             console.log(action);
+
+            // chop stack if too large
+            if (actions.length > 100) {
+                actions = actions.slice(0, 100);
+            }
 
             // clear undone actions
             undone_actions = [];
@@ -2157,6 +2420,30 @@
 
         }
 
+        function set_style_div() {
+
+            const styles = iframeDoc.querySelectorAll('style');
+            if (styles.length > 0) {
+                iframe_style = styles[0];
+            }
+            else {
+                iframe_style = iframeDoc.createElement('style');
+                iframeDoc.head.appendChild(iframe_style);        
+            }
+
+            iframe_style.id = "iframe_style";
+        }
+
+        function write_style_in_html() {
+            // Loop through the rules
+            let css_texts = [];
+            for (let i = 0; i < iframe_style.sheet.cssRules.length; i++) {
+                css_texts.push("\n\t\t" + iframe_style.sheet.cssRules[i].cssText) + "";
+                // console.log(iframe_style.sheet.cssRules[i].cssText);
+            }
+
+            iframe_style.innerHTML = css_texts.join("\n") + "\n";
+        }
 
         let html_content = `
 <!DOCTYPE html>
@@ -2296,12 +2583,12 @@
 
         iframe.srcdoc = html_content;
 
-        
-
         iframe.addEventListener('load', () => {
 
             iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
 
+            // set style div for class editing
+            set_style_div();
 
             // set click listener on the document
             iframeDoc.addEventListener('click', (event) => {

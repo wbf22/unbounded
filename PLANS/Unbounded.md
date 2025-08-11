@@ -1,9 +1,9 @@
 
 
 # Todo
-- css variables
 - color picker tool
 - mobile mode and sized styles
+- classes
 
 
 | Selector type                    | Specificity score | Example                              |
