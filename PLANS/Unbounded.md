@@ -3,7 +3,8 @@
 # Todo
 - color picker tool
 - mobile mode and sized styles
-- classes
+- text hints on styles
+- add remove color option for color picker
 
 
 | Selector type                    | Specificity score | Example                              |

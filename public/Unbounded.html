@@ -36,6 +36,7 @@
         }
 
         #picker {
+            z-index: 1002;
             position: fixed;
             top: 50%;
             left: 50%;
@@ -51,6 +52,7 @@
 
             outline: none;
         }
+
 
         picker_input {
             width: 100%;
@@ -425,6 +427,14 @@
             margin: 1rem;
         }
 
+        .class_check_option {
+            display: flex;
+        }
+        
+        .class_check_option > * {
+            margin-right: 1rem;
+        }
+
     </style>
 </head>
 <body>
@@ -538,7 +548,7 @@
         <h3>Edit a Class</h3>
 
         <p>
-            Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change instead of changing each element. This is very useful 
+            Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change, instead of changing each element. This is useful 
             for things like buttons that you want to be consistant on your page.
         </p>
 
@@ -546,7 +556,7 @@
         <div id="var_list_buttons">
             <input id="new_class_name" class="attribute_input" placeholder="new class name" type="text" autocomplete="off"></input>
             <button class="control_button var_list_button" onclick="add_class()">+</button>
-            <button class="control_button var_list_button" onclick="remove_variable()">-</button>
+            <button class="control_button var_list_button" onclick="remove_class()">-</button>
         </div>
 
         <div id="class_attribute_view" class="attributes_view">
@@ -577,6 +587,8 @@
         const CHANGE_TEXT = "CHANGE_TEXT";
         const MOVE = "MOVE";
         const TYPE = "TYPE";
+        const ADD_CLASS = "ADD_CLASS";
+        const REMOVE_CLASS = "REMOVE_CLASS";
         
         const css_variables = [
             {
@@ -1055,6 +1067,92 @@
             return Array.from(el.parentNode.children).indexOf(el);
         }
 
+        function get_all_css_classes() {
+
+            function get_classes(rules) {
+                let css_classes = new Set();
+                for (let i = 0; i < rules.length; i++) {
+                    const rule = rules[i];
+
+                    if (rule.type === CSSRule.MEDIA_RULE) {
+                        const inner_classes = get_classes(rule.cssRules);
+                        for (let classz of inner_classes) {
+                            css_classes.add(classz);
+                        }
+                    }
+                    else {
+                        // Check if the selector involves classes
+                        // Multiple selectors separated by comma
+                        const selectors = rule.selectorText.split(',');
+                        selectors.forEach(selector => {
+                            const trimmed = selector.split(' ')[0].trim();
+                            if (trimmed.startsWith('.')) {
+                                css_classes.add(trimmed.substring(1));
+                            }
+                        });
+                    }
+                }
+
+                return css_classes;
+            }
+
+            return Array.from(
+                get_classes(iframe_style.sheet.cssRules)
+            );
+            
+        }
+
+        function is_current_an_element() {
+            return current_element && current_element.nodeType === 1;
+        }
+
+        function get_rule_from_iframe_style(class_name) {
+
+            if (iframe_style.sheet) {
+                const rules = iframe_style.sheet.cssRules;
+                for (let i = 0; i < rules.length; i++) {
+                    const rule = rules[i];
+                    if (rule.selectorText && rule.selectorText === `.${class_name}`) {
+                        return rule;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        function remove_rule(class_name) {
+            for (let i = 0; i < iframe_style.sheet.cssRules.length; i++) {
+                const rule = iframe_style.sheet.cssRules[i];
+                if (rule.selectorText === `.${class_name}`) {
+                    iframe_style.sheet.deleteRule(i);
+                    ruleIndex = i;
+                    break;
+                }
+            }
+
+        }
+
+        function change_type(element, new_type) {
+            const newEl = document.createElement(new_type);
+
+            // Copy attributes
+            for (const attr of element.attributes) {
+                newEl.setAttribute(attr.name, attr.value);
+            }
+
+            // Copy inner content
+            newEl.innerHTML = element.innerHTML;
+
+            // Replace in the DOM
+            const id = element.id;
+            element.parentNode.replaceChild(newEl, element);
+            newEl.id = id;
+
+            return newEl;
+        }
+        
+
         // CRYPTO RANDOM
         function random_crypto(min, max) {
             // Create a Uint32Array to hold the random value
@@ -1169,7 +1267,7 @@
         }
 
         function update_color() {
-            console.log(hue, sat, light, alpha);
+            // console.log(hue, sat, light, alpha);
 
             hue_slider.value = hue;
             alpha_slider.value = alpha;
@@ -1281,7 +1379,7 @@
         // color changing functions
         function get_computer_color(style_property) {
             let computed_color = null;
-            if (current_element instanceof Element) {
+            if (is_current_an_element()) {
                 computed_color = getComputedStyle(current_element).getPropertyValue(style_property);
             } 
             // for css classes that aren't elements
@@ -1318,6 +1416,7 @@
             current_element.style[style_property] = hex;
 
             // console.log(hue, sat, light, alpha);
+            // console.log(current_element);
             // console.log(rgba);
             // console.log(hex);
         }
@@ -1332,10 +1431,59 @@
 
 
 
-
         // creating the attributes fields
 
         const attributes_view = document.getElementById("attributes_view");
+
+        function create_multi_select_attribute_div(target_attribute_view, name, value, drop_down_options, onCheck, onUnCheck) {
+
+            let attribute_text_content = document.createElement("div");
+            attribute_text_content.className = 'attribute';
+
+            let name_div = document.createElement("div");
+            name_div.textContent = name;
+            attribute_text_content.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_text_content.appendChild(semicolon);
+
+            let select_div = document.createElement("div");
+            select_div.className = 'class_check_option';
+            for (let option of drop_down_options) {
+
+                let checkbox = document.createElement("div");
+                checkbox.className = 'custom-checkbox';
+                if (current_element.classList.contains(option)) {
+                    checkbox.classList.add('checked');
+                }
+
+                let label = document.createElement("div");
+                label.textContent = option;
+
+                select_div.appendChild(checkbox);
+                select_div.appendChild(label);
+
+                checkbox.addEventListener('click', () => {
+                    const is_checked = checkbox.classList.contains('checked');
+
+                    if (!is_checked) {
+                        checkbox.classList.add('checked');
+                        onCheck(option);
+                    }
+                    else {
+                        checkbox.classList.remove('checked');
+                        onUnCheck(option);
+                    }
+                });
+            }
+            
+            attribute_text_content.appendChild(select_div);
+
+
+            target_attribute_view.appendChild(attribute_text_content);
+        }
 
         function create_drop_down_attribiute_div(target_attribute_view, name, value, drop_down_options, listener) {
 
@@ -1383,6 +1531,7 @@
             attribute_text_content.appendChild(semicolon);
 
             let computed_color = get_computer_color(style_property);
+            console.log(computed_color);
             let color_rgba = parse_any_format_to_rgba(computed_color);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
@@ -1390,7 +1539,7 @@
             color_div.height = 20;
             attribute_text_content.appendChild(color_div);
             color_div.addEventListener('click', (event) => {
-                add_action(STYLE, current_element.id, style_property, current_element.style[style_property]);
+                add_action(STYLE, current_element, style_property, current_element.style[style_property]);
 
                 color_picker_target_function = (hue, sat, light, alpha) => {
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
@@ -1526,7 +1675,7 @@
                 current_element.style[style_property] = measurement_input.value + select_div.value;
             };
             let on_done = () => {
-                add_action(STYLE, current_element.id, style_property, original);
+                add_action(STYLE, current_element, style_property, original);
                 original == null;
             };
 
@@ -1644,7 +1793,7 @@
                 console.log(current_element.style[style_property]);
             };
             const on_done = () => {
-                add_action(STYLE, current_element.id, style_property, original);
+                add_action(STYLE, current_element, style_property, original);
                 original == null;
             };
 
@@ -1677,6 +1826,20 @@
             );
 
 
+            // classes
+            create_multi_select_attribute_div(
+                attributes_view,
+                "classes", 
+                '', 
+                get_all_css_classes(), 
+                (class_name) => {
+                    current_element.classList.add(class_name);
+                }, 
+                (class_name) => {
+                    current_element.classList.remove(class_name);
+                }
+            );
+
             // create_short_input_attribute_div("id", current_element.id, (event) => {
             //     current_element.id = event.target.value;
             // });
@@ -1686,19 +1849,20 @@
                 type, 
                 all_types, 
                 (event) => {
-                    const newEl = document.createElement(event.target.value);
 
-                    // Copy attributes
-                    for (const attr of current_element.attributes) {
-                        newEl.setAttribute(attr.name, attr.value);
-                    }
+                    let old_type = current_element.tagName.toLowerCase();
+                    current_element = change_type(current_element, event.target.value);
+                    setAttributeView(current_element);
 
-                    // Copy inner content
-                    newEl.innerHTML = current_element.innerHTML;
-
-                    // Replace in the DOM
-                    current_element.parentNode.replaceChild(newEl, current_element);
-                    setAttributeView(newEl);
+                    add_action(
+                        TYPE, 
+                        current_element,
+                        null, 
+                        {
+                            old_type: old_type,
+                            new_type: event.target.value
+                        }
+                    );
                 }
             );
             create_drop_down_attribiute_div(
@@ -1709,7 +1873,7 @@
                 (event) => {
                     current_element.style.display = event.target.value;
                     setAttributeView(current_element);
-                    add_action(STYLE, current_element.id, 'display', event.target.value);
+                    add_action(STYLE, current_element, 'display', event.target.value);
                 }
             );
 
@@ -1721,7 +1885,7 @@
                     ["", "row", "column"], 
                     (event) => {
                         current_element.style.flexDirection = event.target.value;
-                        add_action(STYLE, current_element.id, 'flex-direction', event.target.value);
+                        add_action(STYLE, current_element, 'flex-direction', event.target.value);
                     }
                 );
             }
@@ -1732,14 +1896,14 @@
                     styles['grid-template-columns'], 
                     (event) => {
                         current_element.style.gridTemplateColumns = event.target.value;
-                        add_action(STYLE, current_element.id, 'grid-template-columns', event.target.value);
+                        add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
                     }
                 );
             }
 
             if (text_types.has(type)) {
                 create_input_attribute_div(attributes_view, "textContent", get_own_text(current_element), (event) => {
-                    add_action(CHANGE_TEXT, current_element.id, null, get_own_text(current_element));
+                    add_action(CHANGE_TEXT, current_element, null, get_own_text(current_element));
                     set_own_text(current_element, event.target.value);
                 });
             }
@@ -1768,18 +1932,8 @@
         const class_list = document.getElementById("class_list");
         const new_class_name = document.getElementById("new_class_name");
         let selected_class = null;
-        function add_class() {
-            const class_name = new_class_name.value;
 
-            if (!iframe_style.sheet) { // check if style.sheet is available
-                set_style_div();
-            }
-
-            // add new class to iframe
-            iframe_style.sheet.insertRule(`.${class_name} {}`, iframe_style.sheet.cssRules.length);
-
-
-            // add to list
+        function add_class_to_list(class_name) {
             let class_item = document.createElement("div");
             class_item.addEventListener('click', function() {
                 let already_selected = selected_class && selected_class.class_name == class_item.textContent;
@@ -1803,27 +1957,62 @@
             class_item.textContent = class_name;
             class_list.appendChild(class_item);
             class_item.click();
+        }
 
+        function load_class_list() {
+            class_list.replaceChildren();
+            let classes = get_all_css_classes();
+            for (let clazz of classes) {
+                add_class_to_list(clazz);
+            }
+        }
 
+        function add_class() {
+            const class_name = new_class_name.value;
+
+            if (!iframe_style.sheet) { // check if style.sheet is available
+                set_style_div();
+            }
+
+            // add new class to iframe
+            iframe_style.sheet.insertRule(`.${class_name} {}`, iframe_style.sheet.cssRules.length);
+            add_class_to_list(class_name);
+
+            // set views
             set_class_attribute_view();
+
+            // add undo action
+            add_action(ADD_CLASS, current_element, class_name, get_rule_from_iframe_style(selected_class.class_name));
+        }
+
+        function remove_class() {
+            if (!selected_class) return;
+
+            // remove from iframe style
+            remove_rule(selected_class.class_name);
+
+            // remove from list
+            selected_class.element.remove();
+
+            // add undo action
+            add_action(REMOVE_CLASS, current_element, class_name, get_rule_from_iframe_style(selected_class.class_name));
+            current_element = null;
+
+            // set selected to null
+            selected_class = null;
+            new_class_name.value = '';
+            set_class_attribute_view();
+            
         }
 
         function set_class_attribute_view() {
             class_attribute_view.replaceChildren();
+            load_class_list();
+            // new_class_name.value = '';
 
             if (selected_class) {
-                const styles_elements = iframeDoc.querySelectorAll('style');
-                styles_elements.forEach((styleEl) => {
-                    if (styleEl.sheet) {
-                        const rules = styleEl.sheet.cssRules;
-                        for (let i = 0; i < rules.length; i++) {
-                            const rule = rules[i];
-                            if (rule.selectorText && rule.selectorText === `.${selected_class.class_name}`) {
-                                current_element = rule;
-                            }
-                        }
-                    }
-                });
+
+                current_element = get_rule_from_iframe_style(selected_class.class_name);
 
                 const styles = get_styles_for_element(
                     current_element, 
@@ -1840,7 +2029,7 @@
                     (event) => {
                         current_element.style.display = event.target.value;
                         set_class_attribute_view();
-                        add_action(STYLE, current_element.id, 'display', event.target.value);
+                        add_action(STYLE, current_element, 'display', event.target.value);
                     }
                 );
 
@@ -1852,7 +2041,7 @@
                         ["", "row", "column"], 
                         (event) => {
                             current_element.style.flexDirection = event.target.value;
-                            add_action(STYLE, current_element.id, 'flex-direction', event.target.value);
+                            add_action(STYLE, current_element, 'flex-direction', event.target.value);
                         }
                     );
                 }
@@ -1863,7 +2052,7 @@
                         styles['grid-template-columns'], 
                         (event) => {
                             current_element.style.gridTemplateColumns = event.target.value;
-                            add_action(STYLE, current_element.id, 'grid-template-columns', event.target.value);
+                            add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
                         }
                     );
                 }
@@ -1883,6 +2072,7 @@
         function show_class_editor() {
             document.getElementById('gray_out').style.display = "block";
             class_editor_menu.style.display = 'flex';
+            set_class_attribute_view();
         }
     </script>
 
@@ -2157,7 +2347,7 @@
             new_element.id = uuidV4();
             current_element.appendChild(new_element);
 
-            add_action(ADD_ELEMENT, new_element.id);
+            add_action(ADD_ELEMENT, new_element);
 
 
             hide_add_element_dialog();
@@ -2170,7 +2360,7 @@
 
             add_action(
                 DELETE_ELEMENT,
-                current_element.id,
+                current_element,
                 null,
                 {
                     parent: current_element.parentElement,
@@ -2197,7 +2387,7 @@
 
                 add_action(
                     MOVE,
-                    current_element.id,
+                    current_element,
                     null,
                     {
                         original_parent: current_element.parentElement,
@@ -2218,7 +2408,7 @@
 
                 add_action(
                     MOVE,
-                    current_element.id,
+                    current_element,
                     null,
                     {
                         original_parent: current_element.parentElement,
@@ -2255,10 +2445,10 @@
 
         }
 
-        function add_action(type, element_id, property, value) {
+        function add_action(type, element, property, value) {
             action = {
                 type: type,
-                element_id: element_id,
+                element: element,
                 property: property,
                 value: value
             };
@@ -2274,40 +2464,50 @@
             
             // undo the action
             if (action.type == STYLE) {
-                const element = iframeDoc.getElementById(action.element_id);
-                let old_value = element.style[action.property];
-                element.style[action.property] = action.value;
+                let old_value = action.element.style[action.property];
+                action.element.style[action.property] = action.value;
                 action.value = old_value;
             }
             else if (action.type == ADD_ELEMENT) {
-                const element = iframeDoc.getElementById(action.element_id);
                 action.value = {
-                    parent: element.parentElement,
-                    element: element,
-                    index: get_element_index(element)
+                    parent: action.element.parentElement,
+                    element: action.element,
+                    index: get_element_index(action.element)
                 };
-                element.remove();
+                action.element.remove();
             }
             else if (action.type == DELETE_ELEMENT) {
                 const parent = action.value.parent;
                 parent.insertBefore(action.value.element, parent.children[action.value.index]);
             }
             else if (action.type == CHANGE_TEXT) {
-                const element = iframeDoc.getElementById(action.element_id);
                 const old_text = action.value;
-                action.value = get_own_text(element);
-                set_own_text(element, old_text);
+                action.value = get_own_text(action.element);
+                set_own_text(action.element, old_text);
             }
             else if (action.type == MOVE) {
-                const element = iframeDoc.getElementById(action.element_id);
                 const original_parent = action.value.original_parent;
                 const original_index = action.value.original_index;
 
-                element.remove();
-                original_parent.insertBefore(element, original_parent.children[original_index]);
+                action.element.remove();
+                original_parent.insertBefore(action.element, original_parent.children[original_index]);
+            }
+            else if (action.type == TYPE) {
+                current_element = change_type(current_element, action.value.old_type);
+            }
+            else if (action.type == ADD_CLASS) {
+                remove_rule(action.property);
+            }
+            else if (action.type == REMOVE_CLASS) {
+                iframe_style.sheet.insertRule(action.value.cssText, iframe_style.sheet.cssRules.length);
             }
 
-            setAttributeView(current_element);
+            if (is_current_an_element()) {
+                setAttributeView(current_element);
+            }
+            else {
+                set_class_attribute_view();
+            }
             undone_actions.push(action);
             console.log(actions, undone_actions);
         }
@@ -2319,9 +2519,8 @@
 
             // redo the action
             if (action.type == STYLE) {
-                const element = iframeDoc.getElementById(action.element_id);
-                let new_value = element.style[action.property];
-                element.style[action.property] = action.value;
+                let new_value = action.element.style[action.property];
+                action.element.style[action.property] = action.value;
                 action.value = new_value;
             }
             else if (action.type == ADD_ELEMENT) {
@@ -2329,25 +2528,36 @@
                 parent.insertBefore(action.value.element, parent.children[action.value.index]);
             }
             else if (action.type == DELETE_ELEMENT) {
-                const element = iframeDoc.getElementById(action.element_id);
-                element.remove();
+                action.element.remove();
             }
             else if (action.type == CHANGE_TEXT) {
-                const element = iframeDoc.getElementById(action.element_id);
                 const old_text = action.value;
-                action.value = get_own_text(element);
-                set_own_text(element, old_text);
+                action.value = get_own_text(action.element);
+                set_own_text(action.element, old_text);
             }
             else if (action.type == MOVE) {
-                const element = iframeDoc.getElementById(action.element_id);
                 const new_parent = action.value.new_parent;
                 const new_index = action.value.new_index;
 
-                element.remove();
-                new_parent.insertBefore(element, new_parent.children[new_index]);
+                action.element.remove();
+                new_parent.insertBefore(action.element, new_parent.children[new_index]);
+            }
+            else if (action.type == TYPE) {
+                current_element = change_type(current_element, action.value.new_type);
+            }
+            else if (action.type == ADD_CLASS) {
+                iframe_style.sheet.insertRule(action.value.cssText, iframe_style.sheet.cssRules.length);
+            }
+            else if (action.type == REMOVE_CLASS) {
+                remove_rule(action.property);
             }
 
-            setAttributeView(current_element);
+            if (is_current_an_element()) {
+                setAttributeView(current_element);
+            }
+            else {
+                set_class_attribute_view();
+            }
             actions.push(action);
             console.log(actions, undone_actions);
         }
