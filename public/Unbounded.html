@@ -1978,12 +1978,18 @@
 
 
             // update function 
+            function set_undo() {
+                if (number && unit && border_type_value && color) {
+                    add_action(STYLE, current_element, 'border', current_element.style['border']);
+                }
+            }
+
             function update_border() {
                 
                 if (number && unit && border_type_value && color) {
                     console.log("valid border");
-                    add_action(STYLE, current_element, 'border', current_element.style['border']);
                     current_element.style.border = `${number}${unit} ${border_type_value} ${color}`;
+                    console.log(current_element.style.border);
                 }
             }
 
@@ -2008,7 +2014,6 @@
             measurement_input.className = 'attribute_input number_input';
             measurement_input.value = number;
             measurement_input.autocomplete = 'off';
-            measurement_input.addEventListener()
 
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
@@ -2036,8 +2041,6 @@
             side_pair.appendChild(border_type);
 
 
-            
-
             let color_rgba = parse_any_format_to_rgba(color);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
@@ -2055,32 +2058,33 @@
 
 
             // listeners
-
-            let original = null;
-            let on_input = () => {
-                if (!original) original = current_element.style[style_property];
-                current_element.style[style_property] = measurement_input.value + select_div.value;
-            };
-            let on_done = () => {
-                add_action(STYLE, current_element, style_property, original);
-                original == null;
-            };
-
-            measurement_input.addEventListener('input', on_input);
-            select_div.addEventListener('change', ()=> {
-                on_input();
-                on_done();
+            measurement_input.addEventListener('input', (event)=> {
+                number = measurement_input.value;
+                set_undo();
+                update_border();
             });
-            measurement_input.addEventListener('focusout', on_done);
+            
+            select_div.addEventListener('change', () => {
+                unit = select_div.value;
+                set_undo();
+                update_border();
+            });
+
+            border_type.addEventListener('change', () => {
+                border_type_value = border_type.value;
+                set_undo();
+                update_border();
+            });
 
             color_div.addEventListener('click', (event) => {
-                update_border();
+                set_undo();
 
                 color_picker_target_function = (hue, sat, light, alpha) => {
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
                     checker_canvas(color_div);
                     composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
                     color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                    update_border();
                 };
                 
                 picker.classList.remove('hidden');

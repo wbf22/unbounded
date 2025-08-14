@@ -1,11 +1,8 @@
 
 
 # Todo
-- color picker tool
-- mobile mode and sized styles
+- image object-fit
 - text hints on styles
-- add remove color option for color picker
-- adding images and background images
 
 
 ### Layout and Box Model
