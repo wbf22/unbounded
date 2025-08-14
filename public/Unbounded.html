@@ -389,6 +389,8 @@
             transform: translate(-50%, -50%);
             padding: 1rem;
 
+            width: 80vw;
+
         }
 
         #open_text_area {
@@ -465,11 +467,23 @@
 
         #mobile_mode_off_icon {
             margin: 0;
+            cursor: pointer;
         }
 
         #mobile_mode_on_icon {
             display: none;
             margin: 0;
+            cursor: pointer;
+        }
+
+        .border_attribute {
+
+            display: flex;
+            flex-direction: row;
+        }
+
+        .border_attribute > * {
+            margin-right: 1rem;
         }
 
 
@@ -587,7 +601,7 @@
             You can open a file or paste some html you wish to edit below
         </p>
         <input type="file" id="file_input"/>
-        <textarea id="open_text_area" class="attribute_input" autocomplete="off" placeholder="html here"></textarea>
+        <textarea id="open_text_area" class="attribute_input" autocomplete="off" wrap="off" placeholder="html here"></textarea>
         <button id="open_file_done_button" class="control_button" onclick="open_file_done_button()">Done</button>
 
     </div>
@@ -645,7 +659,22 @@
             }
         ];
 
-        const all_styles = ['display', 'flex', 'flex-direction', 'grid', 'grid-template-columns', 'width', 'height', 'margin', 'padding', 'color', 'background-color'];
+        const all_styles = [
+            'display', 
+            'flex', 
+            'flex-direction', 
+            'justify-content', 
+            'align-items', 
+            'grid', 
+            'grid-template-columns', 
+            'width', 
+            'height', 
+            'margin', 
+            'padding', 
+            'color', 
+            'background-color'
+        ];
+        const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
         let iframe_style = null;
 
@@ -1207,6 +1236,26 @@
             return mobile_mode? iframe_style : iframe_style.sheet;
         }
 
+        function get_image_as_url(input_element) {
+            return new Promise((resolve, reject) => {
+                const file = input_element.files[0];
+                if (!file) {
+                    reject("No file selected");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    resolve(e.target.result); // Base64 Data URL
+                };
+                reader.onerror = function (err) {
+                    resolve(''); // empty string
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
 
         // CRYPTO RANDOM
         function random_crypto(min, max) {
@@ -1628,6 +1677,7 @@
 
             target_attribute_view.appendChild(attribute_text_content);
             checker_canvas(color_div);
+            // console.log(color_rgba);
             composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
 
         }
@@ -1711,7 +1761,7 @@
 
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
-            for(option of ['', '%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax']) {
+            for(option of units) {
                 let option_div = document.createElement("option");
                 option_div.value = option;
                 option_div.textContent = option;
@@ -1796,7 +1846,7 @@
 
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
-            for(option of ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax']) {
+            for(option of units) {
                 let option_div = document.createElement("option");
                 option_div.value = option;
                 option_div.textContent = option;
@@ -1867,6 +1917,183 @@
             });
         }
 
+        function create_file_upload_or_url_attribute_div(target_attribute_view, name, listener) {
+
+            let attribute_text_content = document.createElement("div");
+            attribute_text_content.className = 'attribute';
+
+
+            let name_div = document.createElement("div");
+            name_div.textContent = name;
+            attribute_text_content.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_text_content.appendChild(semicolon);
+
+
+            let input_div = document.createElement("input");
+            input_div.className = 'attribute_input';
+            input_div.type = 'file';
+            input_div.accept = 'image/*';
+            input_div.autocomplete = 'off';
+            input_div.style.display = 'none';
+            input_div.addEventListener('change', listener);
+            attribute_text_content.appendChild(input_div);
+
+
+            let icon_div = document.createElement("div");
+            icon_div.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-upload" viewBox="0 0 16 16">
+                    <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
+                    <path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V11.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708z"/>
+                </svg>
+            `;
+            icon_div.style.cursor = 'pointer';
+            icon_div.addEventListener('click', (event) => {
+                input_div.click();
+            });
+            attribute_text_content.appendChild(icon_div);
+
+
+            target_attribute_view.appendChild(attribute_text_content);
+        }
+
+        function create_border_attribute_div(target_attribute_view, listener) {
+
+            // parse current border
+            let number = '';
+            let unit = '';
+            let border_type_value = '';
+            let color = 'rgba(0, 0, 0, 0)';
+            let pieces = current_element.style.border.split(" ");
+            if (pieces.length == 3) {
+                let split = splitNumberAndUnit(pieces[0]);
+                number = split[0]; 
+                unit = split[1];
+                border_type_value = split[2];
+                color = split[3];
+            }
+
+
+            // update function 
+            function update_border() {
+                
+                if (number && unit && border_type_value && color) {
+                    console.log("valid border");
+                    add_action(STYLE, current_element, 'border', current_element.style['border']);
+                    current_element.style.border = `${number}${unit} ${border_type_value} ${color}`;
+                }
+            }
+
+
+            // make selectors
+            let attribute_text_content = document.createElement("div");
+            attribute_text_content.className = 'attribute';
+
+            let name_div = document.createElement("div");
+            name_div.textContent = "border";
+            attribute_text_content.appendChild(name_div);
+
+            let semicolon = document.createElement("div");
+            semicolon.style = 'color: #13a9c3;';
+            semicolon.textContent = ":";
+            attribute_text_content.appendChild(semicolon);
+
+            let side_pair = document.createElement("div");
+            side_pair.className = 'border_attribute';
+
+            let measurement_input = document.createElement("input");
+            measurement_input.className = 'attribute_input number_input';
+            measurement_input.value = number;
+            measurement_input.autocomplete = 'off';
+            measurement_input.addEventListener()
+
+            let select_div = document.createElement("select");
+            select_div.className = 'attribute_input';
+            for(option of units) {
+                let option_div = document.createElement("option");
+                option_div.value = option;
+                option_div.textContent = option;
+                select_div.appendChild(option_div);
+            }
+            select_div.value = '';
+
+            side_pair.appendChild(measurement_input);
+            side_pair.appendChild(select_div);
+
+
+            let border_type = document.createElement("select");
+            border_type.className = 'attribute_input';
+            for(option of ['none', 'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset', 'hidden']) {
+                let option_div = document.createElement("option");
+                option_div.value = option;
+                option_div.textContent = option;
+                border_type.appendChild(option_div);
+            }
+            border_type.value = '';
+            side_pair.appendChild(border_type);
+
+
+            
+
+            let color_rgba = parse_any_format_to_rgba(color);
+            let color_div = document.createElement("canvas");
+            color_div.className = 'attribute_color';
+            color_div.width = 20;
+            color_div.height = 20;
+            side_pair.appendChild(color_div);
+            
+
+            attribute_text_content.appendChild(side_pair);
+            target_attribute_view.appendChild(attribute_text_content);
+
+
+            checker_canvas(color_div);
+            composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
+
+
+            // listeners
+
+            let original = null;
+            let on_input = () => {
+                if (!original) original = current_element.style[style_property];
+                current_element.style[style_property] = measurement_input.value + select_div.value;
+            };
+            let on_done = () => {
+                add_action(STYLE, current_element, style_property, original);
+                original == null;
+            };
+
+            measurement_input.addEventListener('input', on_input);
+            select_div.addEventListener('change', ()=> {
+                on_input();
+                on_done();
+            });
+            measurement_input.addEventListener('focusout', on_done);
+
+            color_div.addEventListener('click', (event) => {
+                update_border();
+
+                color_picker_target_function = (hue, sat, light, alpha) => {
+                    let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
+                    checker_canvas(color_div);
+                    composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
+                    color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                };
+                
+                picker.classList.remove('hidden');
+                picker.focus();
+                picker.style.top = event.clientY - 330 + 'px';
+                picker.style.left = event.clientX + 'px';
+                
+
+            });
+        }
+
+
+
         function setAttributeView(element) {
             
             unsetAttributeView();
@@ -1929,9 +2156,9 @@
                 styles['display'], 
                 ["", "none", "flex", "grid", "block"], 
                 (event) => {
+                    add_action(STYLE, current_element, 'display', current_element.style.display);
                     current_element.style.display = event.target.value;
                     setAttributeView(current_element);
-                    add_action(STYLE, current_element, 'display', event.target.value);
                 }
             );
 
@@ -1942,8 +2169,28 @@
                     styles['flex-direction'], 
                     ["", "row", "column"], 
                     (event) => {
+                        add_action(STYLE, current_element, 'flex-direction', current_element.style.flexDirection);
                         current_element.style.flexDirection = event.target.value;
-                        add_action(STYLE, current_element, 'flex-direction', event.target.value);
+                    }
+                );
+                create_drop_down_attribiute_div(
+                    attributes_view,
+                    "justify-content", 
+                    styles['justify-content'], 
+                    ["", "start", "center", "end"], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'justify-content', current_element.style.justifyContent);
+                        current_element.style.justifyContent = event.target.value;
+                    }
+                );
+                create_drop_down_attribiute_div(
+                    attributes_view,
+                    "align-items", 
+                    styles['align-items'], 
+                    ["", "start", "center", "end"], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'align-items', current_element.style.alignItems);
+                        current_element.style.alignItems = event.target.value;
                     }
                 );
             }
@@ -1965,6 +2212,22 @@
                     set_own_text(current_element, event.target.value);
                 });
             }
+            else if (type == 'img') {
+                create_file_upload_or_url_attribute_div(
+                    attributes_view, 
+                    "src",
+                    async function () {
+                        const url = await get_image_as_url(this);
+                        current_element.src = url;
+                        current_element.onload = () => {
+                            
+                            current_element.style.width = `${current_element.naturalWidth}px`;
+                            current_element.style.height = `${current_element.naturalHeight}px`;
+                        };
+                    }
+                );
+            }
+
             create_measurement_attribiute_div(attributes_view, "width", styles['width'], "width");
             create_measurement_attribiute_div(attributes_view, "height", styles['height'], "height");
             create_quad_input_attribute_div(attributes_view, 'margin', styles['margin'], 'margin');
@@ -1972,6 +2235,16 @@
             
             create_color_attribute_div(attributes_view, "color", "color", update_element_color);
             create_color_attribute_div(attributes_view, "background-color", "background-color", update_element_background_color);
+            create_file_upload_or_url_attribute_div(
+                attributes_view, 
+                "background-image",
+                async function () {
+                    const url = await get_image_as_url(this);
+                    current_element.style.backgroundImage = `url(${url})`;
+                }
+            );
+        
+            create_border_attribute_div(attributes_view, () => {});
         }
 
         function unsetAttributeView() {
@@ -2443,6 +2716,11 @@ If you want a class to apply to both desktop and mobile, create the class in des
                 new_element.style.height = "2rem";
                 new_element.style.backgroundColor = "#848484";
             }
+            else if (type == 'img') {
+                new_element.style.width = "10rem";
+                new_element.style.height = "2rem";
+                new_element.style.backgroundColor = "#848484";
+            }
 
 
             new_element.id = uuidV4();
@@ -2452,6 +2730,8 @@ If you want a class to apply to both desktop and mobile, create the class in des
 
 
             hide_add_element_dialog();
+
+            setAttributeView(new_element);
 
         }
 
