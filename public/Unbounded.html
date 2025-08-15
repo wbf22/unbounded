@@ -49,6 +49,8 @@
             width: 100%;
             height: 60vh;
             border: 1px solid #ccc;
+            resize: horizontal;
+            overflow: auto;
         }
 
         #picker.hidden {
@@ -638,7 +640,7 @@
         let iframeDoc = null;
         const gray_out = document.getElementById('gray_out');
         const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header"]);
-        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section"];
+        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section"];
         let file_name = "index.html";
 
         let actions = [];
@@ -695,6 +697,8 @@
             'overflow',
             'visibility',
             'flex-wrap',
+            'border',
+            'border-radius',
         ];
         const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
@@ -1180,6 +1184,9 @@
                         // for (let classz of inner_classes) {
                         //     css_classes.add(classz);
                         // }
+                    }
+                    else if (rule.type == CSSRule.KEYFRAMES_RULE) {
+
                     }
                     else {
                         // Check if the selector involves classes
@@ -1762,7 +1769,7 @@
             let input_div = document.createElement("textarea");
             input_div.className = 'attribute_input';
             input_div.value = text_content;
-            input_div.autocomplete = 'off';
+            input_div.setAttribute('autocomplete', 'off');
             input_div.addEventListener('input', listener);
             attribute_text_content.appendChild(input_div);
 
@@ -1798,7 +1805,7 @@
 
         function create_measurement_attribiute_div(target_attribute_view, name, value, style_property) {
             let split = splitNumberAndUnit(value);
-            // console.log(split);
+            console.log(split);
             let number = split[0];
             let unit = split[1];
 
@@ -1841,7 +1848,13 @@
             let original = null;
             let on_input = () => {
                 if (!original) original = current_element.style[style_property];
-                current_element.style[style_property] = measurement_input.value + select_div.value;
+                if (measurement_input.value) {
+                    current_element.style[style_property] = measurement_input.value + select_div.value;
+                }
+                else {
+                    current_element.style[style_property] = '';
+                }
+                console.log(current_element.style[style_property]);
             };
             let on_done = () => {
                 add_action(STYLE, current_element, style_property, original);
@@ -2024,7 +2037,7 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_border_attribute_div(target_attribute_view, listener) {
+        function create_border_attribute_div(target_attribute_view) {
 
             // parse current border
             let number = '';
@@ -2294,6 +2307,18 @@
                 );
             }
 
+            if (type == 'a') {
+                create_short_input_attribute_div(
+                    attributes_view,
+                    'href',
+                    current_element.href,
+                    '',
+                    (event) => {
+                        current_element.href = event.target.value;
+                    }
+                )
+            }
+
             create_measurement_attribiute_div(attributes_view, "width", styles['width'], "width");
             create_measurement_attribiute_div(attributes_view, "height", styles['height'], "height");
             create_quad_input_attribute_div(attributes_view, 'margin', styles['margin'], 'margin');
@@ -2310,7 +2335,8 @@
                 }
             );
         
-            create_border_attribute_div(attributes_view, () => {});
+            create_border_attribute_div(attributes_view);
+            create_measurement_attribiute_div(attributes_view, "border-radius", styles['border-radius'], "border-radius");
         
             create_drop_down_attribiute_div(
                 attributes_view, 

@@ -4,6 +4,11 @@
 - image object-fit
 - text hints on styles
 - update class editor with all this
+- hover styles
+- ability to change parent of a div
+- also to add to selected div without having to right click on it
+- fix color picker loading off screen
+- save last edited website in browser local storage when the user hit's download or open
 
 
 ### Layout and Box Model
