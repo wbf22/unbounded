@@ -3,6 +3,7 @@
 # Todo
 - image object-fit
 - text hints on styles
+- update class editor with all this
 
 
 ### Layout and Box Model

@@ -672,7 +672,29 @@
             'margin', 
             'padding', 
             'color', 
-            'background-color'
+            'background-color',
+            'position',
+            'top',
+            'left',
+            'bottom',
+            'right',
+            'font-family',
+            'font-size',
+            'font-weight',
+            'line-height',
+            'text-align',
+            'text-decoration',
+            'text-transform',
+            'letter-spacing',
+            'word-spacing',
+            'background-repeat',
+            'background-size',
+            'opacity',
+            'box-shadow',
+            'cursor',
+            'overflow',
+            'visibility',
+            'flex-wrap',
         ];
         const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
@@ -994,7 +1016,7 @@
             input = input.trim();
             if (is_numeric(input[0])) {
                 let end = 1;
-                while(is_numeric(input.substring(0, end))) end++;
+                while(is_numeric(input.substring(0, end)) && end < input.length) end++;
                 end--;
                 let number = input.substring(0, end);
                 let unit = input.substring(end);
@@ -1254,6 +1276,47 @@
 
                 reader.readAsDataURL(file);
             });
+        }
+
+        function addGoogleFont(id, href) {
+
+            const head = iframeDoc.head;
+            if (!head) {
+                alert("Looks like you html has no head tag so you can't use non-universal fonts");
+                return;
+            }
+
+
+            // Create preconnect for fonts.googleapis.com
+            if (!iframeDoc.getElementById('preconnect1')) {
+                const preconnect1 = document.createElement('link');
+                preconnect1.rel = 'preconnect';
+                preconnect1.href = 'https://fonts.googleapis.com';
+                preconnect1.id = 'preconnect1';
+                head.appendChild(preconnect1);
+            }
+
+            // Create preconnect for fonts.gstatic.com with crossorigin
+            if (!iframeDoc.getElementById('preconnect2')) {
+                const preconnect2 = document.createElement('link');
+                preconnect2.rel = 'preconnect';
+                preconnect2.href = 'https://fonts.gstatic.com';
+                preconnect2.crossOrigin = '';
+                preconnect2.id = 'preconnect2';
+                head.appendChild(preconnect2);
+            }
+
+            // Create the stylesheet link for Roboto font
+            if (!iframeDoc.getElementById(id)) {
+                const stylesheet = document.createElement('link');
+                stylesheet.rel = 'stylesheet';
+                stylesheet.href = href;
+                stylesheet.id = id;
+
+                // Append the links to the head
+                head.appendChild(stylesheet);
+            }
+
         }
 
 
@@ -1707,7 +1770,7 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_short_input_attribute_div(target_attribute_view, name, text_content, listener) {
+        function create_short_input_attribute_div(target_attribute_view, name, text_content, width, listener) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -1725,6 +1788,7 @@
             input_div.className = 'attribute_input';
             input_div.value = text_content;
             input_div.autocomplete = 'off';
+            input_div.style.width = `${width}rem`;
             input_div.addEventListener('input', listener);
             attribute_text_content.appendChild(input_div);
 
@@ -2129,9 +2193,6 @@
                 }
             );
 
-            // create_short_input_attribute_div("id", current_element.id, (event) => {
-            //     current_element.id = event.target.value;
-            // });
             create_drop_down_attribiute_div(
                 attributes_view,
                 "type", 
@@ -2203,6 +2264,7 @@
                     attributes_view,
                     "grid-template-columns", 
                     styles['grid-template-columns'], 
+                    2,
                     (event) => {
                         current_element.style.gridTemplateColumns = event.target.value;
                         add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
@@ -2249,6 +2311,149 @@
             );
         
             create_border_attribute_div(attributes_view, () => {});
+        
+            create_drop_down_attribiute_div(
+                attributes_view, 
+                'position',
+                styles['position'],
+                ['', 'static', 'relative', 'absolute', 'fixed', 'sticky'],
+                (event) => {
+                    add_action(STYLE, current_element, 'position', current_element.style.position);
+                    current_element.style.position = event.target.value;
+                    setAttributeView(current_element);
+                }
+            );
+
+            if (styles['position'] != '' && styles['position'] != 'static') {
+                create_measurement_attribiute_div(attributes_view, "top", styles['top'], "top");
+                create_measurement_attribiute_div(attributes_view, "left", styles['left'], "left");
+                create_measurement_attribiute_div(attributes_view, "bottom", styles['bottom'], "bottom");
+                create_measurement_attribiute_div(attributes_view, "right", styles['right'], "right");
+            }
+
+            create_drop_down_attribiute_div(
+                attributes_view, 
+                'font-family',
+                styles['font-family'],
+                [
+                    '', 
+                    "Roboto",
+                    "Open Sans",
+                    "Lato",
+                    "Montserrat",
+                    "Source Sans 3",
+                    "Raleway",
+                    'Fira Sans',
+                    'Comic Neue',
+                    'Pacifico',
+                    'Fredericka the Great',
+                    'Bangers',
+                    'Luckiest Guy',
+                    'Chewy',
+
+                    'Arial',
+                    'Helvetica',
+                    'sans-serif',
+                    'Georgia',
+                    'monospace',
+                    '"Times New Roman"',
+                    'Times',
+                    '"Palatino Linotype"',
+                    'Palatino',
+                    '"Courier New"',
+                    'cursive',
+                ],
+                (event) => {
+                    add_action(STYLE, current_element, 'font-family', current_element.style.fontFamily);
+
+
+                    const iframe_head = iframeDoc.querySelectorAll("head");
+                    if (event.target.value == "Roboto") {
+                        addGoogleFont('Roboto', 'https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+                    }
+                    else if (event.target.value == 'Open Sans') {
+                        addGoogleFont('Open_Sans', "https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
+                    }
+                    else if (event.target.value == 'Lato') {
+                        addGoogleFont('Lato', 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+                    }
+                    else if (event.target.value == 'Montserrat') {
+                        addGoogleFont('Montserrat', 'https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
+                    }
+                    else if (event.target.value == 'Source Sans 3') {
+                        addGoogleFont('source_sans_3', 'https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,200..900;1,200..900&display=swap');
+                    }
+                    else if (event.target.value == 'Raleway') {
+                        addGoogleFont('Raleway', 'https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+                    }
+                    else if (event.target.value == 'Fira Sans') {
+                        addGoogleFont('Fira_Sans', 'https://fonts.googleapis.com/css2?family=Fira+Sans:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+                    }
+                    else if (event.target.value == 'Comic Neue') {
+                        addGoogleFont('Comic_Neue', 'https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&display=swap');
+                    }
+                    else if (event.target.value == 'Pacifico') {
+                        addGoogleFont('Pacifico', 'https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
+                    }
+                    else if (event.target.value == 'Fredericka the Great') {
+                        addGoogleFont('Fredericka_the_Great', 'https://fonts.googleapis.com/css2?family=Fredericka+the+Great&display=swap');
+                    }
+                    else if (event.target.value == 'Bangers') {
+                        addGoogleFont('Bangers', 'https://fonts.googleapis.com/css2?family=Bangers&display=swap');
+                    }
+                    else if (event.target.value == 'Luckiest Guy') {
+                        addGoogleFont('Luckiest_Guy', 'https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap');
+                    }
+                    else if (event.target.value == 'Chewy') {
+                        addGoogleFont('Chewy', 'https://fonts.googleapis.com/css2?family=Chewy&display=swap');
+                    }
+                    // else if (event.target.value == '') {
+                    //     addGoogleFont('', '');
+                    // }
+
+                    current_element.style.fontFamily = event.target.value;
+                }
+            );
+            
+            create_measurement_attribiute_div(attributes_view, "font-size", styles['font-size'], "font-size");
+            create_short_input_attribute_div(attributes_view, "font-weight", styles['font-weight'], 4, (event) => {
+                add_action(STYLE, current_element, 'font-weight', current_element.style.fontWeight);
+                current_element.style.fontWeight = event.target.value;
+            });
+            create_measurement_attribiute_div(attributes_view, "line-height", styles['line-height'], "line-height");
+            create_drop_down_attribiute_div(
+                attributes_view,
+                "text-align", 
+                styles['text-align'], 
+                ["", "left", "center", "right", "justify"], 
+                (event) => {
+                    add_action(STYLE, current_element, 'text-align', current_element.style.textAlign);
+                    current_element.style.textAlign = event.target.value;
+                }
+            );
+            create_drop_down_attribiute_div(
+                attributes_view,
+                "text-decoration", 
+                styles['text-decoration'], 
+                ["", "none", "solid", "double", "dotted", "dashed", "wavy"], 
+                (event) => {
+                    add_action(STYLE, current_element, 'text-decoration', current_element.style.textDecoration);
+                    current_element.style.textDecoration = event.target.value;
+                }
+            );
+            create_drop_down_attribiute_div(
+                attributes_view,
+                "text-transform", 
+                styles['text-transform'], 
+                ["", "uppercase", "lowercase", "capitalize"], 
+                (event) => {
+                    add_action(STYLE, current_element, 'text-transform', current_element.style.textTransform);
+                    current_element.style.textTransform = event.target.value;
+                }
+            );
+            create_measurement_attribiute_div(attributes_view, "letter-spacing", styles['letter-spacing'], "letter-spacing");
+            create_measurement_attribiute_div(attributes_view, "word-spacing", styles['word-spacing'], "word-spacing");
+        
         }
 
         function unsetAttributeView() {
@@ -2385,6 +2590,7 @@
                         class_attribute_view,
                         "grid-template-columns", 
                         styles['grid-template-columns'], 
+                        4,
                         (event) => {
                             current_element.style.gridTemplateColumns = event.target.value;
                             add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
@@ -3089,6 +3295,8 @@ If you want a class to apply to both desktop and mobile, create the class in des
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Website</title>
   <base target="_self">
+
+
   <style>
     :root {
       --primary-color: #0a84ff;
@@ -3232,6 +3440,11 @@ If you want a class to apply to both desktop and mobile, create the class in des
 
                 // get element
                 const element = event.target;
+
+                // prevent a links
+                if (element.tagName.toLowerCase() === 'a') {
+                    event.preventDefault();
+                }
 
                 // set attributes in attribute view
                 setAttributeView(element);
