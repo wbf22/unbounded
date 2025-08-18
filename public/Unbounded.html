@@ -256,7 +256,7 @@
         }
 
         .control_button {
-            margin: 1rem;
+            margin: .6rem;
             border: var(--def_border);
             border-radius: 2px;
             color: #dddddd;
@@ -453,7 +453,9 @@
         }
 
         .class_check_option {
-            display: flex;
+            display: grid;
+            max-width: 40rem;
+            grid-template-columns: .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr;
         }
         
         .class_check_option > * {
@@ -486,6 +488,16 @@
 
         .border_attribute > * {
             margin-right: 1rem;
+        }
+
+        #hint_popper {
+            display: none;
+            padding: 1rem;
+            width: 20rem;
+            position: fixed;
+            background-color: #dddddd;
+            color: #07002f;
+            pointer-events: none; /* doesn't block mouse */
         }
 
 
@@ -559,6 +571,7 @@
         <div class="menu-item" onclick="moveUp()">move up</div>
         <div class="menu-item" onclick="moveDown()">move down</div>
         <div class="menu-item" onclick="change_parent_start()">change parent</div>
+        <div class="menu-item" onclick="duplicate()">duplicate</div>
     </div>
 
     <div id="gray_out"></div>
@@ -623,13 +636,15 @@
             <input id="new_class_name" class="attribute_input" placeholder="new class name" type="text" autocomplete="off"></input>
             <button class="control_button var_list_button" onclick="add_class()">+</button>
             <button class="control_button var_list_button" onclick="remove_class()">-</button>
+            <p>hover styles</p>
+            <div id="hover_styles_check" class="custom-checkbox" style="margin:1rem"></div>
         </div>
 
         <div id="class_attribute_view" class="attributes_view">
         </div>
     </div>
 
-
+    <div id="hint_popper"></div>
 
 
 
@@ -1258,6 +1273,16 @@
 
         }
 
+        function has_rule(class_name) {
+            for (let i = 0; i < get_sheet().cssRules.length; i++) {
+                const rule = get_sheet().cssRules[i];
+                if (rule.selectorText === `.${class_name}`) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         function change_type(element, new_type) {
             const newEl = document.createElement(new_type);
 
@@ -1597,13 +1622,14 @@
                 light = hsla.lightness;
                 alpha = hsla.alpha / 100;
                 // console.log("updating", hue, sat, light, alpha);
+                current_element.style[style_property] = '';
             }
             else {
                 rgba = hsla_to_rgba(hue_t, sat_t, light_t, alpha_t * 100);
+                const hex = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                current_element.style[style_property] = hex;
             }
 
-            const hex = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
-            current_element.style[style_property] = hex;
 
             // console.log(hue, sat, light, alpha);
             // console.log(current_element);
@@ -1620,18 +1646,36 @@
         }
 
 
+        // hints
+        const hint_popper = document.getElementById("hint_popper");
+        function set_hint(div, hint) {
+            if (!hint) {
+                hint = '(missing hint, sorry! You should be able to search this up online)'
+            }
+
+            div.addEventListener("mouseenter", (event) => {
+                hint_popper.style.top = event.clientY + 'px';
+                hint_popper.style.left = event.clientX + 'px';
+                hint_popper.style.display = 'block';
+                hint_popper.innerHTML = hint;
+            });
+            div.addEventListener("mouseleave", (event) => {
+                hint_popper.style.display = 'none';
+            });
+        }
 
         // creating the attributes fields
 
         const attributes_view = document.getElementById("attributes_view");
 
-        function create_multi_select_attribute_div(target_attribute_view, name, value, drop_down_options, onCheck, onUnCheck) {
+        function create_multi_select_attribute_div(target_attribute_view, name, value, drop_down_options, onCheck, onUnCheck, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1641,7 +1685,13 @@
 
             let select_div = document.createElement("div");
             select_div.className = 'class_check_option';
+            let classes_shown = new Set();
             for (let option of drop_down_options) {
+                if (option.includes(":hover")) {
+                    option = option.substring(0, option.indexOf(":"));
+                }
+                if (classes_shown.has(option)) continue;
+                classes_shown.add(option);
 
                 let checkbox = document.createElement("div");
                 checkbox.className = 'custom-checkbox';
@@ -1675,13 +1725,14 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_drop_down_attribiute_div(target_attribute_view, name, value, drop_down_options, listener) {
+        function create_drop_down_attribiute_div(target_attribute_view, name, value, drop_down_options, listener, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1705,7 +1756,7 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_color_attribute_div(target_attribute_view, name, style_property, target_function) {
+        function create_color_attribute_div(target_attribute_view, name, style_property, target_function, hint) {
 
 
             let attribute_text_content = document.createElement("div");
@@ -1713,6 +1764,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1721,7 +1773,7 @@
             attribute_text_content.appendChild(semicolon);
 
             let computed_color = get_computer_color(style_property);
-            console.log(computed_color);
+            // console.log(computed_color);
             let color_rgba = parse_any_format_to_rgba(computed_color);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
@@ -1768,13 +1820,14 @@
 
         }
 
-        function create_input_attribute_div(target_attribute_view, name, text_content, listener) {
+        function create_input_attribute_div(target_attribute_view, name, text_content, listener, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1793,13 +1846,14 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_short_input_attribute_div(target_attribute_view, name, text_content, width, listener) {
+        function create_short_input_attribute_div(target_attribute_view, name, text_content, width, listener, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1819,7 +1873,7 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_measurement_attribiute_div(target_attribute_view, name, value, style_property) {
+        function create_measurement_attribiute_div(target_attribute_view, name, value, style_property, hint) {
             let split = splitNumberAndUnit(value);
             // console.log(split);
             let number = split[0];
@@ -1830,6 +1884,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_div.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1885,7 +1940,7 @@
             measurement_input.addEventListener('focusout', on_done);
         }
 
-        function create_double_input_attribute_div(target_attribute_view, name, value, style_property) {
+        function create_double_input_attribute_div(target_attribute_view, name, value, style_property, hint) {
             let numbers = [];
             let unit = 'px';
             let values = value.split(' ');
@@ -1902,6 +1957,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_div.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -1971,7 +2027,7 @@
             });
         }
 
-        function create_quad_input_attribute_div(target_attribute_view, name, value, style_property) {
+        function create_quad_input_attribute_div(target_attribute_view, name, value, style_property, hint) {
             let numbers = [];
             let unit = 'px';
             let values = value.split(' ');
@@ -1989,6 +2045,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_div.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -2096,7 +2153,7 @@
             });
         }
 
-        function create_file_upload_or_url_attribute_div(target_attribute_view, name, listener, remove_function) {
+        function create_file_upload_or_url_attribute_div(target_attribute_view, name, listener, remove_function, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -2104,6 +2161,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = name;
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -2156,7 +2214,7 @@
             target_attribute_view.appendChild(attribute_text_content);
         }
 
-        function create_border_attribute_div(target_attribute_view) {
+        function create_border_attribute_div(target_attribute_view, hint) {
 
             // parse current border
             let number = '';
@@ -2196,6 +2254,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = "border";
+            set_hint(name_div, hint);
             attribute_text_content.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -2292,7 +2351,7 @@
             });
         }
 
-        function create_box_shadow_attribute_div(target_attribute_view) {
+        function create_box_shadow_attribute_div(target_attribute_view, hint) {
             let inset = false;
             let numbers = [];
             let unit = 'px';
@@ -2302,8 +2361,8 @@
             let values = color_end != -1? box_shadow.substring(color_end + 2).split(' ') : box_shadow.split(' ');
             const is_num = (str) => /^[\d.]/.test(str);
             for (let side_val of values) {
-                console.log(values);
-                console.log(side_val);
+                // console.log(values);
+                // console.log(side_val);
 
                 if (side_val) {
                     if (is_num(side_val)) {
@@ -2327,6 +2386,7 @@
 
             let name_div = document.createElement("div");
             name_div.textContent = "box-shadow";
+            set_hint(name_div, hint);
             attribute_div.appendChild(name_div);
 
             let semicolon = document.createElement("div");
@@ -2489,62 +2549,14 @@
         }
 
 
+        let scroll_pos = 0;
+        attributes_view.addEventListener('scroll', () => {
+            scroll_pos = attributes_view.scrollTop;
+        });
 
-        function setAttributeView(element) {
-            
-            unsetAttributeView();
-
-            set_current_element(element);
-
-            if (!element) return;
-
-            let type = current_element.tagName.toLowerCase();
-
-            styles = get_styles_for_element(
-                current_element, 
-                all_styles,
-                true
-            );
-
-
-            // classes
-            create_multi_select_attribute_div(
-                attributes_view,
-                "classes", 
-                '', 
-                get_all_css_classes(), 
-                (class_name) => {
-                    current_element.classList.add(class_name);
-                }, 
-                (class_name) => {
-                    current_element.classList.remove(class_name);
-                }
-            );
-
+        function add_all_style_selectors_to_attribute_view(attribute_view_div, styles, display_only_styles) {
             create_drop_down_attribiute_div(
-                attributes_view,
-                "type", 
-                type, 
-                all_types, 
-                (event) => {
-
-                    let old_type = current_element.tagName.toLowerCase();
-                    current_element = change_type(current_element, event.target.value);
-                    setAttributeView(current_element);
-
-                    add_action(
-                        TYPE, 
-                        current_element,
-                        null, 
-                        {
-                            old_type: old_type,
-                            new_type: event.target.value
-                        }
-                    );
-                }
-            );
-            create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "display", 
                 styles['display'], 
                 ["", "none", "flex", "grid", "block"], 
@@ -2552,124 +2564,149 @@
                     add_action(STYLE, current_element, 'display', current_element.style.display);
                     current_element.style.display = event.target.value;
                     setAttributeView(current_element);
-                }
+                },
+                "'display' determines how child elements are arranged inside this element. 'flex' is a good choice for centering children in the parent if you set 'justify-content' and 'align-items' to 'center'"
             );
 
             if (current_element.style.display == "flex") {
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "flex-direction", 
                     styles['flex-direction'], 
                     ["", "row", "column"], 
                     (event) => {
                         add_action(STYLE, current_element, 'flex-direction', current_element.style.flexDirection);
                         current_element.style.flexDirection = event.target.value;
-                    }
+                    },
+                    'Whether elements are are orientated vertically (column) or horizontally (row)'
                 );
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "justify-content", 
                     styles['justify-content'], 
                     ["", "start", "center", "end"], 
                     (event) => {
                         add_action(STYLE, current_element, 'justify-content', current_element.style.justifyContent);
                         current_element.style.justifyContent = event.target.value;
-                    }
+                    },
+                    'Defines how the browser distributes space between and around content items along the main axis of a flex container. If this doesn\'t appear to center a div try \'align-items\''
                 );
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "align-items", 
                     styles['align-items'], 
                     ["", "start", "center", "end"], 
                     (event) => {
                         add_action(STYLE, current_element, 'align-items', current_element.style.alignItems);
                         current_element.style.alignItems = event.target.value;
-                    }
+                    },
+                    'Defines how the browser distributes space between and around content items along the cross axis of a flex container. If this doesn\'t appear to center a div try \'justify-content\''
                 );
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "flex-wrap", 
                     styles['flex-wrap'], 
                     ["", "nowrap", "wrap", "wrap-reverse"], 
                     (event) => {
                         add_action(STYLE, current_element, 'flex-wrap', current_element.style.flexWrap);
                         current_element.style.flexWrap = event.target.value;
-                    }
+                    },
+                    'Sets whether flex items are forced onto one line or can wrap onto multiple lines'
                 );
             }
             else if (current_element.style.display == "grid") {
                 create_short_input_attribute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "grid-template-columns", 
                     styles['grid-template-columns'], 
                     2,
                     (event) => {
                         current_element.style.gridTemplateColumns = event.target.value;
                         add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
-                    }
-                );
-            }
-
-            if (text_types.has(type)) {
-                create_input_attribute_div(attributes_view, "textContent", get_own_text(current_element), (event) => {
-                    add_action(CHANGE_TEXT, current_element, null, get_own_text(current_element));
-                    set_own_text(current_element, event.target.value);
-                });
-            }
-            else if (type == 'img') {
-                create_file_upload_or_url_attribute_div(
-                    attributes_view, 
-                    "src",
-                    async function () {
-                        add_action(ATTRIBUTE, current_element, 'src', current_element.src);
-                        const url = await get_image_as_url(this);
-                        current_element.src = url;
-                        current_element.onload = () => {
-                            
-                            current_element.style.width = `${current_element.naturalWidth}px`;
-                            current_element.style.height = `${current_element.naturalHeight}px`;
-                            setAttributeView(current_element);
-                        };
                     },
-                    () => {
-                        add_action(ATTRIBUTE, current_element, 'src', current_element.src);
-                        current_element.src = null;
-                    }
-                );
-                create_drop_down_attribiute_div(
-                    attributes_view,
-                    "object-fit", 
-                    styles['object-fit'], 
-                    ["", "none", "cover", "contain", "fill", "scale-down"], 
-                    (event) => {
-                        add_action(STYLE, current_element, 'object-fit', current_element.style.objectFit);
-                        current_element.style.objectFit = event.target.value;
-                        setAttributeView(current_element);
-                    }
+                    'Determines the size of grid columns'
                 );
             }
 
-            if (type == 'a') {
-                create_short_input_attribute_div(
-                    attributes_view,
-                    'href',
-                    current_element.href,
-                    '',
-                    (event) => {
-                        current_element.href = event.target.value;
-                    }
-                )
-            }
+            if(!display_only_styles) {
+                let type = current_element.tagName.toLowerCase();
+                if (text_types.has(type)) {
+                    create_input_attribute_div(attribute_view_div, "textContent", get_own_text(current_element), (event) => {
+                            add_action(CHANGE_TEXT, current_element, null, get_own_text(current_element));
+                            set_own_text(current_element, event.target.value);
+                        },
+                        'The text inside this div.'
+                    );
+                }
+                else if (type == 'img') {
+                    create_file_upload_or_url_attribute_div(
+                        attribute_view_div, 
+                        "src",
+                        async function () {
+                            add_action(ATTRIBUTE, current_element, 'src', current_element.src);
+                            const url = await get_image_as_url(this);
+                            current_element.src = url;
+                            current_element.onload = () => {
+                                
+                                current_element.style.width = `${current_element.naturalWidth}px`;
+                                current_element.style.height = `${current_element.naturalHeight}px`;
+                                setAttributeView(current_element);
+                            };
+                        },
+                        () => {
+                            add_action(ATTRIBUTE, current_element, 'src', current_element.src);
+                            current_element.src = null;
+                        },
+                        'The actual image display in this element'
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "object-fit", 
+                        styles['object-fit'], 
+                        ["", "none", "cover", "contain", "fill", "scale-down"], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'object-fit', current_element.style.objectFit);
+                            current_element.style.objectFit = event.target.value;
+                            setAttributeView(current_element);
+                        },
+                        'How the image is cropped or stretched to fit inside this image element'
+                    );
+                }
 
-            create_measurement_attribiute_div(attributes_view, "width", styles['width'], "width");
-            create_measurement_attribiute_div(attributes_view, "height", styles['height'], "height");
-            create_quad_input_attribute_div(attributes_view, 'margin', styles['margin'], 'margin');
-            create_quad_input_attribute_div(attributes_view, 'padding', styles['padding'], 'padding');
+                if (type == 'a') {
+                    create_short_input_attribute_div(
+                        attribute_view_div,
+                        'href',
+                        current_element.href,
+                        '',
+                        (event) => {
+                            current_element.href = event.target.value;
+                        },
+                        'The link that this element will take people too when they click it.'
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "text-decoration", 
+                        styles['text-decoration'], 
+                        ["", "none", "solid", "double", "dotted", "dashed", "wavy"], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'text-decoration', current_element.style.textDecoration);
+                            current_element.style.textDecoration = event.target.value;
+                        },
+                        "Controls what the underline for this element link looks like."
+                    );
+                }
+            }
             
-            create_color_attribute_div(attributes_view, "color", "color", update_element_color);
-            create_color_attribute_div(attributes_view, "background-color", "background-color", update_element_background_color);
+            create_measurement_attribiute_div(attribute_view_div, "width", styles['width'], "width", "The width of an element");
+            create_measurement_attribiute_div(attribute_view_div, "height", styles['height'], "height", "The height of the element");
+            create_quad_input_attribute_div(attribute_view_div, 'margin', styles['margin'], 'margin', "Spacing to be put around element. The 4 inputs are 'top', 'right', 'bottom', and 'left' respectively.");
+            create_quad_input_attribute_div(attribute_view_div, 'padding', styles['padding'], 'padding', "Spacing to be put around everything that's inside this element. The 4 inputs are 'top', 'right', 'bottom', and 'left' respectively.");
+            
+            create_color_attribute_div(attribute_view_div, "color", "color", update_element_color, "The text color of this element. Use 'background-color' to change the color of the element itself.");
+            create_color_attribute_div(attribute_view_div, "background-color", "background-color", update_element_background_color, "The background color of the element.");
             create_file_upload_or_url_attribute_div(
-                attributes_view, 
+                attribute_view_div, 
                 "background-image",
                 async function () {
                     add_action(STYLE, current_element, 'background-image', current_element.style.backgroundImage);
@@ -2681,43 +2718,49 @@
                     add_action(STYLE, current_element, 'background-image', current_element.style.backgroundImage);
                     current_element.style.backgroundImage = '';
                     setAttributeView(current_element);
-                }
+                },
+                "The background image of an element."
             );
             if (current_element.style.backgroundImage) {
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "background-repeat", 
                     styles['background-repeat'], 
                     ["", "no-repeat", "repeat", "repeat-x", "repeat-y", "space", "round"], 
                     (event) => {
                         add_action(STYLE, current_element, 'background-repeat', current_element.style.backgroundRepeat);
                         current_element.style.backgroundRepeat = event.target.value;
-                    }
+                    },
+                    "Controls how the background repeats when it doesn't match the size of the element."
                 );
                 create_drop_down_attribiute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "background-size", 
                     styles['background-size'], 
                     ["", "auto", "cover", "contain"], 
                     (event) => {
                         add_action(STYLE, current_element, 'background-size', current_element.style.backgroundSize);
                         current_element.style.backgroundSize = event.target.value;
-                    }
+                    },
+                    'The auto-sizing of the background image. To set specific values use the drop down below.'
                 );
                 create_double_input_attribute_div(
-                    attributes_view,
+                    attribute_view_div,
                     "background-size", 
                     styles['background-size'], 
-                    "background-size"
+                    "background-size",
+                    'The sizing of the background image. To set auto-sizeing use the drop down above.'
                 );
                 
             }
         
-            create_border_attribute_div(attributes_view);
-            create_measurement_attribiute_div(attributes_view, "border-radius", styles['border-radius'], "border-radius");
+            create_border_attribute_div(attribute_view_div, "The border of a div. A common value is '2px solid' and then a color. To round the corners use 'border-radius'");
+            create_measurement_attribiute_div(attribute_view_div, "border-radius", styles['border-radius'], "border-radius", "How rounded the corners are. '10px' is a common value.");
         
+            create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page.");
+
             create_drop_down_attribiute_div(
-                attributes_view, 
+                attribute_view_div, 
                 'position',
                 styles['position'],
                 ['', 'static', 'relative', 'absolute', 'fixed', 'sticky'],
@@ -2725,40 +2768,50 @@
                     add_action(STYLE, current_element, 'position', current_element.style.position);
                     current_element.style.position = event.target.value;
                     setAttributeView(current_element);
-                }
+                }, 
+                'How the element is positioned in the parent. Typically this is only used when you want a floated element. If that is what you\'re after then you probably want \'fixed\''
+            );
+
+            if (styles['position'] != '' && styles['position'] != 'static') {
+                create_measurement_attribiute_div(attribute_view_div, "top", styles['top'], "top", "Sets the vertical position of the element measuring from the top");
+                create_measurement_attribiute_div(attribute_view_div, "left", styles['left'], "left", "Sets the horizontal position of the element measuring from the left");
+                create_measurement_attribiute_div(attribute_view_div, "bottom", styles['bottom'], "bottom", "Sets the vertical end of the element measuring from the top");
+                create_measurement_attribiute_div(attribute_view_div, "right", styles['right'], "right", "Sets the horizontal end of the element measuring from the left");
+            }
+            
+            create_short_input_attribute_div(attribute_view_div, "z-index", styles['z-index'], 4, (event) => {
+                    add_action(STYLE, current_element, 'z-index', current_element.style.zIndex);
+                    current_element.style.zIndex = event.target.value;
+                },
+                "Controls which floating elements appear on top when they're in the same spot."
             );
 
             create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "cursor", 
                 styles['cursor'], 
                 ["", "default", "pointer", "text", "move", "wait", "help"], 
                 (event) => {
                     add_action(STYLE, current_element, 'cursor', current_element.style.cursor);
                     current_element.style.cursor = event.target.value;
-                }
+                },
+                "What the user's mouse looks like when hovering over the element. For other hovering effects try making a hover class with the 'classes' button."
             );
 
-            if (styles['position'] != '' && styles['position'] != 'static') {
-                create_measurement_attribiute_div(attributes_view, "top", styles['top'], "top");
-                create_measurement_attribiute_div(attributes_view, "left", styles['left'], "left");
-                create_measurement_attribiute_div(attributes_view, "bottom", styles['bottom'], "bottom");
-                create_measurement_attribiute_div(attributes_view, "right", styles['right'], "right");
-            }
-
             create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "overflow", 
                 styles['overflow'], 
                 ["", `visible`, `hidden`, `scroll`, `auto`], 
                 (event) => {
                     add_action(STYLE, current_element, 'overflow', current_element.style.overflow);
                     current_element.style.overflow = event.target.value;
-                }
+                }, 
+                "Controls how an element behaves when elements inside it get too big"
             );
 
             create_drop_down_attribiute_div(
-                attributes_view, 
+                attribute_view_div, 
                 'font-family',
                 styles['font-family'],
                 [
@@ -2838,70 +2891,132 @@
                     // }
 
                     current_element.style.fontFamily = event.target.value;
-                }
+                },
+                "Controls the font of the element. To change the font of the entire document you'll want to change this on the 'body' element."
             );
-            create_short_input_attribute_div(attributes_view, "z-index", styles['z-index'], 4, (event) => {
-                add_action(STYLE, current_element, 'z-index', current_element.style.zIndex);
-                current_element.style.zIndex = event.target.value;
-            });
-
-            create_measurement_attribiute_div(attributes_view, "font-size", styles['font-size'], "font-size");
-            create_short_input_attribute_div(attributes_view, "font-weight", styles['font-weight'], 4, (event) => {
-                add_action(STYLE, current_element, 'font-weight', current_element.style.fontWeight);
-                current_element.style.fontWeight = event.target.value;
-            });
-            create_measurement_attribiute_div(attributes_view, "line-height", styles['line-height'], "line-height");
+            create_measurement_attribiute_div(attribute_view_div, "font-size", styles['font-size'], "font-size");
+            create_short_input_attribute_div(attribute_view_div, "font-weight", styles['font-weight'], 4, (event) => {
+                    add_action(STYLE, current_element, 'font-weight', current_element.style.fontWeight);
+                    current_element.style.fontWeight = event.target.value;
+                },
+                "How bold the text of this div is."
+            );
+            create_measurement_attribiute_div(attribute_view_div, "line-height", styles['line-height'], "line-height", "The height of each line in wrapping text.");
             create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "text-align", 
                 styles['text-align'], 
                 ["", "left", "center", "right", "justify"], 
                 (event) => {
                     add_action(STYLE, current_element, 'text-align', current_element.style.textAlign);
                     current_element.style.textAlign = event.target.value;
-                }
+                },
+                "Which way text is aligned in a div."
             );
             create_drop_down_attribiute_div(
-                attributes_view,
-                "text-decoration", 
-                styles['text-decoration'], 
-                ["", "none", "solid", "double", "dotted", "dashed", "wavy"], 
-                (event) => {
-                    add_action(STYLE, current_element, 'text-decoration', current_element.style.textDecoration);
-                    current_element.style.textDecoration = event.target.value;
-                }
-            );
-            create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "text-transform", 
                 styles['text-transform'], 
                 ["", "uppercase", "lowercase", "capitalize"], 
                 (event) => {
                     add_action(STYLE, current_element, 'text-transform', current_element.style.textTransform);
                     current_element.style.textTransform = event.target.value;
-                }
+                },
+                "Makes text uppercase, lowercase, etc..."
             );
-            create_measurement_attribiute_div(attributes_view, "letter-spacing", styles['letter-spacing'], "letter-spacing");
-            create_measurement_attribiute_div(attributes_view, "word-spacing", styles['word-spacing'], "word-spacing");
+            create_measurement_attribiute_div(attribute_view_div, "letter-spacing", styles['letter-spacing'], "letter-spacing", "How much space is between letters.");
+            create_measurement_attribiute_div(attribute_view_div, "word-spacing", styles['word-spacing'], "word-spacing", "How much space is between words.");
         
-            create_short_input_attribute_div(attributes_view, "opacity", styles['opacity'], 4, (event) => {
-                add_action(STYLE, current_element, 'opacity', current_element.style.fontWeight);
-                current_element.style.opacity = event.target.value;
-            });
+            create_short_input_attribute_div(attribute_view_div, "opacity", styles['opacity'], 4, (event) => {
+                    add_action(STYLE, current_element, 'opacity', current_element.style.fontWeight);
+                    current_element.style.opacity = event.target.value;
+                },
+                "Determines how transparent and element is from 0.0-1.0"
+            );
             
-            create_box_shadow_attribute_div(attributes_view);
-
             create_drop_down_attribiute_div(
-                attributes_view,
+                attribute_view_div,
                 "visibility", 
                 styles['visibility'], 
                 ["", `visible`, `hidden`], 
                 (event) => {
                     add_action(STYLE, current_element, 'visibility', current_element.style.visibility);
                     current_element.style.visibility = event.target.value;
-                }
+                },
+                "For hiding an element. However this doesn't free up the space the element takes up. To do that set the 'display' to 'none'."
             );
 
+        }
+        
+        function setAttributeView(element) {
+            const same_ele = element == current_element;
+            
+            unsetAttributeView();
+
+            set_current_element(element);
+
+            if (!element) return;
+
+            let type = current_element.tagName.toLowerCase();
+
+            styles = get_styles_for_element(
+                current_element, 
+                all_styles,
+                true
+            );
+
+
+            // create_short_input_attribute_div(attributes_view, "id", current_element.id, 20, (event) => {
+            //         add_action(ATTRIBUTE, current_element, 'id', current_element.id);
+            //         current_element.id = event.target.value;
+            //     },
+            //     "The id of an element "
+            // );
+            create_multi_select_attribute_div(
+                attributes_view,
+                "classes", 
+                '', 
+                get_all_css_classes(), 
+                (class_name) => {
+                    current_element.classList.add(class_name);
+                }, 
+                (class_name) => {
+                    current_element.classList.remove(class_name);
+                },
+                'A class is a set of styles you can reuse on different elements. You can create these with the "classes" button above.'
+            );
+            create_drop_down_attribiute_div(
+                attributes_view,
+                "type", 
+                type, 
+                all_types, 
+                (event) => {
+
+                    let old_type = current_element.tagName.toLowerCase();
+                    current_element = change_type(current_element, event.target.value);
+                    setAttributeView(current_element);
+
+                    add_action(
+                        TYPE, 
+                        current_element,
+                        null, 
+                        {
+                            old_type: old_type,
+                            new_type: event.target.value
+                        }
+                    );
+                },
+                "The type of an element. 'div' elements are great for containers, 'p' elements for text, 'a' elements for links, 'h1 h2 h3' elements for titles, and 'input' elements for input fields."
+            );
+            
+            
+            // main styles
+            add_all_style_selectors_to_attribute_view(attributes_view, styles, false);
+
+            // scroll to last position
+            if (same_ele) {
+                attributes_view.scrollTop = scroll_pos;
+            }
         }
 
         function unsetAttributeView() {
@@ -2918,6 +3033,7 @@
         const class_editor_menu = document.getElementById("class_editor_menu");
         const class_attribute_view = document.getElementById("class_attribute_view");
         const class_list = document.getElementById("class_list");
+        const hover_styles_check = document.getElementById("hover_styles_check");
         const new_class_name = document.getElementById("new_class_name");
         let selected_class = null;
 
@@ -2938,13 +3054,14 @@
                     };
                     this.style.backgroundColor = '#241387'; 
                 }
-
+                set_class_attribute_view();
             });
 
             class_item.className = 'class_list_item';
             class_item.textContent = class_name;
             class_list.appendChild(class_item);
-            class_item.click();
+
+            return class_item;
         }
 
         function load_class_list() {
@@ -2957,14 +3074,27 @@
 
         function add_class() {
             const class_name = new_class_name.value;
+            new_class_name.value = '';
 
             if (!get_sheet()) { // check if style.sheet is available
                 set_style_div();
             }
 
+            // make sure class doesn't already exist
+            if(has_rule(class_name)) {
+                alert("That class already exists");
+                return;
+            }
+
             // add new class to iframe
-            get_sheet().insertRule(`.${class_name} {}`, get_sheet().cssRules.length);
-            add_class_to_list(class_name);
+            if (hover_styles_check.classList.contains("checked")) {
+                get_sheet().insertRule(`.${class_name}:hover {}`, get_sheet().cssRules.length);
+            }
+            else {
+                get_sheet().insertRule(`.${class_name} {}`, get_sheet().cssRules.length);
+            }
+            const class_item = add_class_to_list(class_name);
+            class_item.click();
 
             // set views
             set_class_attribute_view();
@@ -3008,51 +3138,8 @@
                     false
                 );
 
-
-                create_drop_down_attribiute_div(
-                    class_attribute_view,
-                    "display", 
-                    styles['display'], 
-                    ["", "none", "flex", "grid", "block"], 
-                    (event) => {
-                        current_element.style.display = event.target.value;
-                        set_class_attribute_view();
-                        add_action(STYLE, current_element, 'display', event.target.value);
-                    }
-                );
-
-                if (current_element.style.display == "flex") {
-                    create_drop_down_attribiute_div(
-                        class_attribute_view,
-                        "flex-direction", 
-                        styles['flex-direction'], 
-                        ["", "row", "column"], 
-                        (event) => {
-                            current_element.style.flexDirection = event.target.value;
-                            add_action(STYLE, current_element, 'flex-direction', event.target.value);
-                        }
-                    );
-                }
-                else if (current_element.style.display == "grid") {
-                    create_short_input_attribute_div(
-                        class_attribute_view,
-                        "grid-template-columns", 
-                        styles['grid-template-columns'], 
-                        4,
-                        (event) => {
-                            current_element.style.gridTemplateColumns = event.target.value;
-                            add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
-                        }
-                    );
-                }
-
-                create_measurement_attribiute_div(class_attribute_view, "width", styles['width'], "width");
-                create_measurement_attribiute_div(class_attribute_view, "height", styles['height'], "height");
-                create_quad_input_attribute_div(class_attribute_view, 'margin', styles['margin'], 'margin');
-                create_quad_input_attribute_div(class_attribute_view, 'padding', styles['padding'], 'padding');
-                
-                create_color_attribute_div(class_attribute_view, "color", "color", update_element_color);
-                create_color_attribute_div(class_attribute_view, "background-color", "background-color", update_element_background_color);   
+                // main styles
+                add_all_style_selectors_to_attribute_view(class_attribute_view, styles, true);
 
             }
             
@@ -3061,8 +3148,22 @@
         function show_class_editor() {
             document.getElementById('gray_out').style.display = "block";
             class_editor_menu.style.display = 'flex';
+            new_class_name.value = '';
             set_class_attribute_view();
         }
+   
+        hover_styles_check.addEventListener('click', () => {
+
+            const is_checked = hover_styles_check.classList.contains('checked');
+
+            if (!is_checked) {
+                hover_styles_check.classList.add('checked');
+            }
+            else {
+                hover_styles_check.classList.remove('checked');
+            }
+
+        });
     </script>
 
     <!-- other buttons -->
@@ -3299,6 +3400,7 @@ If you want a class to apply to both desktop and mobile, create the class in des
             setAttributeView(null);
         });
 
+
     </script>
     
     <!-- right click menu -->
@@ -3505,6 +3607,20 @@ If you want a class to apply to both desktop and mobile, create the class in des
             remove_outlines(selected_parent);
             remove_outlines(current_element);
         }
+    
+    
+    
+        // duplicate
+        function duplicate() {
+            right_click_menu.style.display = "none";
+            const new_element = current_element.cloneNode(true);
+            new_element.id = uuidV4();
+            current_element.parentElement.appendChild(new_element);
+            add_action(ADD_ELEMENT, new_element);
+            setAttributeView(new_element);
+
+        }
+    
     </script>
 
     <!-- undo redo -->
@@ -3775,6 +3891,7 @@ If you want a class to apply to both desktop and mobile, create the class in des
             }
 
         }
+
 
         function write_style_in_html() {
             const styles = iframeDoc.querySelectorAll('style');
