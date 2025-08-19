@@ -256,7 +256,7 @@
         }
 
         .control_button {
-            margin: .6rem;
+            margin: 1rem;
             border: var(--def_border);
             border-radius: 2px;
             color: #dddddd;
@@ -373,6 +373,7 @@
         #var_list_buttons {
             width: auto;
             display: flex;
+            align-items: center;
 
         }
 
@@ -501,6 +502,43 @@
         }
 
 
+        #animation_editor {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
+
+            width: 80vw;
+            height: 80vh;
+
+            display: none;
+            /* display: flex; */
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 1rem;
+        }
+
+        #animation_list {
+            height: 5rem;
+        }
+
+        #animation_name_input {
+            height: 1.5rem;
+            width: 9rem;
+            margin: 1rem;
+        }
+
+        #animation_list_buttons {
+            width: auto;
+            display: flex;
+            align-items: center;
+
+        }
+
     </style>
 </head>
 <body>
@@ -537,6 +575,7 @@
         <button class="control_button" onclick="select_parent()">select parent</button>
         <button class="control_button" onclick="show_class_editor()">classes</button>
         <button class="control_button" onclick="show_add_css_variable_dialog()">edit css variable</button>
+        <button class="control_button" onclick="show_animation_editor()">animations</button>
         <button class="control_button" onclick="show_hidden_divs()">show hidden divs</button>
     </div>
 
@@ -646,6 +685,32 @@
 
     <div id="hint_popper"></div>
 
+    <div id="animation_editor">
+        <h3>Edit an Animation</h3>
+
+        <p>
+            Animations are a great way to make your page stand out and feel more interactive. To create one you specify 
+            the style of the element at each keyframe below (you can skip keyframes). You can then apply this to an elements 'animation'.
+        </p>
+
+        <div id="animation_list" class="attributes_view"></div>
+        <div id="animation_list_buttons">
+            <input id="animation_name_input" class="attribute_input" placeholder="new animation name" type="text" autocomplete="off"></input>
+            <button class="control_button var_list_button" onclick="add_animation()">+</button>
+            <button class="control_button var_list_button" onclick="remove_animation()">-</button>
+        </div>
+        <div id="animation_list_buttons">
+            <button class="control_button" onclick="set_selected_keyframe_percent('keyframe 0%')">keyframe 0%</button>
+            <button class="control_button" onclick="set_selected_keyframe_percent('keyframe 25%')">keyframe 25%</button>
+            <button class="control_button" onclick="set_selected_keyframe_percent('keyframe 50%')">keyframe 50%</button>
+            <button class="control_button" onclick="set_selected_keyframe_percent('keyframe 75%')">keyframe 75%</button>
+            <button class="control_button" onclick="set_selected_keyframe_percent('keyframe 100%')">keyframe 100%</button>
+        </div>
+
+        <p id="selected_keyframe">keyframe 0%</p>
+        <div id="animation_attribute_view" class="attributes_view">
+        </div>
+    </div>
 
 
 
@@ -719,6 +784,8 @@
             'border-radius',
             'object-fit',
             'z-index',
+            'grid-template-rows',
+            'gap',
         ];
         const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
@@ -1240,6 +1307,20 @@
                 get_classes(rules)
             );
             
+        }
+
+        function get_key_frame_rules() {
+            let keyframe_rules = [];
+            const rules = get_sheet().cssRules;
+            for (let i = 0; i < rules.length; i++) {
+                const rule = rules[i];
+
+                if (rule.type === CSSRule.KEYFRAMES_RULE) {
+                    keyframe_rules.push(rule);
+                }
+            }
+
+            return keyframe_rules;
         }
 
         function is_current_an_element() {
@@ -2582,6 +2663,45 @@
                 );
                 create_drop_down_attribiute_div(
                     attribute_view_div,
+                    "flex-wrap", 
+                    styles['flex-wrap'], 
+                    ["", "nowrap", "wrap", "wrap-reverse"], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'flex-wrap', current_element.style.flexWrap);
+                        current_element.style.flexWrap = event.target.value;
+                    },
+                    'Sets whether flex items are forced onto one line or can wrap onto multiple lines'
+                );
+            }
+            else if (current_element.style.display == "grid") {
+                create_short_input_attribute_div(
+                    attribute_view_div,
+                    "grid-template-columns", 
+                    styles['grid-template-columns'], 
+                    6,
+                    (event) => {
+                        current_element.style.gridTemplateColumns = event.target.value;
+                        add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
+                    },
+                    'Determines the size of grid columns. For example "1fr 1fr 2fr" makes a grid of 3 columns with the last column being twice as big.'
+                );
+                create_short_input_attribute_div(
+                    attribute_view_div,
+                    "grid-template-rows", 
+                    styles['grid-template-rows'],
+                    6,
+                    (event) => {
+                        current_element.style.gridTemplateColumns = event.target.value;
+                        add_action(STYLE, current_element, 'grid-template-rows', event.target.value);
+                    },
+                    'Determines the size of grid rows. For example "1fr 1fr 2fr" specifies 3 rows with the last row being twice as big.'
+                );
+                create_measurement_attribiute_div(attribute_view_div, "gap", styles['gap'], "gap", "Gap between rows and columns.");
+            }
+
+            if (current_element.style.display == "flex" || current_element.style.display == "grid") {
+                create_drop_down_attribiute_div(
+                    attribute_view_div,
                     "justify-content", 
                     styles['justify-content'], 
                     ["", "start", "center", "end"], 
@@ -2602,31 +2722,8 @@
                     },
                     'Defines how the browser distributes space between and around content items along the cross axis of a flex container. If this doesn\'t appear to center a div try \'justify-content\''
                 );
-                create_drop_down_attribiute_div(
-                    attribute_view_div,
-                    "flex-wrap", 
-                    styles['flex-wrap'], 
-                    ["", "nowrap", "wrap", "wrap-reverse"], 
-                    (event) => {
-                        add_action(STYLE, current_element, 'flex-wrap', current_element.style.flexWrap);
-                        current_element.style.flexWrap = event.target.value;
-                    },
-                    'Sets whether flex items are forced onto one line or can wrap onto multiple lines'
-                );
             }
-            else if (current_element.style.display == "grid") {
-                create_short_input_attribute_div(
-                    attribute_view_div,
-                    "grid-template-columns", 
-                    styles['grid-template-columns'], 
-                    2,
-                    (event) => {
-                        current_element.style.gridTemplateColumns = event.target.value;
-                        add_action(STYLE, current_element, 'grid-template-columns', event.target.value);
-                    },
-                    'Determines the size of grid columns'
-                );
-            }
+
 
             if(!display_only_styles) {
                 let type = current_element.tagName.toLowerCase();
@@ -2946,6 +3043,26 @@
                 "For hiding an element. However this doesn't free up the space the element takes up. To do that set the 'display' to 'none'."
             );
 
+
+            let animation_rules = get_key_frame_rules();
+            let animation_names = animation_rules.map(rule => rule.name);
+            animation_names.unshift('');
+            create_drop_down_attribiute_div(
+                attribute_view_div,
+                "animation-name", 
+                styles['animation-name'], 
+                animation_names, 
+                (event) => {
+                    add_action(STYLE, current_element, 'animation-name', current_element.style.animationName);
+                    current_element.style.animationName = event.target.value;
+                },
+                "The animation to apply to this element"
+            );
+
+            if (styles['animation-name'] && styles['animation'] != '') {
+
+            }
+
         }
         
         function setAttributeView(element) {
@@ -3074,6 +3191,7 @@
 
         function add_class() {
             const class_name = new_class_name.value;
+            if (!class_name) return;
             new_class_name.value = '';
 
             if (!get_sheet()) { // check if style.sheet is available
@@ -3106,17 +3224,17 @@
         function remove_class() {
             if (!selected_class) return;
 
+            // add undo action
+            add_action(REMOVE_CLASS, current_element, class_name, get_rule_from_iframe_style(selected_class.class_name));
+
             // remove from iframe style
             remove_rule(selected_class.class_name);
 
             // remove from list
             selected_class.element.remove();
 
-            // add undo action
-            add_action(REMOVE_CLASS, current_element, class_name, get_rule_from_iframe_style(selected_class.class_name));
-            current_element = null;
-
             // set selected to null
+            current_element = null;
             selected_class = null;
             new_class_name.value = '';
             set_class_attribute_view();
@@ -3126,7 +3244,7 @@
         function set_class_attribute_view() {
             class_attribute_view.replaceChildren();
             load_class_list();
-            // new_class_name.value = '';
+            new_class_name.value = '';
 
             if (selected_class) {
 
@@ -3166,6 +3284,196 @@
         });
     </script>
 
+    <!-- animatino editing -->
+    <script>
+        const animation_editor = document.getElementById("animation_editor");
+        const animation_attribute_view = document.getElementById("animation_attribute_view");
+        const animation_list = document.getElementById("animation_list");
+        const animation_name_input = document.getElementById("animation_name_input");
+        const selected_keyframe = document.getElementById("selected_keyframe");
+        let selected_animation = null;
+        let key_frame_rules = [];
+
+        function add_animation_to_list(animation_name) {
+            let animation_item = document.createElement("div");
+            animation_item.addEventListener('click', function() {
+                let already_selected = selected_animation && selected_animation.class_name == animation_item.textContent;
+
+                if (selected_animation)
+                    selected_animation.element.style.backgroundColor = ''; 
+                if (already_selected) {
+                    selected_animation = null;
+                }
+                else {
+                    selected_animation = {
+                        element: this,
+                        animation_name: animation_name
+                    };
+                    this.style.backgroundColor = '#241387';
+                }
+                set_animation_attribute_view();
+            });
+
+            animation_item.className = 'class_list_item';
+            animation_item.textContent = animation_name;
+            animation_list.appendChild(animation_item);
+
+            return animation_item;
+        }
+
+        function load_animation_list() {
+            animation_list.replaceChildren();
+            key_frame_rules = get_key_frame_rules();
+            for (let keyframe_rule of key_frame_rules) {
+                add_animation_to_list(keyframe_rule.name);
+            }
+        }
+
+        function add_animation() {
+            let animation_name = animation_name_input.value;
+            if (!animation_name) return;
+
+            if (!get_sheet()) { // check if style.sheet is available
+                set_style_div();
+            }
+
+
+            // make sure animation doesn't already exist
+            let already_exists = false;
+            for (let rule of key_frame_rules) {
+                if (rule.name == animation_name) {
+                    already_exists = true;
+                }
+            }
+            if(already_exists) {
+                alert("That animation already exists");
+                return;
+            }
+
+            const animation = `
+            @keyframes ${animation_name} {
+                0% {
+
+                }
+                25% {
+                
+                }
+                50% {
+                
+                }
+                75% {
+                
+                }
+                100% {
+                
+                }
+            }
+            `;
+            const sheet = get_sheet();
+            sheet.insertRule(animation, sheet.cssRules.length);
+            const animation_item = add_animation_to_list(animation_name);
+            animation_item.click();
+        }
+
+        function remove_animation() {
+            if (!selected_animation) return;
+
+            // find rule
+            let index = -1;
+            for (let i = 0; i < key_frame_rules.length; i++) {
+                let rule = key_frame_rules[i];
+                if (rule.name == selected_animation.animation_name) {
+                    index = i;
+                    break;
+                }
+            }
+
+            // add undo action
+            add_action(REMOVE_CLASS, current_element, selected_animation.animation_name, keyframe_rules[index]);
+            
+            // remove from iframe style
+            get_sheet().deleteRule(index);
+
+            // remove from list
+            selected_animation.element.remove();
+
+            // set selected to null
+            selected_animation = null;
+            current_element = null;
+            set_animation_attribute_view();
+        }
+
+        function set_animation_attribute_view() {
+            animation_attribute_view.replaceChildren();
+            load_animation_list();
+            animation_name_input.value = '';
+
+            if (selected_animation) {
+
+                // get keyframe rule
+                let keyframes_rule = null;
+                key_frame_rules = get_key_frame_rules();
+                for (let rule of key_frame_rules) {
+                    if (rule.name = selected_animation) {
+                        keyframes_rule = rule;
+                        break;
+                    }
+                }
+                let keyframe_rule = null;
+                for (let rule of keyframes_rule.cssRules) {
+                    if (rule.keyText == '0%' && selected_keyframe.textContent == 'keyframe 0%') {
+                        keyframe_rule = rule;
+                        break;
+                    }
+                    else if (rule.keyText == '25%' && selected_keyframe.textContent == 'keyframe 25%') {
+                        keyframe_rule = rule;
+                        break;
+                    }
+                    else if (rule.keyText == '50%' && selected_keyframe.textContent == 'keyframe 50%') {
+                        keyframe_rule = rule;
+                        break;
+                    }
+                    else if (rule.keyText == '75%' && selected_keyframe.textContent == 'keyframe 75%') {
+                        keyframe_rule = rule;
+                        break;
+                    }
+                    else if (rule.keyText == '100%' && selected_keyframe.textContent == 'keyframe 100%') {
+                        keyframe_rule = rule;
+                        break;
+                    }
+                }
+                if (!keyframe_rule) return;
+                current_element = keyframe_rule;
+                
+                const styles = get_styles_for_element(
+                    current_element, 
+                    all_styles,
+                    false
+                );
+
+                // main styles
+                add_all_style_selectors_to_attribute_view(animation_attribute_view, styles, true);
+
+            }
+            
+
+
+        }
+
+        function show_animation_editor() {
+            document.getElementById('gray_out').style.display = "block";
+            animation_editor.style.display = 'flex';
+            load_animation_list();
+            set_animation_attribute_view();
+        }
+   
+        function set_selected_keyframe_percent(percent) {
+            console.log(percent);
+            selected_keyframe.textContent = percent;
+            set_animation_attribute_view();
+        }
+    </script>
+
     <!-- other buttons -->
     <script>
 
@@ -3177,6 +3485,7 @@
                 document.getElementById('add_css_variable_dialog').style.display = "none";  
                 open_menu.style.display = "none";
                 class_editor_menu.style.display = 'none';
+                animation_editor.style.display = 'none';
             }
         });
 
