@@ -40,8 +40,6 @@
             display: block;
         }
 
-
-
         #main_title {
         }
 
@@ -238,6 +236,7 @@
             background: #07002f; 
             border-radius: 2px;
         }
+
         .menu-item {
             font-size: .8rem;
             padding: 8px 12px;
@@ -256,7 +255,7 @@
         }
 
         .control_button {
-            margin: 1rem;
+            margin: .6rem;
             border: var(--def_border);
             border-radius: 2px;
             color: #dddddd;
@@ -786,6 +785,13 @@
             'z-index',
             'grid-template-rows',
             'gap',
+            'animation-name',
+            'animation-duration',
+            'animation-timing-function',
+            'animation-iteration-count',
+            'animation-delay',
+            'animation-direction',
+            'animation-fill-mode',
         ];
         const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
@@ -795,6 +801,8 @@
 
         let changing_parent = false;
         let selected_parent = null;
+
+        let persist_locally = false;
     </script>
 
     <!-- UTIL -->
@@ -1108,7 +1116,9 @@
             const full_html = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
 
             // save to local storage
-            localStorage.setItem('last_state', full_html);
+            if (persist_locally) {
+                localStorage.setItem('last_state', full_html);
+            }
 
             return full_html;
         }
@@ -1347,7 +1357,10 @@
                 const rule = get_sheet().cssRules[i];
                 if (rule.selectorText === `.${class_name}`) {
                     get_sheet().deleteRule(i);
-                    ruleIndex = i;
+                    break;
+                }
+                else if (rule.type === CSSRule.KEYFRAMES_RULE && rule.name == class_name) {
+                    get_sheet().deleteRule(i);
                     break;
                 }
             }
@@ -3055,12 +3068,64 @@
                 (event) => {
                     add_action(STYLE, current_element, 'animation-name', current_element.style.animationName);
                     current_element.style.animationName = event.target.value;
+                    setAttributeView(current_element);
                 },
-                "The animation to apply to this element"
+                "The animation to apply to this element. You can create this under 'animation'. In order for the animation to play you need to set the duration and iteration count below."
             );
 
             if (styles['animation-name'] && styles['animation'] != '') {
 
+                create_short_input_attribute_div(attribute_view_div, "animation-duration", styles['animation-duration'], 4, (event) => {
+                        add_action(STYLE, current_element, 'animation-duration', current_element.style.animationDuration);
+                        current_element.style.animationDuration = event.target.value;
+                    },
+                    "How long the animation playback takes. (Example '0.5s')"
+                );
+                create_drop_down_attribiute_div(
+                    attribute_view_div,
+                    "animation-timing-function", 
+                    styles['animation-timing-function'], 
+                    ['', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'animation-timing-function', current_element.style.animationTimingFunction);
+                        current_element.style.animationTimingFunction = event.target.value;
+                    },
+                    "Modifies the speed of the animation at certain points to make it potentially more smooth."
+                );
+                create_short_input_attribute_div(attribute_view_div, "animation-iteration-count", styles['animation-iteration-count'], 8, (event) => {
+                        add_action(STYLE, current_element, 'animation-iteration-count', current_element.style.animationIterationCount);
+                        current_element.style.animationIterationCount = event.target.value;
+                    },
+                    "How many times the animation should play. (Example 'infinite' or '2.5')"
+                );
+                create_short_input_attribute_div(attribute_view_div, "animation-delay", styles['animation-delay'], 4, (event) => {
+                        add_action(STYLE, current_element, 'animation-delay', current_element.style.animationDelay);
+                        current_element.style.animationDelay = event.target.value;
+                    },
+                    "Delay before the animation starts. (Example '0.5s')"
+                );
+                create_drop_down_attribiute_div(
+                    attribute_view_div,
+                    "animation-direction", 
+                    styles['animation-direction'], 
+                    ['', 'linear', 'normal', 'reverse', 'alternate'], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'animation-direction', current_element.style.animationDirection);
+                        current_element.style.animationDirection = event.target.value;
+                    },
+                    "Modifies the way the animation is played going normal, reverse, or alternating between normal and reverse."
+                );
+                create_drop_down_attribiute_div(
+                    attribute_view_div,
+                    "animation-fill-mode", 
+                    styles['animation-fill-mode'], 
+                    ['', 'none', 'forwards', 'backwards', 'both'], 
+                    (event) => {
+                        add_action(STYLE, current_element, 'animation-fill-mode', current_element.style.animationFillMode);
+                        current_element.style.animationFillMode = event.target.value;
+                    },
+                    "Determines what the animations styles are when the animation is done playing. With 'forwards' the animation keeps the styles from the last keyframe."
+                );
             }
 
         }
@@ -3225,7 +3290,7 @@
             if (!selected_class) return;
 
             // add undo action
-            add_action(REMOVE_CLASS, current_element, class_name, get_rule_from_iframe_style(selected_class.class_name));
+            add_action(REMOVE_CLASS, current_element, selected_class.class_name, get_rule_from_iframe_style(selected_class.class_name));
 
             // remove from iframe style
             remove_rule(selected_class.class_name);
@@ -3243,7 +3308,6 @@
 
         function set_class_attribute_view() {
             class_attribute_view.replaceChildren();
-            load_class_list();
             new_class_name.value = '';
 
             if (selected_class) {
@@ -3267,6 +3331,7 @@
             document.getElementById('gray_out').style.display = "block";
             class_editor_menu.style.display = 'flex';
             new_class_name.value = '';
+            load_class_list();
             set_class_attribute_view();
         }
    
@@ -3284,7 +3349,7 @@
         });
     </script>
 
-    <!-- animatino editing -->
+    <!-- animation editing -->
     <script>
         const animation_editor = document.getElementById("animation_editor");
         const animation_attribute_view = document.getElementById("animation_attribute_view");
@@ -3297,7 +3362,7 @@
         function add_animation_to_list(animation_name) {
             let animation_item = document.createElement("div");
             animation_item.addEventListener('click', function() {
-                let already_selected = selected_animation && selected_animation.class_name == animation_item.textContent;
+                let already_selected = selected_animation && selected_animation.animation_name == animation_item.textContent;
 
                 if (selected_animation)
                     selected_animation.element.style.backgroundColor = ''; 
@@ -3350,27 +3415,30 @@
                 return;
             }
 
-            const animation = `
-            @keyframes ${animation_name} {
-                0% {
+            let animation = `
+                @keyframes ${animation_name} {
+                    0% {
 
+                    }
+                    25% {
+                    
+                    }
+                    50% {
+                    
+                    }
+                    75% {
+                    
+                    }
+                    100% {
+                    
+                    }
                 }
-                25% {
-                
-                }
-                50% {
-                
-                }
-                75% {
-                
-                }
-                100% {
-                
-                }
-            }
             `;
-            const sheet = get_sheet();
-            sheet.insertRule(animation, sheet.cssRules.length);
+
+            // write out animations (insertRule doesn't work some reason for animations)
+            write_style_in_html(animation);
+            
+            // add to visual list
             const animation_item = add_animation_to_list(animation_name);
             animation_item.click();
         }
@@ -3380,8 +3448,9 @@
 
             // find rule
             let index = -1;
-            for (let i = 0; i < key_frame_rules.length; i++) {
-                let rule = key_frame_rules[i];
+            let rules = get_sheet().cssRules;
+            for (let i = 0; i < rules.length; i++) {
+                let rule = rules[i];
                 if (rule.name == selected_animation.animation_name) {
                     index = i;
                     break;
@@ -3389,7 +3458,7 @@
             }
 
             // add undo action
-            add_action(REMOVE_CLASS, current_element, selected_animation.animation_name, keyframe_rules[index]);
+            add_action(REMOVE_CLASS, current_element, selected_animation.animation_name, rules[index]);
             
             // remove from iframe style
             get_sheet().deleteRule(index);
@@ -3400,12 +3469,12 @@
             // set selected to null
             selected_animation = null;
             current_element = null;
+            load_animation_list();
             set_animation_attribute_view();
         }
 
         function set_animation_attribute_view() {
             animation_attribute_view.replaceChildren();
-            load_animation_list();
             animation_name_input.value = '';
 
             if (selected_animation) {
@@ -3414,7 +3483,7 @@
                 let keyframes_rule = null;
                 key_frame_rules = get_key_frame_rules();
                 for (let rule of key_frame_rules) {
-                    if (rule.name = selected_animation) {
+                    if (rule.name == selected_animation.animation_name) {
                         keyframes_rule = rule;
                         break;
                     }
@@ -4009,6 +4078,8 @@ If you want a class to apply to both desktop and mobile, create the class in des
             }
             else if (action.type == REMOVE_CLASS) {
                 get_sheet().insertRule(action.value.cssText, get_sheet().cssRules.length);
+                load_class_list();
+                load_animation_list();
             }
             else if (action.type == ATTRIBUTE) {
                 let old_value = action.element.getAttribute(action.property);
@@ -4065,6 +4136,8 @@ If you want a class to apply to both desktop and mobile, create the class in des
             }
             else if (action.type == REMOVE_CLASS) {
                 remove_rule(action.property);
+                load_class_list();
+                load_animation_list();
             }
             else if (action.type == ATTRIBUTE) {
                 let new_value = action.element.getAttribute(action.property);
@@ -4202,15 +4275,19 @@ If you want a class to apply to both desktop and mobile, create the class in des
         }
 
 
-        function write_style_in_html() {
+        function write_style_in_html(css_to_add) {
             const styles = iframeDoc.querySelectorAll('style');
             let main_style_sheet = styles[0];
 
             // Loop through the rules
             let css_texts = [];
-            for (let i = 0; i < main_style_sheet.sheet.cssRules.length; i++) {
-                css_texts.push("\n\t\t" + main_style_sheet.sheet.cssRules[i].cssText) + "";
+            let rules = main_style_sheet.sheet.cssRules;
+            for (let i = 0; i < rules.length; i++) {
+                css_texts.push("\n\t\t" + rules[i].cssText) + "";
                 // console.log(iframe_style.sheet.cssRules[i].cssText);
+            }
+            if(css_to_add) {
+                css_texts.push("\n\t\t" + css_to_add);
             }
 
             main_style_sheet.innerHTML = css_texts.join("\n") + "\n";
