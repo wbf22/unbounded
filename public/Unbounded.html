@@ -849,6 +849,7 @@
             'animation-delay',
             'animation-direction',
             'animation-fill-mode',
+            'box-sizing',
         ];
         const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
@@ -2925,6 +2926,19 @@
             create_measurement_attribiute_div(attribute_view_div, "border-radius", styles['border-radius'], "border-radius", "How rounded the corners are. '10px' is a common value.");
         
             create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page.");
+            create_drop_down_attribiute_div(
+                attribute_view_div, 
+                'box-sizing',
+                styles['box-sizing'],
+                ['', 'inherit', 'border-box', 'content-box'],
+                (event) => {
+                    add_action(STYLE, current_element, 'box-sizing', current_element.style.boxSizing);
+                    current_element.style.boxSizing = event.target.value;
+                }, 
+                'Determines how the size of a box is calculated. Affects width and height sizing. (Typically "border-box" is reccomened)'
+            );
+
+
 
             create_drop_down_attribiute_div(
                 attribute_view_div, 
@@ -3127,7 +3141,7 @@
                     current_element.style.animationName = event.target.value;
                     setAttributeView(current_element);
                 },
-                "The animation to apply to this element. You can create this under 'animation'. In order for the animation to play you need to set the duration and iteration count below."
+                "The animation to apply to this element. You can create this under 'animation'. In order for the animation to play you need to set the duration and iteration count afterwards."
             );
 
             if (styles['animation-name'] && styles['animation'] != '') {
@@ -4252,17 +4266,25 @@ If you want a class to apply to both desktop and mobile, create the class in des
             }
         }
 
-        function remove_outlines(outlined_element) {
+        function remove_outlines_rec(outlined_element) {
             if (outlined_element == null) return;
 
-            let element = outlined_element;
-            while (element.parentElement) {
-                const is_dashed = window.getComputedStyle(element).outlineStyle === 'dashed';
-                if (is_dashed) {
-                    element.style.outline = '';
-                }
-                element = element.parentElement;
+            const is_dashed = window.getComputedStyle(outlined_element).outlineStyle === 'dashed';
+            if (is_dashed) {
+                outlined_element.style.outline = '';
             }
+
+            for(let element of outlined_element.children) {
+                remove_outlines_rec(element);
+            }
+
+        }
+
+        function remove_outlines() {
+            const root = iframeDoc.documentElement;
+            if (root == null) return;
+
+            remove_outlines_rec(root);
 
         }
 
