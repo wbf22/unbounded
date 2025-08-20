@@ -2775,7 +2775,7 @@
                     attribute_view_div,
                     "justify-content", 
                     styles['justify-content'], 
-                    ["", "start", "center", "end"], 
+                    ["", "start", "center", "end", "space-between", "space-around", "space-evenly"], 
                     (event) => {
                         add_action(STYLE, current_element, 'justify-content', current_element.style.justifyContent);
                         current_element.style.justifyContent = event.target.value;
@@ -2786,7 +2786,7 @@
                     attribute_view_div,
                     "align-items", 
                     styles['align-items'], 
-                    ["", "start", "center", "end"], 
+                    ["", "start", "center", "end", "stretch", "baseline"], 
                     (event) => {
                         add_action(STYLE, current_element, 'align-items', current_element.style.alignItems);
                         current_element.style.alignItems = event.target.value;
