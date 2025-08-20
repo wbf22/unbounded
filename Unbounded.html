@@ -3022,6 +3022,12 @@
                     'Palatino',
                     '"Courier New"',
                     'cursive',
+                    'Pixelify Sans',
+                    'Uncial Antiqua',
+                    'Caesar Dressing',
+                    'Jacquard 12',
+                    'UnifrakturMaguntia',
+                    'Ballet',
                 ],
                 (event) => {
                     add_action(STYLE, current_element, 'font-family', current_element.style.fontFamily);
@@ -3066,6 +3072,24 @@
                     }
                     else if (event.target.value == 'Chewy') {
                         addGoogleFont('Chewy', 'https://fonts.googleapis.com/css2?family=Chewy&display=swap');
+                    }
+                    else if (event.target.value == 'Pixelify Sans') {
+                         addGoogleFont('Pixelify_Sans', 'https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap');
+                    }
+                    else if (event.target.value == 'Uncial Antiqua') {
+                         addGoogleFont('Uncial_Antiqua', 'https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap');
+                    }
+                    else if (event.target.value == 'Caesar Dressing') {
+                        addGoogleFont('Caesar_Dressing', 'https://fonts.googleapis.com/css2?family=Caesar+Dressing&display=swap');
+                    }
+                    else if (event.target.value == 'Jacquard 12') {
+                        addGoogleFont('Jacquard_12', 'https://fonts.googleapis.com/css2?family=Jacquard+12&display=swap');
+                    }
+                    else if (event.target.value == 'UnifrakturMaguntia') {
+                        addGoogleFont('UnifrakturMaguntia', 'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap');
+                    }
+                    else if (event.target.value == 'Ballet') {
+                        addGoogleFont('Ballet', 'https://fonts.googleapis.com/css2?family=Ballet:opsz@16..72&display=swap');
                     }
                     // else if (event.target.value == '') {
                     //     addGoogleFont('', '');
