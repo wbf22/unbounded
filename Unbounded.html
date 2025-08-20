@@ -548,6 +548,8 @@
             background-color: #dddddd;
             color: #07002f;
             pointer-events: none; /* doesn't block mouse */
+
+            z-index: 1002;
         }
 
 
@@ -1564,6 +1566,7 @@
         const color_hex = document.getElementById('color_hex');
         const ctx = slCanvas.getContext('2d');
         let color_picker_target_function = null;
+        let set_inherit = true;
 
         let hue = 0;
         let sat = 100;
@@ -1713,6 +1716,7 @@
         });
 
         function check_inherited() {
+            set_inherit = true;
             color_picker_target_function(-1, -1, -1, -1);
             update_color();
             checkboxDiv.classList.add('checked');
@@ -1720,6 +1724,7 @@
         }
 
         function un_check_inherited() {
+            set_inherit = false;
             color_picker_target_function(0, 100, 50, 1);
             update_color();
             // console.log("unchecked", checkboxDiv.classList);
@@ -1763,8 +1768,8 @@
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
 
             let rgba = null;
-            if (hue_t < 0) {
-                current_element.style[style_property] = '';
+            if (set_inherit) {
+                current_element.style[style_property] = 'inherit';
                 const computed_color = get_computer_color(style_property);
                 rgba = parse_any_format_to_rgba(computed_color);
 
@@ -1774,7 +1779,6 @@
                 light = hsla.lightness;
                 alpha = hsla.alpha / 100;
                 // console.log("updating", hue, sat, light, alpha);
-                current_element.style[style_property] = '';
             }
             else {
                 rgba = hsla_to_rgba(hue_t, sat_t, light_t, alpha_t * 100);
@@ -1782,7 +1786,7 @@
                 current_element.style[style_property] = hex;
             }
 
-
+            // console.log(current_element.style[style_property]);
             // console.log(hue, sat, light, alpha);
             // console.log(current_element);
             // console.log(rgba);
@@ -1933,6 +1937,10 @@
             color_div.height = 20;
             attribute_text_content.appendChild(color_div);
             color_div.addEventListener('click', (event) => {
+
+                set_inherit = current_element.style[style_property] == 'inherit';
+                console.log("set_inherit", set_inherit);
+
                 add_action(STYLE, current_element, style_property, current_element.style[style_property]);
 
                 color_picker_target_function = (hue, sat, light, alpha) => {
@@ -1946,6 +1954,18 @@
                 picker.focus();
                 picker.style.top = event.clientY - 420 + 'px';
                 picker.style.left = event.clientX + 'px';
+                if (event.clientY - 420 < 0) {
+                    picker.style.top = '0px';
+                    console.log("too high");
+                }
+                if (event.clientX + picker.offsetWidth > window.innerWidth) {
+                    picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
+                    console.log("too right");
+                }
+                // console.log(event.clientX);
+                // console.log(event.clientY);
+
+
                 
                 let computed_color = get_computer_color(style_property);
                 let inherited = computed_color != current_element.style[style_property];
@@ -2498,7 +2518,14 @@
                 picker.focus();
                 picker.style.top = event.clientY - 420 + 'px';
                 picker.style.left = event.clientX + 'px';
-                
+                if (event.clientY - 420 < 0) {
+                    picker.style.top = '0px';
+                    console.log("too high");
+                }
+                if (event.clientX + picker.offsetWidth > window.innerWidth) {
+                    picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
+                    console.log("too right");
+                }
 
             });
         }
@@ -2695,6 +2722,14 @@
                 picker.focus();
                 picker.style.top = event.clientY - 420 + 'px';
                 picker.style.left = event.clientX + 'px';
+                if (event.clientY - 420 < 0) {
+                    picker.style.top = '0px';
+                    console.log("too high");
+                }
+                if (event.clientX + picker.offsetWidth > window.innerWidth) {
+                    picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
+                    console.log("too right");
+                }
             });
 
         
@@ -2925,7 +2960,7 @@
             create_border_attribute_div(attribute_view_div, "The border of a div. A common value is '2px solid' and then a color. To round the corners use 'border-radius'");
             create_measurement_attribiute_div(attribute_view_div, "border-radius", styles['border-radius'], "border-radius", "How rounded the corners are. '10px' is a common value.");
         
-            create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page.");
+            create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page. (offset-x offset-y blur-raidus spread-radius color inset). A good example is (0 0 10)");
             create_drop_down_attribiute_div(
                 attribute_view_div, 
                 'box-sizing',
