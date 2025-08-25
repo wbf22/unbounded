@@ -252,9 +252,10 @@
             /* width: 30rem; */
             display: grid;
             /* border: 1px solid #4d31ee; */
-            grid-template-columns: .5fr .2fr 2fr;
+            grid-template-columns: .7fr .2fr 2fr;
             justify-items: start;
             align-items: start;
+
         }
 
         .attribute > * {
@@ -384,7 +385,7 @@
         }
 
         .number_input {
-            width: 1rem;
+            width: 1.5rem;
             margin-right: 1rem;
         }
 
@@ -503,9 +504,12 @@
         }
 
         .class_check_option {
-            display: grid;
             max-width: 40rem;
-            grid-template-columns: .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr;
+            /* display: grid;
+            grid-template-columns: .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr .5fr 1fr; */
+
+            display: flex;
+            flex-wrap: wrap;
         }
         
         .class_check_option > * {
@@ -836,6 +840,7 @@
             'word-spacing',
             'background-repeat',
             'background-size',
+            'background-position',
             'opacity',
             'box-shadow',
             'cursor',
@@ -1850,6 +1855,11 @@
             select_div.className = 'class_check_option';
             let classes_shown = new Set();
             for (let option of drop_down_options) {
+
+                let option_div = document.createElement("div");
+                option_div.style.display = 'flex';
+                option_div.style.marginBottom = '0.5rem';
+
                 if (option.includes(":hover")) {
                     option = option.substring(0, option.indexOf(":"));
                 }
@@ -1864,9 +1874,11 @@
 
                 let label = document.createElement("div");
                 label.textContent = option;
+                label.style.marginLeft = '1rem';
 
-                select_div.appendChild(checkbox);
-                select_div.appendChild(label);
+                option_div.appendChild(checkbox);
+                option_div.appendChild(label);
+                select_div.appendChild(option_div);
 
                 checkbox.addEventListener('click', () => {
                     const is_checked = checkbox.classList.contains('checked');
@@ -1934,8 +1946,6 @@
             semicolon.style = 'color: #13a9c3;';
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
-
-
 
             let value_section = document.createElement("div");
             value_section.style.display = 'flex';
@@ -2148,7 +2158,7 @@
             measurement_input.addEventListener('focusout', on_done);
         }
 
-        function create_double_input_attribute_div(target_attribute_view, name, value, style_property, hint) {
+        function create_double_input_attribute_div(target_attribute_view, name, value, style_property, allow_single, hint) {
             let numbers = [];
             let unit = 'px';
             let values = value.split(' ');
@@ -2212,7 +2222,7 @@
                 let left = first_input.value + (is_numeric(first_input.value)? select_div.value : '');
                 let right = right_input.value + (is_numeric(right_input.value)? select_div.value : '');
 
-                if (left && right) {
+                if (left && right || (allow_single && left)) {
                     current_element.style[style_property] = left + ' ' + right;
                 }
 
@@ -2361,7 +2371,7 @@
             });
         }
 
-        function create_file_upload_or_url_attribute_div(target_attribute_view, name, listener, remove_function, hint) {
+        function create_file_upload_or_url_attribute_div(target_attribute_view, name, listener, remove_function, remove_button_id, hint) {
 
             let attribute_text_content = document.createElement("div");
             attribute_text_content.className = 'attribute';
@@ -2415,6 +2425,8 @@
                 remove_function();
             });
             remove_div.style.marginLeft = '1rem';
+            remove_div.id = remove_button_id;
+            remove_div.style.display = 'none';
             pair.appendChild(remove_div);
 
             attribute_text_content.appendChild(pair);
@@ -2630,30 +2642,34 @@
 
             let side_5 = document.createElement("div");
             side_5.style.display = 'flex';
-            // side_5.style.gridTemplateColumns = '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr';
+            side_5.style.flexWrap = 'wrap';
 
             let top_input = document.createElement("input");
             top_input.className = 'attribute_input number_input';
             top_input.autocomplete = 'off';
-            top_input.value = numbers.length > 0? numbers[0] : '';;
+            top_input.value = numbers.length > 0? numbers[0] : '';
+            top_input.style.marginBottom = '0.5rem';
             side_5.appendChild(top_input);
 
             let right_input = document.createElement("input");
             right_input.className = 'attribute_input number_input';
             right_input.autocomplete = 'off';
             right_input.value = numbers.length > 1? numbers[1] : '';
+            right_input.style.marginBottom = '0.5rem';
             side_5.appendChild(right_input);
 
             let bottom_input = document.createElement("input");
             bottom_input.className = 'attribute_input number_input';
             bottom_input.autocomplete = 'off';
             bottom_input.value = numbers.length > 2? numbers[2] : '';
+            bottom_input.style.marginBottom = '0.5rem';
             side_5.appendChild(bottom_input);
 
             let left_input = document.createElement("input");
             left_input.className = 'attribute_input number_input';
             left_input.autocomplete = 'off';
             left_input.value = numbers.length > 3? numbers[3] : '';
+            left_input.style.marginBottom = '0.5rem';
             side_5.appendChild(left_input);
 
             let select_div = document.createElement("select");
@@ -2665,6 +2681,8 @@
                 select_div.appendChild(option_div);
             }
             select_div.value = unit;
+            select_div.style.marginRight = '1rem';
+            select_div.style.marginBottom = '0.5rem';
             side_5.appendChild(select_div);
 
 
@@ -2674,11 +2692,16 @@
             color_div.width = 20;
             color_div.height = 20;
             side_5.appendChild(color_div);
-            color_div.style.marginLeft = '1rem';
+            color_div.style.marginBottom = '0.5rem';
+            color_div.style.marginRight = '1rem';
             
 
+            let inset_div = document.createElement("div");
+            inset_div.style.display = 'flex';
+            inset_div.style.marginBottom = '0.5rem';
+
             let checkbox = document.createElement("div");
-            checkbox.style.marginLeft = '1rem';
+            checkbox.style.marginRight = '1rem';
             checkbox.className = 'custom-checkbox';
             if (inset) {
                 checkbox.classList.add('checked');
@@ -2686,10 +2709,11 @@
 
             let label = document.createElement("div");
             label.textContent = "inset";
-            label.style.marginLeft = '1rem';
 
-            side_5.appendChild(label);
-            side_5.appendChild(checkbox);
+            inset_div.appendChild(checkbox);
+            inset_div.appendChild(label);
+            side_5.appendChild(inset_div);
+
 
 
             attribute_div.appendChild(side_5);
@@ -2801,7 +2825,7 @@
             scroll_pos = attributes_view.scrollTop;
         });
 
-        function add_all_style_selectors_to_attribute_view(attribute_view_div, styles, display_only_styles) {
+        function add_all_style_selectors_to_attribute_view(attribute_view_div, styles, display_only_styles, show_all, no_animations) {
             create_drop_down_attribiute_div(
                 attribute_view_div,
                 "display", 
@@ -2815,7 +2839,7 @@
                 "'display' determines how child elements are arranged inside this element. 'flex' is a good choice for centering children in the parent if you set 'justify-content' and 'align-items' to 'center'"
             );
 
-            if (current_element.style.display == "flex") {
+            if (current_element.style.display == "flex" || show_all) {
                 create_drop_down_attribiute_div(
                     attribute_view_div,
                     "flex-direction", 
@@ -2839,7 +2863,7 @@
                     'Sets whether flex items are forced onto one line or can wrap onto multiple lines'
                 );
             }
-            else if (current_element.style.display == "grid") {
+            else if (current_element.style.display == "grid" || show_all) {
                 create_short_input_attribute_div(
                     attribute_view_div,
                     "grid-template-columns", 
@@ -2865,7 +2889,7 @@
                 create_measurement_attribiute_div(attribute_view_div, "gap", styles['gap'], "gap", "Gap between rows and columns.");
             }
 
-            if (current_element.style.display == "flex" || current_element.style.display == "grid") {
+            if (current_element.style.display == "flex" || current_element.style.display == "grid" || show_all) {
                 create_drop_down_attribiute_div(
                     attribute_view_div,
                     "justify-content", 
@@ -2891,8 +2915,8 @@
             }
 
 
-            if(!display_only_styles) {
-                let type = current_element.tagName.toLowerCase();
+            if(!display_only_styles || show_all) {
+                let type = current_element.tagName? current_element.tagName.toLowerCase() : '';
                 if (text_types.has(type)) {
                     create_input_attribute_div(attribute_view_div, "textContent", get_own_text(current_element), (event) => {
                             add_action(CHANGE_TEXT, current_element, null, get_own_text(current_element));
@@ -2901,27 +2925,33 @@
                         'The text inside this div.'
                     );
                 }
-                else if (type == 'img') {
-                    create_file_upload_or_url_attribute_div(
-                        attribute_view_div, 
-                        "src",
-                        async function () {
-                            add_action(ATTRIBUTE, current_element, 'src', current_element.src);
-                            const url = await get_image_as_url(this);
-                            current_element.src = url;
-                            current_element.onload = () => {
-                                
-                                current_element.style.width = `${current_element.naturalWidth}px`;
-                                current_element.style.height = `${current_element.naturalHeight}px`;
-                                setAttributeView(current_element);
-                            };
-                        },
-                        () => {
-                            add_action(ATTRIBUTE, current_element, 'src', current_element.src);
-                            current_element.src = null;
-                        },
-                        'The actual image display in this element'
-                    );
+                else if (type == 'img' || show_all) {
+                    if (type == 'img') {
+                        create_file_upload_or_url_attribute_div(
+                            attribute_view_div, 
+                            "src",
+                            async function () {
+                                add_action(ATTRIBUTE, current_element, 'src', current_element.src);
+                                const url = await get_image_as_url(this);
+                                current_element.src = url;
+                                current_element.onload = () => {
+                                    
+                                    current_element.style.width = `${current_element.naturalWidth}px`;
+                                    current_element.style.height = `${current_element.naturalHeight}px`;
+                                    document.getElementById('src_remove_x').style.display = 'block';
+                                    setAttributeView(current_element);
+                                };
+                            },
+                            () => {
+                                add_action(ATTRIBUTE, current_element, 'src', current_element.src);
+                                current_element.src = null;
+                                document.getElementById('src_remove_x').style.display = 'none';
+                            },
+                            "src_remove_x",
+                            'The actual image display in this element'
+                        );
+                        if (current_element.src) document.getElementById('src_remove_x').style.display = 'block';
+                    }
                     create_drop_down_attribiute_div(
                         attribute_view_div,
                         "object-fit", 
@@ -2976,15 +3006,20 @@
                     const url = await get_image_as_url(this);
                     current_element.style.backgroundImage = `url(${url})`;
                     setAttributeView(current_element);
+                    document.getElementById('background_remove_x').style.display = 'block';
                 },
                 async function () {
                     add_action(STYLE, current_element, 'background-image', current_element.style.backgroundImage);
                     current_element.style.backgroundImage = '';
                     setAttributeView(current_element);
+                    document.getElementById('background_remove_x').style.display = 'none';
                 },
+                "background_remove_x",
                 "The background image of an element."
             );
-            if (current_element.style.backgroundImage) {
+            // console.log(current_element.style.backgroundImage);
+            if (current_element.style.backgroundImage) document.getElementById('background_remove_x').style.display = 'block';
+            if (current_element.style.backgroundImage || show_all) {
                 create_drop_down_attribiute_div(
                     attribute_view_div,
                     "background-repeat", 
@@ -3012,9 +3047,10 @@
                     "background-size", 
                     styles['background-size'], 
                     "background-size",
+                    true,
                     'The sizing of the background image. To set auto-sizeing use the drop down above.'
                 );
-                
+                create_double_input_attribute_div(attribute_view_div, "background-position", styles['background-position'], "background-position", true, "The offset of the background image.");
             }
         
             create_border_attribute_div(attribute_view_div, "The border of a div. A common value is '2px solid' and then a color. To round the corners use 'border-radius'");
@@ -3048,7 +3084,7 @@
                 'How the element is positioned in the parent. Typically this is only used when you want a floated element. If that is what you\'re after then you probably want \'fixed\''
             );
 
-            if (styles['position'] != '' && styles['position'] != 'static') {
+            if ((styles['position'] != '' && styles['position'] != 'static') || show_all) {
                 create_measurement_attribiute_div(attribute_view_div, "top", styles['top'], "top", "Sets the vertical position of the element measuring from the top");
                 create_measurement_attribiute_div(attribute_view_div, "left", styles['left'], "left", "Sets the horizontal position of the element measuring from the left");
                 create_measurement_attribiute_div(attribute_view_div, "bottom", styles['bottom'], "bottom", "Sets the vertical end of the element measuring from the top");
@@ -3247,75 +3283,79 @@
             );
 
 
-            let animation_rules = get_key_frame_rules();
-            let animation_names = animation_rules.map(rule => rule.name);
-            animation_names.unshift('');
-            create_drop_down_attribiute_div(
-                attribute_view_div,
-                "animation-name", 
-                styles['animation-name'], 
-                animation_names, 
-                (event) => {
-                    add_action(STYLE, current_element, 'animation-name', current_element.style.animationName);
-                    current_element.style.animationName = event.target.value;
-                    setAttributeView(current_element);
-                },
-                "The animation to apply to this element. You can create this under 'animation'. In order for the animation to play you need to set the duration and iteration count afterwards."
-            );
 
-            if (styles['animation-name'] && styles['animation'] != '') {
+            if (!no_animations) {
 
-                create_short_input_attribute_div(attribute_view_div, "animation-duration", styles['animation-duration'], 4, (event) => {
-                        add_action(STYLE, current_element, 'animation-duration', current_element.style.animationDuration);
-                        current_element.style.animationDuration = event.target.value;
-                    },
-                    "How long the animation playback takes. (Example '0.5s')"
-                );
+                let animation_rules = get_key_frame_rules();
+                let animation_names = animation_rules.map(rule => rule.name);
+                animation_names.unshift('');
                 create_drop_down_attribiute_div(
                     attribute_view_div,
-                    "animation-timing-function", 
-                    styles['animation-timing-function'], 
-                    ['', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'], 
+                    "animation-color", 
+                    styles['animation-name'], 
+                    animation_names, 
                     (event) => {
-                        add_action(STYLE, current_element, 'animation-timing-function', current_element.style.animationTimingFunction);
-                        current_element.style.animationTimingFunction = event.target.value;
+                        add_action(STYLE, current_element, 'animation-name', current_element.style.animationName);
+                        current_element.style.animationName = event.target.value;
+                        setAttributeView(current_element);
                     },
-                    "Modifies the speed of the animation at certain points to make it potentially more smooth."
+                    "The animation to apply to this element. You can create this under 'animation'. In order for the animation to play you need to set the duration and iteration count afterwards."
                 );
-                create_short_input_attribute_div(attribute_view_div, "animation-iteration-count", styles['animation-iteration-count'], 8, (event) => {
-                        add_action(STYLE, current_element, 'animation-iteration-count', current_element.style.animationIterationCount);
-                        current_element.style.animationIterationCount = event.target.value;
-                    },
-                    "How many times the animation should play. (Example 'infinite' or '2.5')"
-                );
-                create_short_input_attribute_div(attribute_view_div, "animation-delay", styles['animation-delay'], 4, (event) => {
-                        add_action(STYLE, current_element, 'animation-delay', current_element.style.animationDelay);
-                        current_element.style.animationDelay = event.target.value;
-                    },
-                    "Delay before the animation starts. (Example '0.5s')"
-                );
-                create_drop_down_attribiute_div(
-                    attribute_view_div,
-                    "animation-direction", 
-                    styles['animation-direction'], 
-                    ['', 'linear', 'normal', 'reverse', 'alternate'], 
-                    (event) => {
-                        add_action(STYLE, current_element, 'animation-direction', current_element.style.animationDirection);
-                        current_element.style.animationDirection = event.target.value;
-                    },
-                    "Modifies the way the animation is played going normal, reverse, or alternating between normal and reverse."
-                );
-                create_drop_down_attribiute_div(
-                    attribute_view_div,
-                    "animation-fill-mode", 
-                    styles['animation-fill-mode'], 
-                    ['', 'none', 'forwards', 'backwards', 'both'], 
-                    (event) => {
-                        add_action(STYLE, current_element, 'animation-fill-mode', current_element.style.animationFillMode);
-                        current_element.style.animationFillMode = event.target.value;
-                    },
-                    "Determines what the animations styles are when the animation is done playing. With 'forwards' the animation keeps the styles from the last keyframe."
-                );
+
+                if ((styles['animation-name'] && styles['animation'] != '') || show_all) {
+                    create_short_input_attribute_div(attribute_view_div, "animation-duration", styles['animation-duration'], 4, (event) => {
+                            add_action(STYLE, current_element, 'animation-duration', current_element.style.animationDuration);
+                            current_element.style.animationDuration = event.target.value;
+                        },
+                        "How long the animation playback takes. (Example '0.5s')"
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "animation-timing-function", 
+                        styles['animation-timing-function'], 
+                        ['', 'linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'animation-timing-function', current_element.style.animationTimingFunction);
+                            current_element.style.animationTimingFunction = event.target.value;
+                        },
+                        "Modifies the speed of the animation at certain points to make it potentially more smooth."
+                    );
+                    create_short_input_attribute_div(attribute_view_div, "animation-iteration-count", styles['animation-iteration-count'], 8, (event) => {
+                            add_action(STYLE, current_element, 'animation-iteration-count', current_element.style.animationIterationCount);
+                            current_element.style.animationIterationCount = event.target.value;
+                        },
+                        "How many times the animation should play. (Example 'infinite' or '2.5')"
+                    );
+                    create_short_input_attribute_div(attribute_view_div, "animation-delay", styles['animation-delay'], 4, (event) => {
+                            add_action(STYLE, current_element, 'animation-delay', current_element.style.animationDelay);
+                            current_element.style.animationDelay = event.target.value;
+                        },
+                        "Delay before the animation starts. (Example '0.5s')"
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "animation-direction", 
+                        styles['animation-direction'], 
+                        ['', 'linear', 'normal', 'reverse', 'alternate'], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'animation-direction', current_element.style.animationDirection);
+                            current_element.style.animationDirection = event.target.value;
+                        },
+                        "Modifies the way the animation is played going normal, reverse, or alternating between normal and reverse."
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "animation-fill-mode", 
+                        styles['animation-fill-mode'], 
+                        ['', 'none', 'forwards', 'backwards', 'both'], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'animation-fill-mode', current_element.style.animationFillMode);
+                            current_element.style.animationFillMode = event.target.value;
+                        },
+                        "Determines what the animations styles are when the animation is done playing. With 'forwards' the animation keeps the styles from the last keyframe."
+                    );
+                }
+            
             }
 
         }
@@ -3383,7 +3423,7 @@
             
             
             // main styles
-            add_all_style_selectors_to_attribute_view(attributes_view, styles, false);
+            add_all_style_selectors_to_attribute_view(attributes_view, styles, false, false);
 
             // scroll to last position
             if (same_ele) {
@@ -3461,10 +3501,10 @@
 
             // add new class to iframe
             if (hover_styles_check.classList.contains("checked")) {
-                get_sheet().insertRule(`.${class_name}:hover {}`, get_sheet().cssRules.length);
+                get_sheet().insertRule(`.${class_name}:hover {}`, get_sheet().cssRules.length - 1); // (insert before mobile classes)
             }
             else {
-                get_sheet().insertRule(`.${class_name} {}`, get_sheet().cssRules.length);
+                get_sheet().insertRule(`.${class_name} {}`, get_sheet().cssRules.length - 1); // (insert before mobile classes)
             }
             const class_item = add_class_to_list(class_name);
             class_item.click();
@@ -3511,7 +3551,7 @@
                 );
 
                 // main styles
-                add_all_style_selectors_to_attribute_view(class_attribute_view, styles, true);
+                add_all_style_selectors_to_attribute_view(class_attribute_view, styles, true, true);
 
             }
             
@@ -3521,6 +3561,7 @@
             document.getElementById('gray_out').style.display = "block";
             class_editor_menu.style.display = 'flex';
             new_class_name.value = '';
+            selected_class = null;
             load_class_list();
             set_class_attribute_view();
         }
@@ -3678,6 +3719,7 @@
                         break;
                     }
                 }
+
                 let keyframe_rule = null;
                 for (let rule of keyframes_rule.cssRules) {
                     if (rule.keyText == '0%' && selected_keyframe.textContent == 'keyframe 0%') {
@@ -3711,7 +3753,7 @@
                 );
 
                 // main styles
-                add_all_style_selectors_to_attribute_view(animation_attribute_view, styles, true);
+                add_all_style_selectors_to_attribute_view(animation_attribute_view, styles, true, true, true);
 
             }
             
@@ -3722,6 +3764,7 @@
         function show_animation_editor() {
             document.getElementById('gray_out').style.display = "block";
             animation_editor.style.display = 'flex';
+            selected_animation = null;
             load_animation_list();
             set_animation_attribute_view();
         }
