@@ -787,8 +787,8 @@
         const iframe = document.getElementById('iframe');
         let iframeDoc = null;
         const gray_out = document.getElementById('gray_out');
-        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header"]);
-        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section"];
+        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header", "li", "div"]);
+        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section", "ul", "ol", "li"];
         let file_name = "index.html";
 
         let actions = [];
@@ -861,9 +861,13 @@
             'animation-direction',
             'animation-fill-mode',
             'box-sizing',
+            'list-style-type',
+            'list-style-position',
+            'list-style-image',
         ];
         const units = ['', '%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
+        let mobile_warning_given = false;
         let iframe_style = null;
 
         let mobile_mode = false;
@@ -2989,6 +2993,52 @@
                         "Controls what the underline for this element link looks like."
                     );
                 }
+
+                if (type == 'ol' || type == 'ul') {
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "list-style-type", 
+                        styles['list-style-type'], 
+                        ["", "none", "disc", "circle", "square", "decimal", "decimal-leading-zero", "lower-roman", "upper-roman", "lower-greek", 'upper-greek', 'lower-latin', 'upper-latin'], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'list-style-type', current_element.style.listStyleType);
+                            current_element.style.listStyleType = event.target.value;
+                        },
+                        "Controls what the bullets in this list look like. If you can't see bullets try setting 'list-style-position' to 'inside'"
+                    );
+                    create_drop_down_attribiute_div(
+                        attribute_view_div,
+                        "list-style-position", 
+                        styles['list-style-position'], 
+                        ["", "inside", "outside"], 
+                        (event) => {
+                            add_action(STYLE, current_element, 'list-style-position', current_element.style.listStylePosition);
+                            current_element.style.listStylePosition = event.target.value;
+                        },
+                        "Controls whether the bullet is inside or outside the list element."
+                    );
+                    create_file_upload_or_url_attribute_div(
+                        attribute_view_div, 
+                        "list-style-image",
+                        async function () {
+                            add_action(STYLE, current_element, 'list-style-image', current_element.style.listStyleImage);
+                            const url = await get_image_as_url(this);
+                            current_element.style.listStyleImage = `url(${url})`;
+                            setAttributeView(current_element);
+                            document.getElementById('list_style_image_remove_x').style.display = 'block';
+                        },
+                        async function () {
+                            add_action(STYLE, current_element, 'list-style-image', current_element.style.listStyleImage);
+                            current_element.style.listStyleImage = '';
+                            setAttributeView(current_element);
+                            document.getElementById('list_style_image_remove_x').style.display = 'none';
+                        },
+                        "list_style_image_remove_x",
+                        "The background image of an element."
+                    );
+                    if (current_element.style.listStyleImage) document.getElementById('list_style_image_remove_x').style.display = 'block';
+
+                }
             }
             
             create_measurement_attribiute_div(attribute_view_div, "width", styles['width'], "width", "The width of an element");
@@ -3972,7 +4022,6 @@
 
 
         // mobile mode stuff
-        let mobile_warning_given = true;
         const mobile_mode_off_icon = document.getElementById("mobile_mode_off_icon");
         const mobile_mode_on_icon = document.getElementById("mobile_mode_on_icon");
         mobile_mode_off_icon.addEventListener('click', () => {
@@ -4080,16 +4129,16 @@ If you want a class to apply to both desktop and mobile, create the class in des
 
 
             // make empty divs visible
-            if (type == "div" && !new_element.textContent) {
+            if (!new_element.textContent) {
                 console.log("empty_div");
                 new_element.style.width = "10rem";
                 new_element.style.height = "2rem";
                 new_element.style.backgroundColor = "#848484";
             }
-            else if (type == 'img') {
-                new_element.style.width = "10rem";
-                new_element.style.height = "2rem";
-                new_element.style.backgroundColor = "#848484";
+
+            // set defaults on some types
+            if (type == 'ul' || type == 'ol') {
+                new_element.style.listStylePosition = 'inside';
             }
 
 
@@ -4390,6 +4439,182 @@ If you want a class to apply to both desktop and mobile, create the class in des
 
     </script>
 
+    <!-- starter templates -->
+    <script>
+        let generic_business = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Website</title>
+  <base target="_self">
+
+
+  <style>
+    :root {
+      --primary-color: #0a84ff;
+      --text-color: #333;
+      --bg-color: #f9f9f9;
+      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-family);
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      line-height: 1.6;
+    }
+
+    header {
+      background: white;
+      border-bottom: 1px solid #ddd;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    nav a {
+      margin-left: 1.5rem;
+      text-decoration: none;
+      color: var(--text-color);
+      font-weight: 500;
+    }
+
+    nav a:hover {
+      color: var(--primary-color);
+    }
+
+    .main_section {
+      padding: 4rem 2rem;
+      text-align: center;
+      background-color: white;
+    }
+
+    .main_section h2 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .main_section p {
+      font-size: 1.1rem;
+      max-width: 600px;
+      margin: 0 auto 2rem auto;
+      color: #666;
+    }
+
+    .main_section button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .main_section button:hover {
+      background-color: #006edc;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    @media (max-width: 600px) {
+      nav a {
+        margin-left: 1rem;
+        font-size: 0.9rem;
+      }
+
+      .main_section h2 {
+        font-size: 2rem;
+      }
+
+      .main_section p {
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>MySite</h1>
+    <nav>
+      <a href="/home.html">Home</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <section class="main_section">
+    <h2>Welcome to MySite</h2>
+    <p>Your one-stop solution for professional web design, development, and more.</p>
+    <button>Get Started</button>
+  </section>
+
+  <footer>
+    &copy; 2025 MySite. All rights reserved.
+  </footer>
+
+</body>
+</html>
+
+        `;
+
+
+        let blank_page = `
+<!DOCTYPE html>
+<html lang="en" id="b67e0cc8-27cd-430d-a5b1-388fdc48ebf8" style="background-color: rgb(255, 255, 255);">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Website</title>
+    <base target="_self">
+
+
+    <style>
+        :root {}
+
+        * {
+            box-sizing: border-box;
+            margin: 0px;
+            padding: 0px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Blank Page!</h1>
+
+
+
+</body>
+
+</html>
+        `;
+
+    </script>
+
+
     <!-- iframe main page listeners -->
     <script>
 
@@ -4537,143 +4762,6 @@ If you want a class to apply to both desktop and mobile, create the class in des
             iframe_style.innerHTML = new_html;
         }
 
-        let html_content = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Website</title>
-  <base target="_self">
-
-
-  <style>
-    :root {
-      --primary-color: #0a84ff;
-      --text-color: #333;
-      --bg-color: #f9f9f9;
-      --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: var(--font-family);
-      color: var(--text-color);
-      background-color: var(--bg-color);
-      line-height: 1.6;
-    }
-
-    header {
-      background: white;
-      border-bottom: 1px solid #ddd;
-      padding: 1rem 2rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    header h1 {
-      font-size: 1.5rem;
-      color: var(--primary-color);
-    }
-
-    nav a {
-      margin-left: 1.5rem;
-      text-decoration: none;
-      color: var(--text-color);
-      font-weight: 500;
-    }
-
-    nav a:hover {
-      color: var(--primary-color);
-    }
-
-    .main_section {
-      padding: 4rem 2rem;
-      text-align: center;
-      background-color: white;
-    }
-
-    .main_section h2 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .main_section p {
-      font-size: 1.1rem;
-      max-width: 600px;
-      margin: 0 auto 2rem auto;
-      color: #666;
-    }
-
-    .main_section button {
-      background-color: var(--primary-color);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      font-size: 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    .main_section button:hover {
-      background-color: #006edc;
-    }
-
-    footer {
-      text-align: center;
-      padding: 2rem;
-      font-size: 0.9rem;
-      color: #888;
-    }
-
-    @media (max-width: 600px) {
-      nav a {
-        margin-left: 1rem;
-        font-size: 0.9rem;
-      }
-
-      .main_section h2 {
-        font-size: 2rem;
-      }
-
-      .main_section p {
-        font-size: 1rem;
-      }
-    }
-  </style>
-</head>
-<body>
-
-  <header>
-    <h1>MySite</h1>
-    <nav>
-      <a href="/home.html">Home</a>
-      <a href="/about.html">About</a>
-      <a href="/contact.html">Contact</a>
-    </nav>
-  </header>
-
-  <section class="main_section">
-    <h2>Welcome to MySite</h2>
-    <p>Your one-stop solution for professional web design, development, and more.</p>
-    <button>Get Started</button>
-  </section>
-
-  <footer>
-    &copy; 2025 MySite. All rights reserved.
-  </footer>
-
-</body>
-</html>
-
-        `;
 
 
         // set landscape view if screen is landscape
@@ -4705,7 +4793,7 @@ If you want a class to apply to both desktop and mobile, create the class in des
             iframe.srcdoc = full_html;
         }
         else {
-            iframe.srcdoc = html_content;
+            iframe.srcdoc = blank_page;
         }
 
         iframe.addEventListener('load', () => {
@@ -4750,6 +4838,10 @@ If you want a class to apply to both desktop and mobile, create the class in des
                 right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
                 right_click_menu.style.display = 'block';
 
+                // move if off screen
+                // if (right_click_menu.)
+
+
                 setAttributeView(event.target);
             });
             
@@ -4760,6 +4852,7 @@ If you want a class to apply to both desktop and mobile, create the class in des
 
 
     </script>
+
 
 </body>
 </html>
