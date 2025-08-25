@@ -656,10 +656,10 @@
             </div>
         </div>
 
-        <div id="picker_inherit_section">
+        <!-- <div id="picker_inherit_section">
             <div class="custom-checkbox" id="checkboxDiv"></div>
             <div>inherit color</div>
-        </div>
+        </div> -->
     </div>
 
     <div id="right_click_menu">
@@ -726,6 +726,10 @@
         <p>
             Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change, instead of changing each element. This is useful 
             for things like buttons that you want to be consistant on your page.
+        </p>
+        <p>
+            WARNING: styles applied to individual elements take precedence over styles in classes. So if you want have a class style show up on an element, make sure the corresponding style is blank
+            on the element.
         </p>
 
         <div id="class_list" class="attributes_view"></div>
@@ -853,7 +857,7 @@
             'animation-fill-mode',
             'box-sizing',
         ];
-        const units = ['%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
+        const units = ['', '%', 'rem', 'vh', 'vw', 'px', 'em', 'vmin', 'vmax'];
         let external_style_sheet_warning_given = false;
         let iframe_style = null;
 
@@ -1021,6 +1025,8 @@
 
         function parse_any_format_to_rgba(color_str) {
 
+
+
             let color_rgba = null;
             if (color_str.startsWith('#')) {
                 color_rgba = hex_to_rgba(color_str);
@@ -1056,7 +1062,7 @@
                     r: 0,
                     g: 0,
                     b: 0,
-                    a: 255
+                    a: 0
                 };
             }
             // console.log(color_rgba);
@@ -1547,6 +1553,11 @@
             return uuid.map((x) => x.toString(16)).join('');
         }
     
+        function little_id() {
+
+        }
+
+
         // NUMBERS
         function is_numeric(str) {
             return typeof str === 'string' && str.trim() !== '' && !isNaN(str);
@@ -1562,11 +1573,9 @@
         const alpha_slider = document.getElementById('alpha_slider');
         const preview_canvas = document.getElementById('color-preview');
         const alpha_background_canvas = document.getElementById('alpha_background_canvas');
-        const checkboxDiv = document.getElementById('checkboxDiv');
         const color_hex = document.getElementById('color_hex');
         const ctx = slCanvas.getContext('2d');
         let color_picker_target_function = null;
-        let set_inherit = true;
 
         let hue = 0;
         let sat = 100;
@@ -1622,6 +1631,9 @@
             const rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
             const hex = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
             color_hex.value = hex;
+            if (hue == 0 && sat == 0 && light == 0 && alpha == 0) {
+                color_hex.value = '';
+            }
             checker_canvas(preview_canvas);
             composite_color_on_canvas(preview_canvas, rgba.r, rgba.g, rgba.b, rgba.a)
 
@@ -1639,16 +1651,17 @@
         function update_color() {
             // console.log(hue, sat, light, alpha);
 
+            if (color_picker_target_function) {
+                color_picker_target_function(hue, sat, light, alpha);
+            }
+
             hue_slider.value = hue;
             alpha_slider.value = alpha;
             updatePreview();
             updateAlphaSlider();
             updateSLPanel();
-            if (color_picker_target_function) {
-                color_picker_target_function(hue, sat, light, alpha);
-            }
 
-            checkboxDiv.classList.remove('checked');
+            // checkboxDiv.classList.remove('checked');
         }
 
         function handleSLClick(e) {
@@ -1656,18 +1669,35 @@
 
             const canvas_end_x = rect.left + slCanvas.offsetWidth;
             const canvas_end_y = rect.top + slCanvas.offsetHeight;
-            if (e.clientX > rect.left && e.clientY > rect.top && e.clientX < canvas_end_x && e.clientY < canvas_end_y) {
 
-                const gradient_x = e.clientX - rect.left;
-                const gradient_y = e.clientY - rect.top;
 
-                sat = Math.round((gradient_x / slCanvas.offsetWidth) * 100);
-                
-                light = Math.round(100 - (gradient_y / slCanvas.offsetHeight) * 100);
-                light = Math.round(light * (1 - 0.5 * sat / 100));
-
-                update_color();
+            // keep in bounds
+            let clientX = e.clientX;
+            if (clientX < rect.left) {
+                clientX = rect.left;
             }
+            else if (clientX >= canvas_end_x) {
+                clientX = canvas_end_x - 1;
+            }
+            let clientY = e.clientY;
+            if (clientY < rect.top) {
+                clientY = rect.top;
+            }
+            else if (clientY >= canvas_end_y) {
+                clientY = canvas_end_y - 1;
+            }
+
+
+            // set color
+            const gradient_x = clientX - rect.left;
+            const gradient_y = clientY - rect.top;
+
+            sat = Math.round((gradient_x / slCanvas.offsetWidth) * 100);
+            
+            light = Math.round(100 - (gradient_y / slCanvas.offsetHeight) * 100);
+            light = Math.round(light * (1 - 0.5 * sat / 100));
+
+            update_color();
 
         }
 
@@ -1697,52 +1727,36 @@
         color_hex.addEventListener('input', (e) => {
             console.log("hex change");
             let hex = e.target.value;
-            const rgba = hex_to_rgba(hex);
-            const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
-            hue = hsla.hue;
-            sat = hsla.saturation;
-            light = hsla.lightness;
-            alpha = hsla.alpha / 100;
+
+            if (!hex) {
+                hue = 0;
+                sat = 0;
+                light = 0;
+                alpha = 0;
+            }
+            else {
+                const rgba = hex_to_rgba(hex);
+                const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
+                hue = hsla.hue;
+                sat = hsla.saturation;
+                light = hsla.lightness;
+                alpha = hsla.alpha / 100;
+            }
             update_color();
         });
 
         picker.addEventListener('focusout', (event) => {
             if (!picker.contains(event.relatedTarget)) {
                 picker.classList.add('hidden');
-                checkboxDiv.classList.remove('checked');
                 color_picker_target_function = null;
                 color_hex.value = '';
             }
         });
 
-        function check_inherited() {
-            set_inherit = true;
-            color_picker_target_function(-1, -1, -1, -1);
-            update_color();
-            checkboxDiv.classList.add('checked');
-            // console.log("checked", checkboxDiv.classList);
-        }
-
-        function un_check_inherited() {
-            set_inherit = false;
-            color_picker_target_function(0, 100, 50, 1);
-            update_color();
-            // console.log("unchecked", checkboxDiv.classList);
-        }
-
-        checkboxDiv.addEventListener('click', () => {
-            const is_checked = checkboxDiv.classList.contains('checked');
-
-            if (!is_checked) {
-                check_inherited();
-            }
-            else {
-                un_check_inherited();
-            }
-        });
 
         // Initialize
         update_color();
+
     </script>
 
     <!-- attribute view -->
@@ -1768,17 +1782,8 @@
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
 
             let rgba = null;
-            if (set_inherit) {
-                current_element.style[style_property] = 'inherit';
-                const computed_color = get_computer_color(style_property);
-                rgba = parse_any_format_to_rgba(computed_color);
-
-                const hsla = rgba_to_hsla(rgba.r, rgba.g, rgba.b, rgba.a);
-                hue = hsla.hue;
-                sat = hsla.saturation;
-                light = hsla.lightness;
-                alpha = hsla.alpha / 100;
-                // console.log("updating", hue, sat, light, alpha);
+            if (hue_t == 0 && sat_t == 0 && light_t == 0 && alpha_t == 0) {
+                current_element.style[style_property] = '';
             }
             else {
                 rgba = hsla_to_rgba(hue_t, sat_t, light_t, alpha_t * 100);
@@ -1802,6 +1807,7 @@
         }
 
 
+
         // hints
         const hint_popper = document.getElementById("hint_popper");
         function set_hint(div, hint) {
@@ -1820,8 +1826,9 @@
             });
         }
 
-        // creating the attributes fields
 
+
+        // creating the attributes fields
         const attributes_view = document.getElementById("attributes_view");
 
         function create_multi_select_attribute_div(target_attribute_view, name, value, drop_down_options, onCheck, onUnCheck, hint) {
@@ -1928,18 +1935,21 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
-            let computed_color = get_computer_color(style_property);
-            // console.log(computed_color);
-            let color_rgba = parse_any_format_to_rgba(computed_color);
+
+
+            let value_section = document.createElement("div");
+            value_section.style.display = 'flex';
+
+
+            // let computed_color = get_computer_color(style_property);
+            let color_rgba = parse_any_format_to_rgba(current_element.style[style_property]);
             let color_div = document.createElement("canvas");
             color_div.className = 'attribute_color';
             color_div.width = 20;
             color_div.height = 20;
-            attribute_text_content.appendChild(color_div);
+            color_div.style.marginRight = '1rem';
+            value_section.appendChild(color_div);
             color_div.addEventListener('click', (event) => {
-
-                set_inherit = current_element.style[style_property] == 'inherit';
-                console.log("set_inherit", set_inherit);
 
                 add_action(STYLE, current_element, style_property, current_element.style[style_property]);
 
@@ -1956,36 +1966,62 @@
                 picker.style.left = event.clientX + 'px';
                 if (event.clientY - 420 < 0) {
                     picker.style.top = '0px';
-                    console.log("too high");
                 }
                 if (event.clientX + picker.offsetWidth > window.innerWidth) {
                     picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
-                    console.log("too right");
                 }
                 // console.log(event.clientX);
                 // console.log(event.clientY);
 
 
                 
-                let computed_color = get_computer_color(style_property);
-                let inherited = computed_color != current_element.style[style_property];
-                if (inherited) {
-                    checkboxDiv.click();
-                }
-                else {
-                    color_rgba = parse_any_format_to_rgba(computed_color);
-                    let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
-                    hue = color_hsla.hue;
-                    sat = color_hsla.saturation;
-                    light = color_hsla.lightness;
-                    alpha = color_hsla.alpha / 100;
-                    update_color();
-                }
+                color_rgba = parse_any_format_to_rgba(current_element.style[style_property]);
+                let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
+                hue = color_hsla.hue;
+                sat = color_hsla.saturation;
+                light = color_hsla.lightness;
+                alpha = color_hsla.alpha / 100;
+                update_color();
 
             });
 
 
+            let check_box = document.createElement("div");
+            check_box.classList.add("custom-checkbox");
+            check_box.style.marginRight = '1rem';
+            let inherit_color = document.createElement("div");
+            inherit_color.textContent = "inherit";
+            value_section.appendChild(check_box);
+            value_section.appendChild(inherit_color);
+            attribute_text_content.appendChild(value_section);
+
+            check_box.addEventListener('click', () => {
+
+                add_action(STYLE, current_element, style_property, current_element.style[style_property]);
+
+                const is_checked = check_box.classList.contains('checked');
+                if (!is_checked) {
+                    check_box.classList.add('checked');
+                    color_div.style.display = 'none';
+                    current_element.style[style_property] = 'inherit';
+                }
+                else {
+                    check_box.classList.remove('checked');
+                    color_div.style.display = 'block';
+                    current_element.style[style_property] = '';
+                }
+            });
+
+            if (current_element.style[style_property] == 'inherit') {
+                check_box.classList.add('checked');
+                color_div.style.display = 'none';
+            }
+            
+
             target_attribute_view.appendChild(attribute_text_content);
+
+
+
             checker_canvas(color_div);
             // console.log(color_rgba);
             composite_color_on_canvas(color_div, color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
@@ -2392,31 +2428,40 @@
             let number = '';
             let unit = '';
             let border_type_value = '';
-            let color = 'rgba(0, 0, 0, 0)';
-            let pieces = current_element.style.border.split(" ");
-            if (pieces.length == 3) {
+
+            let border_str = current_element.style.border;
+            let color_start = border_str.indexOf('rgb');
+            let color = color_start > 0? border_str.substring(color_start) : '';
+            border_str = border_str.substring(0, color_start);
+            let pieces = border_str.split(" ");
+            if (pieces.length >= 2) {
                 let split = splitNumberAndUnit(pieces[0]);
                 number = split[0]; 
                 unit = split[1];
-                border_type_value = split[2];
-                color = split[3];
+                border_type_value = pieces[1];
             }
 
+            // console.log(pieces);
+            // console.log(number, unit, border_type_value, color);
 
             // update function 
             function set_undo() {
-                if (number && unit && border_type_value && color) {
-                    add_action(STYLE, current_element, 'border', current_element.style['border']);
-                }
+                add_action(STYLE, current_element, 'border', current_element.style['border']);
             }
 
             function update_border() {
-                
-                if (number && unit && border_type_value && color) {
-                    console.log("valid border");
-                    current_element.style.border = `${number}${unit} ${border_type_value} ${color}`;
-                    console.log(current_element.style.border);
+                let new_border_str = `${number}${unit}`;
+                if (new_border_str) {
+                    new_border_str += ' ';
                 }
+                new_border_str += `${border_type_value}`;
+                if (new_border_str) {
+                    new_border_str += ' ';
+                }
+                new_border_str += `${color}`;
+                current_element.style.border = new_border_str;
+                // console.log(new_border_str);
+                // console.log(current_element.style.border);
             }
 
 
@@ -2450,7 +2495,7 @@
                 option_div.textContent = option;
                 select_div.appendChild(option_div);
             }
-            select_div.value = '';
+            select_div.value = unit;
 
             side_pair.appendChild(measurement_input);
             side_pair.appendChild(select_div);
@@ -2458,13 +2503,13 @@
 
             let border_type = document.createElement("select");
             border_type.className = 'attribute_input';
-            for(option of ['none', 'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset', 'hidden']) {
+            for(option of ['', 'none', 'solid', 'dashed', 'dotted', 'double', 'groove', 'ridge', 'inset', 'outset', 'hidden']) {
                 let option_div = document.createElement("option");
                 option_div.value = option;
                 option_div.textContent = option;
                 border_type.appendChild(option_div);
             }
-            border_type.value = '';
+            border_type.value = border_type_value;
             side_pair.appendChild(border_type);
 
 
@@ -2510,7 +2555,12 @@
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
                     checker_canvas(color_div);
                     composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
-                    color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                    if (hue == 0 && sat == 0 && light == 0 && alpha == 0) {
+                        color = '';
+                    }
+                    else {
+                        color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                    }
                     update_border();
                 };
                 
@@ -2520,12 +2570,17 @@
                 picker.style.left = event.clientX + 'px';
                 if (event.clientY - 420 < 0) {
                     picker.style.top = '0px';
-                    console.log("too high");
                 }
                 if (event.clientX + picker.offsetWidth > window.innerWidth) {
                     picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
-                    console.log("too right");
                 }
+
+                let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
+                hue = color_hsla.hue;
+                sat = color_hsla.saturation;
+                light = color_hsla.lightness;
+                alpha = color_hsla.alpha / 100;
+                update_color();
 
             });
         }
@@ -2724,12 +2779,17 @@
                 picker.style.left = event.clientX + 'px';
                 if (event.clientY - 420 < 0) {
                     picker.style.top = '0px';
-                    console.log("too high");
                 }
                 if (event.clientX + picker.offsetWidth > window.innerWidth) {
                     picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
-                    console.log("too right");
                 }
+
+                let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
+                hue = color_hsla.hue;
+                sat = color_hsla.saturation;
+                light = color_hsla.lightness;
+                alpha = color_hsla.alpha / 100;
+                update_color();
             });
 
         
@@ -2960,7 +3020,7 @@
             create_border_attribute_div(attribute_view_div, "The border of a div. A common value is '2px solid' and then a color. To round the corners use 'border-radius'");
             create_measurement_attribiute_div(attribute_view_div, "border-radius", styles['border-radius'], "border-radius", "How rounded the corners are. '10px' is a common value.");
         
-            create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page. (offset-x offset-y blur-raidus spread-radius color inset). A good example is (0 0 10)");
+            create_box_shadow_attribute_div(attribute_view_div, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page. (offset-x, offset-y, blur-raidus, spread-radius, color, inset). A good example is (0 0 10 #e3e3e3)");
             create_drop_down_attribiute_div(
                 attribute_view_div, 
                 'box-sizing',
