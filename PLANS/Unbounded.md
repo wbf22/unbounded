@@ -1,7 +1,7 @@
 
 - consider auto converting inline styles to css
 - see if we can add 'body' or similar div type styles in classes
-
+- consider making outlines show up even when on edge of screen
 
 
 
