@@ -9,7 +9,6 @@
 
 
 # Todo
-- make ids in templates less crazy
 - make components page
 
 
