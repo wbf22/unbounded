@@ -10,6 +10,7 @@
 
 # Todo
 - make components page
+- hover style in main attributes panel
 
 
 
