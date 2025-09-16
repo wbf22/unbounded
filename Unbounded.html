@@ -6342,6 +6342,260 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
     </script>
 
+    <!-- iframe main page listeners -->
+    <script>
+
+        const key_down_listener = (e) => {
+            const isZ = e.key.toLowerCase() === 'z';
+            const isUndo = isZ && (e.ctrlKey || e.metaKey) && !e.shiftKey;
+            const isRedo = isZ && (e.ctrlKey || e.metaKey) && e.shiftKey;
+
+            if (isUndo) {
+                e.preventDefault();
+                // console.log('Undo detected (Ctrl/Cmd + Z)');
+                undo();
+            }
+
+            if (isRedo) {
+                e.preventDefault();
+                // console.log('Redo detected (Ctrl/Cmd + Shift + Z)');
+                redo();
+            }
+        };
+        document.addEventListener('keydown', key_down_listener);
+
+
+
+        function set_current_element(new_current_element) {
+
+            // console.log("current", current_element);
+
+            // apply outlines on parents
+            set_outlines(new_current_element);
+
+            current_element = new_current_element;
+            if (new_current_element != null) {
+                current_style_ref = get_or_create_element_style_ref(current_element);
+            }
+            else {
+                current_style_ref = null;
+            }
+        }
+
+        function remove_outlines_rec(outlined_element) {
+            if (outlined_element == null) return;
+
+            const is_dashed = window.getComputedStyle(outlined_element).outlineStyle === 'dashed';
+            if (is_dashed) {
+                outlined_element.style.outline = '';
+            }
+
+            for(let element of outlined_element.children) {
+                remove_outlines_rec(element);
+            }
+
+        }
+
+        function remove_outlines() {
+            const root = iframeDoc.documentElement;
+            if (root == null) return;
+
+            remove_outlines_rec(root);
+
+        }
+
+        function set_outlines(new_current_element) {
+            remove_outlines(current_element);
+
+            if (new_current_element) {
+                const colors = ['#eb0707', '#eb8c07', '#ebe707', '#07eb07', '#070feb', '#9307eb', '#eb07df'];
+                let index = 0;
+                let element = new_current_element;
+                while (element.parentElement) {
+
+                    if (!element.style.outline || element.style.outline == 'none') {
+                        element.style.outline = colors[index % 7] + ' dashed 2px';
+                    }
+                    // console.log(element.style.outline);
+                    element = element.parentElement;
+                    index++;
+                }
+            }
+        }
+
+        function set_style_div() {
+
+            const styles = iframeDoc.querySelectorAll('style');
+            if (styles.length == 0) {
+                iframe_style = iframeDoc.createElement('style');
+                iframeDoc.head.appendChild(iframe_style);
+            }
+            else {
+                iframe_style = styles[0];
+            }
+
+
+            if (mobile_mode) {
+                
+                // search for mobile rules
+                let rules = iframe_style.sheet.cssRules;
+                let has_mobile_rules = false;
+                for (let i = 0; i < rules.length; i++) {
+                    const rule = rules[i];
+
+                    if (rule.type === CSSRule.MEDIA_RULE) {
+                        iframe_style = rule;
+                        has_mobile_rules = true;
+                        break;
+                    }
+                }
+
+                // add mobile rule if none exists
+                if (!has_mobile_rules) {
+                    add_mobile_style();
+
+                    // get mobile style
+                    rules = iframe_style.sheet.cssRules;
+                    for (let i = 0; i < rules.length; i++) {
+                        const rule = rules[i];
+
+                        if (rule.type === CSSRule.MEDIA_RULE) {
+                            iframe_style = rule;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        }
+
+        function add_mobile_style() {
+            let new_html = iframe_style.innerHTML + "\n\t\t@media (max-width: 1024px) {}\n\n";
+            iframe_style.innerHTML = new_html;
+        }
+
+
+
+        // set landscape view if screen is landscape
+        const attributes_view_container = document.getElementById('attributes_view_container');
+        function set_orientation() {
+            const editor = document.getElementById("editor");
+            if (window.innerWidth > window.innerHeight) {
+                console.log("landscape");
+                editor.classList.add("editor_landscape");
+                iframe.classList.remove('iframe_portrait');
+                attributes_view_container.classList.remove('main_attribute_view_portrait');
+            }
+            else {
+                console.log("portrait");
+                editor.classList.remove("editor_landscape");
+                iframe.classList.add('iframe_portrait');
+                attributes_view_container.classList.add('main_attribute_view_portrait');
+            }
+
+        }
+        window.addEventListener("resize", () => {
+            set_orientation();
+        });
+        window.onload = set_orientation;
+
+
+        // load last state form local storage
+        loadHtml("last_state").then((full_html) => {
+            if (full_html) {
+                iframe.srcdoc = full_html;
+            }
+            else {
+                iframe.srcdoc = blank_page;
+            }
+        });
+
+        iframe.addEventListener('load', () => {
+
+            iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+            // set style div for class editing
+            set_style_div();
+
+            // set click listener on the document
+            iframeDoc.addEventListener('click', (event) => {
+                right_click_menu.style.display = 'none';
+                // console.log(event.button);
+
+                // get element
+                const element = event.target;
+
+                // prevent a links
+                if (element.tagName.toLowerCase() === 'a') {
+                    event.preventDefault();
+                }
+
+
+                // changing parent of a div
+                if (changing_parent) {
+                    change_parent_end();
+                    
+                }
+                // set current element
+                else {
+                    set_current_element(element);
+                    if (css_tab.classList.contains("side_view_tab_selected")) {
+                        setAttributeView(element)
+                    }
+                    else if (layout_tab.classList.contains("side_view_tab_selected")) {
+                        show_layout_tab();
+                    }
+                }
+
+            });
+
+
+            const right_click_menu = document.getElementById('right_click_menu');
+            iframeDoc.addEventListener('contextmenu', (event) => {
+                event.preventDefault();
+                const iframe_rect = iframe.getBoundingClientRect();
+                right_click_menu.style.display = 'block';
+                right_click_menu.style.top = `${event.clientY + iframe_rect.top}px`;
+                right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
+
+
+
+                // move if off screen
+                const rect = right_click_menu.getBoundingClientRect();
+                const topInPixels = rect.top;
+                const widthInPixels = rect.width;
+                if (rect.top + rect.height > window.innerHeight) {
+                    right_click_menu.style.top = `${window.innerHeight - rect.height}px`;
+                }
+                if (rect.left + rect.width > window.innerWidth) {
+                    right_click_menu.style.left = `${window.innerWidth - rect.left}px`;
+                }
+
+
+
+            });
+            
+        
+            iframeDoc.addEventListener('keydown', key_down_listener);
+
+
+            // init current_element to the body element
+            set_current_element(iframeDoc.querySelector("body"));
+
+
+            // default to showing component tab
+            components = JSON.parse(document.getElementById("starter_components").textContent)
+            show_components_tab();
+        });
+
+        window.addEventListener('click', (event) => {
+            right_click_menu.style.display = 'none';
+        });
+
+
+
+    </script>
+
     <!-- starter templates -->
     <script>
         let blank_page = `
@@ -7203,259 +7457,6 @@ If you want a style change to apply to both desktop and mobile, make changes in 
     </script>
 
 
-    <!-- iframe main page listeners -->
-    <script>
-
-        const key_down_listener = (e) => {
-            const isZ = e.key.toLowerCase() === 'z';
-            const isUndo = isZ && (e.ctrlKey || e.metaKey) && !e.shiftKey;
-            const isRedo = isZ && (e.ctrlKey || e.metaKey) && e.shiftKey;
-
-            if (isUndo) {
-                e.preventDefault();
-                // console.log('Undo detected (Ctrl/Cmd + Z)');
-                undo();
-            }
-
-            if (isRedo) {
-                e.preventDefault();
-                // console.log('Redo detected (Ctrl/Cmd + Shift + Z)');
-                redo();
-            }
-        };
-        document.addEventListener('keydown', key_down_listener);
-
-
-
-        function set_current_element(new_current_element) {
-
-            // console.log("current", current_element);
-
-            // apply outlines on parents
-            set_outlines(new_current_element);
-
-            current_element = new_current_element;
-            if (new_current_element != null) {
-                current_style_ref = get_or_create_element_style_ref(current_element);
-            }
-            else {
-                current_style_ref = null;
-            }
-        }
-
-        function remove_outlines_rec(outlined_element) {
-            if (outlined_element == null) return;
-
-            const is_dashed = window.getComputedStyle(outlined_element).outlineStyle === 'dashed';
-            if (is_dashed) {
-                outlined_element.style.outline = '';
-            }
-
-            for(let element of outlined_element.children) {
-                remove_outlines_rec(element);
-            }
-
-        }
-
-        function remove_outlines() {
-            const root = iframeDoc.documentElement;
-            if (root == null) return;
-
-            remove_outlines_rec(root);
-
-        }
-
-        function set_outlines(new_current_element) {
-            remove_outlines(current_element);
-
-            if (new_current_element) {
-                const colors = ['#eb0707', '#eb8c07', '#ebe707', '#07eb07', '#070feb', '#9307eb', '#eb07df'];
-                let index = 0;
-                let element = new_current_element;
-                while (element.parentElement) {
-
-                    if (!element.style.outline || element.style.outline == 'none') {
-                        element.style.outline = colors[index % 7] + ' dashed 2px';
-                    }
-                    // console.log(element.style.outline);
-                    element = element.parentElement;
-                    index++;
-                }
-            }
-        }
-
-        function set_style_div() {
-
-            const styles = iframeDoc.querySelectorAll('style');
-            if (styles.length == 0) {
-                iframe_style = iframeDoc.createElement('style');
-                iframeDoc.head.appendChild(iframe_style);
-            }
-            else {
-                iframe_style = styles[0];
-            }
-
-
-            if (mobile_mode) {
-                
-                // search for mobile rules
-                let rules = iframe_style.sheet.cssRules;
-                let has_mobile_rules = false;
-                for (let i = 0; i < rules.length; i++) {
-                    const rule = rules[i];
-
-                    if (rule.type === CSSRule.MEDIA_RULE) {
-                        iframe_style = rule;
-                        has_mobile_rules = true;
-                        break;
-                    }
-                }
-
-                // add mobile rule if none exists
-                if (!has_mobile_rules) {
-                    add_mobile_style();
-
-                    // get mobile style
-                    rules = iframe_style.sheet.cssRules;
-                    for (let i = 0; i < rules.length; i++) {
-                        const rule = rules[i];
-
-                        if (rule.type === CSSRule.MEDIA_RULE) {
-                            iframe_style = rule;
-                            break;
-                        }
-                    }
-                }
-            }
-
-        }
-
-        function add_mobile_style() {
-            let new_html = iframe_style.innerHTML + "\n\t\t@media (max-width: 1024px) {}\n\n";
-            iframe_style.innerHTML = new_html;
-        }
-
-
-
-        // set landscape view if screen is landscape
-        const attributes_view_container = document.getElementById('attributes_view_container');
-        function set_orientation() {
-            const editor = document.getElementById("editor");
-            if (window.innerWidth > window.innerHeight) {
-                console.log("landscape");
-                editor.classList.add("editor_landscape");
-                iframe.classList.remove('iframe_portrait');
-                attributes_view_container.classList.remove('main_attribute_view_portrait');
-            }
-            else {
-                console.log("portrait");
-                editor.classList.remove("editor_landscape");
-                iframe.classList.add('iframe_portrait');
-                attributes_view_container.classList.add('main_attribute_view_portrait');
-            }
-
-        }
-        window.addEventListener("resize", () => {
-            set_orientation();
-        });
-        window.onload = set_orientation;
-
-
-        // load last state form local storage
-        loadHtml("last_state").then((full_html) => {
-            if (full_html) {
-                iframe.srcdoc = full_html;
-            }
-            else {
-                iframe.srcdoc = blank_page;
-            }
-        });
-
-        iframe.addEventListener('load', () => {
-
-            iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-
-            // set style div for class editing
-            set_style_div();
-
-            // set click listener on the document
-            iframeDoc.addEventListener('click', (event) => {
-                right_click_menu.style.display = 'none';
-                // console.log(event.button);
-
-                // get element
-                const element = event.target;
-
-                // prevent a links
-                if (element.tagName.toLowerCase() === 'a') {
-                    event.preventDefault();
-                }
-
-
-                // changing parent of a div
-                if (changing_parent) {
-                    change_parent_end();
-                    
-                }
-                // set current element
-                else {
-                    set_current_element(element);
-                    if (css_tab.classList.contains("side_view_tab_selected")) {
-                        setAttributeView(element)
-                    }
-                    else if (layout_tab.classList.contains("side_view_tab_selected")) {
-                        show_layout_tab();
-                    }
-                }
-
-            });
-
-
-            const right_click_menu = document.getElementById('right_click_menu');
-            iframeDoc.addEventListener('contextmenu', (event) => {
-                event.preventDefault();
-                const iframe_rect = iframe.getBoundingClientRect();
-                right_click_menu.style.display = 'block';
-                right_click_menu.style.top = `${event.clientY + iframe_rect.top}px`;
-                right_click_menu.style.left = `${event.clientX + iframe_rect.left}px`;
-
-
-
-                // move if off screen
-                const rect = right_click_menu.getBoundingClientRect();
-                const topInPixels = rect.top;
-                const widthInPixels = rect.width;
-                if (rect.top + rect.height > window.innerHeight) {
-                    right_click_menu.style.top = `${window.innerHeight - rect.height}px`;
-                }
-                if (rect.left + rect.width > window.innerWidth) {
-                    right_click_menu.style.left = `${window.innerWidth - rect.left}px`;
-                }
-
-
-
-            });
-            
-        
-            iframeDoc.addEventListener('keydown', key_down_listener);
-
-
-            // init current_element to the body element
-            set_current_element(iframeDoc.querySelector("body"));
-
-
-            // default to showing component tab
-            components = JSON.parse(document.getElementById("starter_components").textContent)
-            show_components_tab();
-        });
-
-        window.addEventListener('click', (event) => {
-            right_click_menu.style.display = 'none';
-        });
-
-
-
-    </script>
 
 
 </body>
