@@ -10,7 +10,8 @@
 
 # Todo
 - make components page
-- hover style in main attributes panel
+- add svgs maybe
+- add tables?
 
 
 
