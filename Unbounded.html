@@ -806,6 +806,21 @@
             border: var(--def_border);
         }
 
+
+        .class_warning_link {
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #241387;
+            padding: 0.2rem;
+            margin-right: 1rem;
+            border-radius: 1rem;
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -2242,6 +2257,21 @@
             return id && !iframeDoc.getElementById(id) && /^[A-Za-z][A-Za-z0-9._:-]*$/.test(id);
         }
 
+        function get_element_class_affecting_style(element, style_property) {
+            if (element.classList.length == 0) return null;
+
+            let affecting_class = null;
+            for (let clasz of element.classList) {
+                let rule = get_rule_from_iframe_style(clasz, 'class');
+                let value = rule.style.getPropertyValue(style_property);
+                if (value) {
+                    affecting_class = clasz;
+                }
+            }
+
+            return affecting_class;
+        }
+
 
         // CRYPTO RANDOM
         function random_crypto(min, max) {
@@ -2960,6 +2990,10 @@
                 let label = document.createElement("div");
                 label.textContent = option;
                 label.style.marginLeft = '1rem';
+                label.style.cursor = 'pointer';
+                label.addEventListener("click", () => {
+                    show_class_in_class_editor(option);
+                });
 
                 option_div.appendChild(checkbox);
                 option_div.appendChild(label);
@@ -3000,6 +3034,26 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
+            let modifiers = document.createElement("modifiers");
+            modifiers.style.display = 'flex';
+
+            // add warning this is affect by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    modifiers.appendChild(warning)
+                }
+            }
+
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
             for(option of drop_down_options) {
@@ -3010,9 +3064,10 @@
             }
             select_div.value = value;
             select_div.addEventListener('change', listener);
-            attribute_text_content.appendChild(select_div);
+            modifiers.appendChild(select_div);
 
 
+            attribute_text_content.appendChild(modifiers);
             target_attribute_view.appendChild(attribute_text_content);
         }
 
@@ -3035,6 +3090,22 @@
             let value_section = document.createElement("div");
             value_section.style.display = 'flex';
 
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    value_section.appendChild(warning)
+                }
+            }
 
             // let computed_color = get_computer_color(style_property);
             let color_rgba = parse_any_format_to_rgba(current_style_ref.style[style_property]);
@@ -3142,14 +3213,37 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
+
+            let modifiers = document.createElement("modifiers");
+            modifiers.style.display = 'flex';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    modifiers.appendChild(warning)
+                }
+            }
+
+
             let input_div = document.createElement("textarea");
             input_div.className = 'attribute_input';
             input_div.value = text_content;
             input_div.setAttribute('autocomplete', 'off');
             input_div.addEventListener('input', listener);
-            attribute_text_content.appendChild(input_div);
+            modifiers.appendChild(input_div);
 
 
+            attribute_text_content.appendChild(modifiers);
             target_attribute_view.appendChild(attribute_text_content);
         }
 
@@ -3168,15 +3262,36 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
+            let modifiers = document.createElement("modifiers");
+            modifiers.style.display = 'flex';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    modifiers.appendChild(warning)
+                }
+            }
+
             let input_div = document.createElement("input");
             input_div.className = 'attribute_input';
             input_div.value = text_content;
             input_div.autocomplete = 'off';
             input_div.style.width = `${width}rem`;
             input_div.addEventListener('input', listener);
-            attribute_text_content.appendChild(input_div);
+            modifiers.appendChild(input_div);
 
 
+            attribute_text_content.appendChild(modifiers);
             target_attribute_view.appendChild(attribute_text_content);
         }
 
@@ -3195,15 +3310,35 @@
             semicolon.textContent = ":";
             attribute_text_content.appendChild(semicolon);
 
+            let modifiers = document.createElement("modifiers");
+            modifiers.style.display = 'flex';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    modifiers.appendChild(warning)
+                }
+            }
+
             let input_div = document.createElement("input");
             input_div.className = 'attribute_input';
             input_div.value = text_content;
             input_div.autocomplete = 'off';
             input_div.style.width = `${width}rem`;
             input_div.addEventListener('blur', listener);
-            attribute_text_content.appendChild(input_div);
+            modifiers.appendChild(input_div);
 
-
+            attribute_text_content.appendChild(modifiers);
             target_attribute_view.appendChild(attribute_text_content);
         }
 
@@ -3228,6 +3363,23 @@
 
             let side_pair = document.createElement("div");
             side_pair.className = 'side_pair';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    side_pair.appendChild(warning)
+                }
+            }
 
             let measurement_input = document.createElement("input");
             measurement_input.className = 'attribute_input number_input';
@@ -3302,6 +3454,25 @@
             let side_5 = document.createElement("div");
             // side_5.style.display = "grid";
             // side_5.style.gridTemplateColumns = "1fr 1fr 1fr";
+
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    side_5.appendChild(warning)
+                }
+            }
+
 
             let first_input = document.createElement("input");
             first_input.className = 'attribute_input number_input';
@@ -3389,6 +3560,23 @@
 
             let side_5 = document.createElement("div");
             side_5.className = 'side_quad';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    side_5.appendChild(warning)
+                }
+            }
 
             let top_input = document.createElement("input");
             top_input.className = 'attribute_input number_input';
@@ -3511,6 +3699,23 @@
             let pair = document.createElement("pair");
             pair.style.display = 'flex';
 
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    pair.appendChild(warning)
+                }
+            }
+
             let input_div = document.createElement("input");
             input_div.className = 'attribute_input';
             input_div.type = 'file';
@@ -3613,6 +3818,23 @@
 
             let side_pair = document.createElement("div");
             side_pair.className = 'border_attribute';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, "border");
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    side_pair.appendChild(warning)
+                }
+            }
 
             let measurement_input = document.createElement("input");
             measurement_input.className = 'attribute_input number_input';
@@ -3767,6 +3989,23 @@
             let side_5 = document.createElement("div");
             side_5.style.display = 'flex';
             side_5.style.flexWrap = 'wrap';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, "box-shadow");
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    side_5.appendChild(warning)
+                }
+            }
 
             let top_input = document.createElement("input");
             top_input.className = 'attribute_input number_input';
@@ -4007,6 +4246,23 @@
             attribute_values.style.display = 'flex';
             attribute_values.style.flexWrap = 'wrap';
 
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    attribute_values.appendChild(warning)
+                }
+            }
+
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
             let options = all_styles.slice();
@@ -4123,6 +4379,23 @@
             let attribute_values = document.createElement("div");
             attribute_values.style.display = 'flex';
             attribute_values.style.flexWrap = 'wrap';
+
+            // add warning if this is affected by a class
+            if (attributes_view.contains(target_attribute_view)) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. Click here to edit that class");
+
+                    attribute_values.appendChild(warning)
+                }
+            }
 
             let method = document.createElement("select");
             method.className = 'attribute_input';
@@ -5199,6 +5472,16 @@
         const hover_styles_check = document.getElementById("hover_styles_check");
         const new_class_name = document.getElementById("new_class_name");
         let selected_class = null;
+
+        function show_class_in_class_editor(class_name) {
+            show_class_editor();
+            for (let class_item of class_list.children) {
+                if (class_item.textContent == class_name) {
+                    class_item.click();
+                    break;
+                }
+            }
+        }
 
         function add_class_to_list(class_name) {
             let class_item = document.createElement("div");

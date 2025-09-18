@@ -9,7 +9,6 @@
 
 
 # Todo
-- make components page
 - add svgs maybe
 - add tables?
 
