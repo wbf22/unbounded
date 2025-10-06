@@ -1186,7 +1186,7 @@
 
             pixels.forEach((pixel) => {
 
-                if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x > 0 && pixel.y > 0) {
+                if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x >= 0 && pixel.y >= 0) {
                     const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
 
                     // Set the alpha composite pixel color (R, G, B, A)
