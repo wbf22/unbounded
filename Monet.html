@@ -1241,7 +1241,7 @@
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             storke_to_remove.pixels.forEach((pixel) => {
 
-                if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x > 0 && pixel.y > 0) {
+                if (pixel.x < canvas.width && pixel.y < canvas.height && pixel.x >= 0 && pixel.y >= 0) {
                     const index = Math.round(pixel.y * canvas.width + pixel.x) * 4; // Calculate index for the pixel
 
                     let r_image = 0;
