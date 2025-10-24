@@ -29,7 +29,7 @@ This page has a few premade components (website pieces) that you can add to your
 As you go along, you can create your own components and add them there. (Right click the component on the page and select 'save as component')
 You can import or export your components to share them with other people!
 
-### CSS
+### Edit
 This is the main tab were you can edit your page with. Websites are made up of lots of pieces called 'elements'. When you click on something in the website view, you'll notice dashed lines around your target. This is the element you have selected. If you select and element this way, and then go to the CSS tab, you can then modify the style of the element.
 
 On the CSS tab I've ordered things in order of what you'd probably most commonly use. Some of the most important sections are layout and sizing. Layout if mostly used for controlling how things are aligned or centered on the page. 'flex' is probably the most common layout type (option for 'display'). Sizing is for controlling the size of the element. HTML has some defaults for how things are sized. If you don't set the width or height for an element, HTML will size it correctly a lot of the time.
