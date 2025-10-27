@@ -2558,7 +2558,8 @@
             window.addEventListener('mouseup', upHandler);
         });
         
-        color_hex.addEventListener('input', (e) => {
+
+        function color_hex_input(e) {
             console.log("hex change");
             let hex = e.target.value;
             const rgba = hex_to_rgba(hex);
@@ -2568,7 +2569,17 @@
             light = hsla.lightness;
             alpha = hsla.alpha / 100;
 
-            update_color();
+            update_color(); 
+        }
+        color_hex.addEventListener('input', (e) => {
+            color_hex_input(e);
+        });
+        color_hex.addEventListener('paste', (e) => {
+            console.log("hex pasted");
+            // Wait a tick for the pasted value to appear in the input
+            setTimeout(() => {
+                color_hex_input(e);
+            }, 0);
         });
 
         picker.addEventListener('focusout', (event) => {
@@ -3034,6 +3045,9 @@
         }
 
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
+
+            add_action(STYLE, current_element, style_property, current_style_ref.style[style_property]);
+            console.log(current_style_ref.style[style_property]);
 
             let rgba = null;
             if (!color_hex.value.startsWith("#")) {
@@ -4082,7 +4096,7 @@
                 sat = color_hsla.saturation;
                 light = color_hsla.lightness;
                 alpha = color_hsla.alpha / 100;
-                color_hex.value = current_style_ref.style[style_property];
+                color_hex.value = color;
                 update_color();
 
             });
@@ -4328,7 +4342,7 @@
                 sat = color_hsla.saturation;
                 light = color_hsla.lightness;
                 alpha = color_hsla.alpha / 100;
-                color_hex.value = current_style_ref.style[style_property];
+                color_hex.value = color;
                 update_color();
             });
 
@@ -5765,6 +5779,7 @@
             else {
                 hover_styles_check.classList.remove('checked');
             }
+            set_class_attribute_view();
 
         });
     </script>
