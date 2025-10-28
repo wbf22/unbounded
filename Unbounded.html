@@ -868,13 +868,13 @@
             <iframe id="iframe" class='iframe'></iframe>
 
             <div id="buttons_section">
-                <button class="control_button" onclick="undo()">
+                <button id="undo_button" class="control_button" onclick="undo()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
                         <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466"/>
                     </svg>
                 </button>
-                <button class="control_button" onclick="redo()">
+                <button id="redo_button" class="control_button" onclick="redo()">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
                         <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
@@ -890,12 +890,13 @@
                     </svg>
                 </div>
                 <button id="add_div_button" class="control_button" onclick="show_add_element_dialog()">+</button>
-                <button class="control_button" onclick="save()">save</button>
-                <button class="control_button" onclick="open_file()">open</button>
-                <button class="control_button" onclick="template_dialog()">new page</button>
-                <button class="control_button" onclick="show_class_editor()">classes</button>
-                <button class="control_button" onclick="show_add_css_variable_dialog()">css variables</button>
-                <button class="control_button" onclick="show_animation_editor()">animations</button>
+                <button id="save_button" class="control_button" onclick="save()">save</button>
+                <button id="open_button" class="control_button" onclick="open_file()">open</button>
+                <button id="new_page_button" class="control_button" onclick="template_dialog()">new page</button>
+                <button id="classes_button" class="control_button" onclick="show_class_editor()">classes</button>
+                <button id="css_variables_button" class="control_button" onclick="show_add_css_variable_dialog()">css variables</button>
+                <button id="animations_button" class="control_button" onclick="show_animation_editor()">animations</button>
+                <button id="reload_src_button" class="control_button" onclick="set_src_dir()">reload src folder assets</button>
                 <div id="help_button" class="control_button" onclick="show_help()">?</div>
             </div>
 
@@ -1399,6 +1400,10 @@
         let selected_parent = null;
 
         let persist_locally = true;
+
+
+        // uploaded assets from users src folder
+        let relative_src_to_blob_url = new Map();
     </script>
 
     <!-- UTIL -->
@@ -1761,6 +1766,15 @@
             // prepare and extract html
             remove_outlines(current_element);
             write_style_in_html();
+            reset_asset_references();
+
+            // remove empty style attributes
+            const all_elements = iframeDoc.querySelectorAll("*");
+            all_elements.forEach(el => {
+                if (el.style.length === 0) el.removeAttribute("style");
+            });
+
+
             const full_html = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
 
             // save to indexeddb
@@ -2397,6 +2411,37 @@
         function is_numeric(str) {
             return typeof str === 'string' && str.trim() !== '' && !isNaN(str);
         }
+    
+    
+        // HOVER HINTS
+        const hint_popper = document.getElementById("hint_popper");
+        function set_hint(div, hint) {
+            if (!hint) {
+                hint = '(missing hint, sorry! You should be able to search this up online)'
+            }
+
+            div.addEventListener("mouseenter", (event) => {
+                hint_popper.style.display = 'block';
+                hint_popper.innerHTML = hint;
+                hint_popper.style.top = event.clientY - hint_popper.offsetHeight - 10 + 'px';
+                hint_popper.style.left = event.clientX + 'px';
+
+
+                if (event.clientX + hint_popper.offsetWidth > window.innerWidth) {
+                    hint_popper.style.left = window.innerWidth - hint_popper.offsetWidth - 10 + 'px';
+                }
+
+                if (event.clientY - hint_popper.offsetHeight - 10 < 0) {
+                    hint_popper.style.top = '0px';
+                }
+                
+            });
+            div.addEventListener("mouseleave", (event) => {
+                hint_popper.style.display = 'none';
+            });
+        }
+
+    
     </script>
 
     <!-- color picker -->
@@ -3073,28 +3118,6 @@
         function update_element_background_color(hue, sat, light, alpha) {
             update_color_property(hue, sat, light, alpha, "background-color");
         }
-
-
-
-        // hints
-        const hint_popper = document.getElementById("hint_popper");
-        function set_hint(div, hint) {
-            if (!hint) {
-                hint = '(missing hint, sorry! You should be able to search this up online)'
-            }
-
-            div.addEventListener("mouseenter", (event) => {
-                hint_popper.style.top = event.clientY + 'px';
-                hint_popper.style.left = event.clientX + 'px';
-                hint_popper.style.display = 'block';
-                hint_popper.innerHTML = hint;
-            });
-            div.addEventListener("mouseleave", (event) => {
-                hint_popper.style.display = 'none';
-            });
-        }
-
-
 
         // creating the attributes fields
         let last_open_section = new Set(["general"]);
@@ -4770,7 +4793,7 @@
                         create_file_upload_or_url_attribute_div(
                             image_container, 
                             "src",
-                            current_element.getAttribute('src'),
+                            current_element && current_element.dataset.originalSrc? current_element.dataset.originalSrc : current_element.getAttribute('src'),
                             async function () {
                                 add_action(ATTRIBUTE, current_element, 'src', current_element.src);
                                 const url = await get_image_as_url(this);
@@ -4872,7 +4895,7 @@
                     create_file_upload_or_url_attribute_div(
                         lists_container, 
                         "list-style-image",
-                        current_style_ref.style.listStyleImage,
+                        current_element && current_element.dataset.originalIcon? current_element.dataset.originalIcon : current_style_ref.style.listStyleImage,
                         async function () {
                             add_action(STYLE, current_element, 'list-style-image', current_style_ref.style.listStyleImage);
                             const url = await get_image_as_url(this);
@@ -5194,7 +5217,7 @@
                 },
                 "Controls the font of the element. To change the font of the entire document you'll want to change this on the 'body' element."
             );
-            create_measurement_attribiute_div(text_container, "font-size", styles['font-size'], "font-size");
+            create_measurement_attribiute_div(text_container, "font-size", styles['font-size'], "font-size", "The size of the font. Typically people use 'rem' for the measurement.");
             create_short_input_attribute_div(text_container, "font-weight", styles['font-weight'], 4, (event) => {
                     add_action(STYLE, current_style_ref, 'font-weight', current_style_ref.style.fontWeight);
                     current_style_ref.style.fontWeight = event.target.value;
@@ -5302,7 +5325,7 @@
             create_file_upload_or_url_attribute_div(
                 background_container, 
                 "background-image",
-                current_style_ref.style.backgroundImage,
+                current_element && current_element.dataset.originalBck? current_element.dataset.originalBck : current_style_ref.style.backgroundImage,
                 async function () {
                     add_action(STYLE, current_element, 'background-image', current_style_ref.style.backgroundImage);
                     const url = await get_image_as_url(this);
@@ -6304,12 +6327,136 @@ If you want a style change to apply to both desktop and mobile, make changes in 
         }
 
 
+        // set src dir
+        function set_src_dir() {
+            for (const [key, url] of relative_src_to_blob_url.entries()) {
+                URL.revokeObjectURL(url);
+            }
+            relative_src_to_blob_url.clear();
+
+            let input = document.createElement("input");
+            input.type = "file";
+            input.style.display = "none";
+            input.webkitdirectory = true; // Allows folder selection
+            input.multiple = true;       // Allow selecting multiple files within the folder
+
+            // When the user selects files
+            input.addEventListener("change", (event) => {
+
+                const files = Array.from(input.files); // FileList → Array
+                files.forEach(file => {
+                    let url = URL.createObjectURL(file);
+                    const fullPath = file.webkitRelativePath;
+                    const relativePath = fullPath.split('/').slice(1).join('/');
+                    relative_src_to_blob_url.set(relativePath, url);
+                });
+
+                // replace src's with file sources
+                const all_elements = iframeDoc.querySelectorAll("*");
+                all_elements.forEach(el => {
+                    
+                    // src attributes
+                    let el_src = el.getAttribute("src");
+                    if (el_src && relative_src_to_blob_url.has(el_src)) {
+                        el.dataset.originalSrc = el_src;
+                        console.log("Retrieved and set asset: ", el_src);
+                        el.setAttribute("src", relative_src_to_blob_url.get(el_src));
+                    }
+
+                    // background image and list icons
+                    const bg = getComputedStyle(el).backgroundImage;
+                    let background_src = bg.match(/url\(["']?(.*?)["']?\)/);
+                    const icon = getComputedStyle(el).listStyleImage;
+                    let list_icon_src = icon.match(/url\(["']?(.*?)["']?\)/);
+                    if (background_src || list_icon_src) {
+                        const background_path = background_src && background_src.length > 1? background_src[1] : null;
+                        const icon_path = list_icon_src && list_icon_src.length > 1? list_icon_src[1] : null;
+                        for (const [key, url] of relative_src_to_blob_url.entries()) {
+                            if (background_path && background_path.endsWith(key)) {
+                                el.dataset.originalBck = el.style.backgroundImage;
+                                console.log("Retrieved and set asset: ", bg);
+                                el.style.backgroundImage = `url("${url}")`
+                            }
+                            if (icon_path && icon_path.endsWith(key)) {
+                                el.dataset.originalIcon = el.style.listStyleImage;
+                                console.log("Retrieved and set asset: ", icon);
+                                el.style.listStyleImage = `url("${url}")`
+                            }
+                        }
+                    }
+
+                    
+
+                });
+
+                input.remove();
+            });
+
+            // Trigger the file selector
+            input.click();
+        }
+
+        /*
+            Resets all elements to their user defined src value instead of the src dir set values
+        */
+        function reset_asset_references() {
+            const all_elements = iframeDoc.querySelectorAll("*");
+            all_elements.forEach(el => {
+                if (el.dataset.originalSrc) {
+                    el.setAttribute("src", el.dataset.originalSrc);
+                    delete el.dataset.originalSrc;
+                }
+                if (el.hasAttribute('data-original-bck')) {
+                    el.style.backgroundImage = el.dataset.originalBck;
+                    delete el.dataset.originalBck;
+                }
+                if (el.hasAttribute('data-original-icon')) {
+                    el.style.listStyleImage = el.dataset.originalIcon;
+                    delete el.dataset.originalIcon;
+                }
+            });
+        }
+
         // help dialog
         const help_dialog = document.getElementById("help_dialog");
         function show_help() {
             document.getElementById('gray_out').style.display = "block";
             help_dialog.style.display = "flex";
         }
+    
+    
+        // set up hover tips for bottom buttons
+        let undo_button = document.getElementById("undo_button");
+        let redo_button = document.getElementById("redo_button");
+        let mobile_switch_section = document.getElementById("mobile_switch_section");
+        let add_div_button = document.getElementById("add_div_button");
+        let save_button = document.getElementById("save_button");
+        let open_button = document.getElementById("open_button");
+        let new_page_button = document.getElementById("new_page_button");
+        let classes_button = document.getElementById("classes_button");
+        let css_variables_button = document.getElementById("css_variables_button");
+        let animations_button = document.getElementById("animations_button");
+        let reload_src_button = document.getElementById("reload_src_button");
+        set_hint(undo_button, "Undo the last action");
+        set_hint(redo_button, "Redo the last action");
+        set_hint(mobile_switch_section, "Switch to mobile mode. Any style editing in this mode only applies to mobile. To edit styles for both desktop and mobile, edit in desktop mode.");
+        set_hint(add_div_button, "Add a new element to the page inside the currently selected element");
+        set_hint(save_button, "Save or Export the page to your downloads folder. (Unfortunately the browser doesn't let us save to anywhere else for security reasons)");
+        set_hint(open_button, "Open an html file for editing. Also lets you inspect or copy/paste the html");
+        set_hint(new_page_button, "Creates a new page letting you choose from a list of templates.");
+        set_hint(classes_button, `
+            For editing classes. Classes are styles that you want to apply to multiple elements in the page, saving you work editing each element. 
+            First you'll create a class here, and then for each element hit the checkbox in the edit tab.
+        `);
+        set_hint(css_variables_button, "For creating css variables. Useful for defining a color you want to resuse");
+        set_hint(animations_button, "For creating animations. This is a bit advanced, but allows the creation of animations. These can then be applied to elements in the edit tab.");
+        set_hint(reload_src_button, `
+            Reloads relative links for images from a folder. For this to work you should set relative paths for image sources,
+            and then select the folder in which your html would be. This can be tricky, and it can be easier to use the upload 
+            option when setting image sources instead. (This embeds the image in the html)
+        `);
+
+    
     </script>
     
     <!-- right click menu -->
