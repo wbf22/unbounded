@@ -1540,6 +1540,17 @@
         }
 
         function hex_to_rgba(hex) {
+
+            if (!hex.startsWith("#")) {
+                return {
+                    r: 0,
+                    g: 0,
+                    b: 0,
+                    a: 0
+                };
+            }
+
+
             // Remove the hash at the start if it's there
             hex = hex.replace(/^#/, '');
 
@@ -2904,6 +2915,8 @@
             element_tag.style.marginLeft = `1rem`;
             element_tag.className = "element_tag"
             element_tag.style.cursor = "pointer";
+            element_tag.style.marginTop = "0.2rem";
+            element_tag.style.marginBottom = "0.2rem";
             element_tag.ref_element = element;
 
 
@@ -2946,13 +2959,10 @@
             child_container.style.paddingBottom = "0.2rem";
             child_container.style.gap = "0.2rem";
             child_container.ref_element = element;
-            element_tag.style.marginTop = "0.2rem";
             for (let child of element.children) {
                 display_element(child_container, child);
             }
-            if (element.children.length > 0) {
-                element_tag.appendChild(child_container);
-            }
+            element_tag.appendChild(child_container);
 
 
             carrot.addEventListener('click', () => {
@@ -3072,6 +3082,7 @@
                         container.ref_element.insertBefore(selected_element.ref_element, container.ref_element.children[index]);
                         
                         container = null;
+                        show_layout_tab();
                     }
                 }
             });
@@ -3321,8 +3332,6 @@
                 // console.log(event.clientX);
                 // console.log(event.clientY);
 
-
-                
                 color_rgba = parse_any_format_to_rgba(current_style_ref.style[style_property]);
                 if (!current_style_ref.style[style_property]) {
                     color_rgba.a = 255;
@@ -3953,7 +3962,7 @@
         }
 
         function create_border_attribute_div(target_attribute_view, hint) {
-
+            
             // parse current border
             let number = '';
             let unit = '';
@@ -3961,6 +3970,9 @@
 
             let border_str = current_style_ref.style.border;
             let color_start = border_str.indexOf('rgb');
+            if (color_start < 0) {
+                color_start = border_str.indexOf('var');
+            }
             let color = color_start > 0? border_str.substring(color_start) : '';
             border_str = border_str.substring(0, color_start);
             let pieces = border_str.split(" ");
@@ -3988,9 +4000,18 @@
                 if (new_border_str) {
                     new_border_str += ' ';
                 }
-                new_border_str += `${color}`;
+                
+
+                if (color_hex.value.startsWith("#")) {
+                    new_border_str += `${color}`;
+                }
+                else {
+                    new_border_str += color_hex.value;
+                }
+
                 current_style_ref.style.border = new_border_str;
                 // console.log(new_border_str);
+                // console.log(color_hex.value);
                 // console.log(current_style_ref.style.border);
             }
 
@@ -4102,7 +4123,10 @@
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
                     checker_canvas(color_div);
                     composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
-                    if (hue == 0 && sat == 0 && light == 0 && alpha == 0) {
+                    if (!color_hex.value.startsWith("#")) {
+                        color = color_hex.value;
+                    }
+                    else if (hue == 0 && sat == 0 && light == 0 && alpha == 0) {
                         color = '';
                     }
                     else {
@@ -4122,7 +4146,7 @@
                     picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
                 }
 
-                if (color_rgba.r == 0 && color_rgba.g == 0 && color_rgba.b == 0 && color_rgba.a == 0) {
+                if (!color) {
                     color_rgba.a = 255;
                 }
                 let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
@@ -4131,6 +4155,8 @@
                 light = color_hsla.lightness;
                 alpha = color_hsla.alpha / 100;
                 color_hex.value = color;
+                console.log(color);
+                
                 update_color();
 
             });
@@ -4142,7 +4168,7 @@
             let unit = 'px';
             let box_shadow = current_style_ref.style.boxShadow? current_style_ref.style.boxShadow : '';
             let color_end = box_shadow.indexOf(')');
-            let color = box_shadow.includes('rgb')? box_shadow.substring(0, color_end + 1) : '#000000';
+            let color = box_shadow.includes('rgb') || box_shadow.includes('var')? box_shadow.substring(0, color_end + 1) : '#000000';
             let values = color_end != -1? box_shadow.substring(color_end + 2).split(' ') : box_shadow.split(' ');
             const is_num = (str) => /^[\d.]/.test(str);
             for (let side_val of values) {
@@ -4304,7 +4330,13 @@
                     current_style_ref.style.boxShadow = '';
                 }
                 else {
-                    current_style_ref.style.boxShadow = inset_val +  top + right + bottom + left + color;
+
+                    if (color_hex.value.startsWith("#")) {
+                        current_style_ref.style.boxShadow = color + " " + inset_val +  top + right + bottom + left;
+                    }
+                    else {
+                        current_style_ref.style.boxShadow = color_hex.value + " " + inset_val +  top + right + bottom + left;
+                    }
                 }
 
             }
@@ -4353,7 +4385,12 @@
                     let rgba = hsla_to_rgba(hue, sat, light, alpha * 100);
                     checker_canvas(color_div);
                     composite_color_on_canvas(color_div, rgba.r, rgba.g, rgba.b, rgba.a);
-                    color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                    if (color_hex.value.startsWith("#")) {
+                        color = rgba_to_hex(rgba.r, rgba.g, rgba.b, rgba.a);
+                    }
+                    else {
+                        color = color_hex.value;
+                    }
                     update_shadow();
                 };
                 
@@ -4368,7 +4405,8 @@
                     picker.style.left = window.innerWidth - picker.offsetWidth + 'px';
                 }
 
-                if (color_rgba.r == 0 && color_rgba.g == 0 && color_rgba.b == 0 && color_rgba.a == 0) {
+                color_rgba = parse_any_format_to_rgba(color);
+                if (!color) {
                     color_rgba.a = 255;
                 }
                 let color_hsla = rgba_to_hsla(color_rgba.r, color_rgba.g, color_rgba.b, color_rgba.a);
@@ -4377,6 +4415,7 @@
                 light = color_hsla.lightness;
                 alpha = color_hsla.alpha / 100;
                 color_hex.value = color;
+                console.log(color);
                 update_color();
             });
 
@@ -7193,7 +7232,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
             // default to showing component tab
             components = JSON.parse(document.getElementById("starter_components").textContent)
-            show_components_tab();
+            show_css_tab();
         });
 
         window.addEventListener('click', (event) => {
