@@ -1796,8 +1796,9 @@
                 if (el.style.length === 0) el.removeAttribute("style");
             });
 
-
-            const full_html = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
+            // pretty format
+            let full_html = '<!DOCTYPE html>\n' + iframe.contentDocument.documentElement.outerHTML;
+            // full_html = prettyHTML(full_html);
 
             // save to indexeddb
             if (persist_locally) {
@@ -1808,6 +1809,41 @@
 
             return full_html;
         }
+
+        function prettyHTML(html, indent = 0) {
+            const tab = '  ';
+            let result = '';
+            let level = indent;
+            
+            // Self-closing tags
+            const selfClosing = ['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'];
+            
+            html.split(/(<[^>]+>)/g)
+                .filter(line => line.trim())
+                .forEach(line => {
+                if (line.match(/^<\/\w/)) {
+                    // Closing tag
+                    level--;
+                    result += tab.repeat(level) + line + '\n';
+                } else if (line.match(/^<\w[^>]*>$/)) {
+                    // Opening tag
+                    const tagName = line.match(/<(\w+)/)?.[1];
+                    result += tab.repeat(level) + line + '\n';
+                    if (tagName && !selfClosing.includes(tagName)) {
+                    level++;
+                    }
+                } else if (line.match(/^</)) {
+                    // Self-closing or other
+                    result += tab.repeat(level) + line + '\n';
+                } else {
+                    // Text content
+                    result += tab.repeat(level) + line.trim() + '\n';
+                }
+                });
+            
+            return result.trim();
+        }
+
 
         function write_style_in_html(css_to_add) {
             const styles = iframeDoc.querySelectorAll('style');
@@ -2226,21 +2262,26 @@
 
         function get_image_as_url(input_element) {
             return new Promise((resolve, reject) => {
-                const file = input_element.files[0];
-                if (!file) {
-                    reject("No file selected");
-                    return;
+                if (input_element.files) {
+                    const file = input_element.files[0];
+                    if (!file) {
+                        reject("No file selected");
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function (e) {
+                        resolve(e.target.result); // Base64 Data URL
+                    };
+                    reader.onerror = function (err) {
+                        resolve(''); // empty string
+                    };
+
+                    reader.readAsDataURL(file);
                 }
-
-                const reader = new FileReader();
-                reader.onload = function (e) {
-                    resolve(e.target.result); // Base64 Data URL
-                };
-                reader.onerror = function (err) {
-                    resolve(''); // empty string
-                };
-
-                reader.readAsDataURL(file);
+                else {
+                    resolve(input_element.value);
+                }
             });
         }
 
