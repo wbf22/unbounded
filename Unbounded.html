@@ -1312,8 +1312,8 @@
             }
         ];
 
-        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header", "li", "div", "button"]);
-        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "canvas", "body", "label", "html", "footer", "header", "nav", "section", "ul", "ol", "li", "textarea"];
+        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header", "li", "div", "button", "option"]);
+        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "option", "canvas", "body", "label", "html", "footer", "header", "nav", "section", "ul", "ol", "li", "textarea"];
         let file_name = "index.html";
 
         let actions = [];
@@ -5092,6 +5092,23 @@
                         },
                         'The place holder text for this input'
                     );
+                }
+
+                if (type == "option") {
+                    let option_container = create_attribute_container(attribute_view_div, "option");
+                    
+                    create_short_input_attribute_div(
+                        option_container,
+                        "value", 
+                        current_element.getAttribute("value"),
+                        4,
+                        (event) => {
+                            add_action(ATTRIBUTE, current_element, "value", current_element.getAttribute("value"));
+                            current_element.setAttribute("value", event.target.value);
+                        },
+                        "The value for the option in the select dropdown"
+                    );
+
                 }
 
                 if (type == "textarea") {
