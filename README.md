@@ -62,6 +62,8 @@ I may in the future set up something for hosting websites you create on Unbounde
 If you'd like to contribute, feel free to make a pull request and we can determine if we want to merge that in or make a fork instead.
 If you'd like to make a fork I'm totally fine with that, and if it's pretty good, we'll link to it here.
 
+If you find a bug you can also make an issue which will help us make the editor better.
+
 
 ## Other
 This repo also contains a paint app similar to MS paint. It's still a work in progress but can be accessed here [https://wbf22.github.io/unbounded/Monet.html](https://wbf22.github.io/unbounded/Monet.html)
