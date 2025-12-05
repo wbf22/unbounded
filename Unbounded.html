@@ -815,6 +815,11 @@
             border: var(--def_border);
         }
 
+        #help_video {
+            width: 40vw;
+            height: 40vh;
+        }
+
         .how_to {
             margin: 1rem;
             border-radius: 5px;
@@ -1151,7 +1156,11 @@
             </li>
         </ul>
 
-
+        <p>Here's a video showing how to make a basic page:</p>
+        <div id="help_video">
+            <iframe src="https://www.youtube.com/embed/5RZYSvPmer8" title="Unbounded Basics Tutorial" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        
         <h2>How-Tos</h2>
         <p>Here's some how-tos you might find useful.</p>
         <div class="how_to">
@@ -3154,8 +3163,8 @@
 
         function update_color_property(hue_t, sat_t, light_t, alpha_t, style_property) {
 
-            add_action(STYLE, current_element, style_property, current_style_ref.style[style_property]);
-            console.log(current_style_ref.style[style_property]);
+            // add_action(STYLE, current_element, style_property, current_style_ref.style[style_property]);
+            // console.log(current_style_ref.style[style_property]);
 
             let rgba = null;
             if (!color_hex.value.startsWith("#")) {
@@ -6854,7 +6863,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
             
             // undo the action
             if (action.type == STYLE) {
-                let style_ref = get_or_create_element_style_ref(action.element);
+                let style_ref = action.element;
                 let old_value = style_ref.style[action.property];
                 style_ref.style[action.property] = action.value;
                 action.value = old_value;
@@ -6957,7 +6966,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
             // redo the action
             if (action.type == STYLE) {
-                let style_ref = get_or_create_element_style_ref(action.element);
+                let style_ref = action.element;
                 let new_value = style_ref.style[action.property];
                 style_ref.style[action.property] = action.value;
                 action.value = new_value;
