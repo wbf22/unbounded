@@ -13,7 +13,6 @@
     </script>
 
 
-
     <!-- title -->
     <title>No Code Website Creator Editor | Unbounded</title>
 
@@ -7239,6 +7238,12 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 // get element
                 const element = event.target;
 
+                // finish text editing if new element
+                if (text_editing) {
+                    if (current_element.contains(element)) return; // return here so we don't select the text_edit_input
+                    finish_text_edit();
+                }
+
                 // prevent a links
                 if (element.tagName.toLowerCase() === 'a') {
                     event.preventDefault();
@@ -7263,6 +7268,91 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
             });
 
+            let text_editing = false;
+            let text_edit_input = null;
+            function finish_text_edit() {
+                text_editing = false;
+                const newText = text_edit_input.value;
+                current_element.removeChild(text_edit_input);
+                current_element.textContent = newText;
+                text_edit_input = null;
+
+                if (newText.includes("\n")) {
+                    add_action(STYLE, current_style_ref, "whiteSpace", current_style_ref.style.whiteSpace);
+                    current_style_ref.style.whiteSpace = "pre-wrap";
+                }
+            }
+
+            iframeDoc.addEventListener('dblclick', (e) => {
+                // console.log('Double clicked!');
+                // console.log(current_element.textContent);
+
+
+                if (current_element.children.length > 0) return; // only edit elements without children
+
+
+                text_editing = true;
+
+                // Prevent bubbling to parent elements Don't start editing if already editing
+                e.stopPropagation(); 
+                if (current_element.querySelector('input, textarea')) return;
+                
+
+                // get current text
+                const originalText = current_element.textContent;
+                add_action(CHANGE_TEXT, current_element, null, originalText);
+                const rect = current_element.getBoundingClientRect();
+                
+                // Create input current_element (use textarea for multi-line text)
+                const isMultiLine = current_element.scrollHeight > current_element.clientHeight || 
+                    current_element.textContent.includes('\n');
+                text_edit_input = document.createElement('textarea');
+                
+                // Style the input to match the original element
+                text_edit_input.value = originalText;
+                const computedStyle = window.getComputedStyle(current_element);
+                text_edit_input.style.cssText = computedStyle.cssText;
+                text_edit_input.style.fontSize = computedStyle.fontSize;
+                text_edit_input.style.fontFamily = computedStyle.fontFamily;
+                text_edit_input.style.fontWeight = computedStyle.fontWeight;
+                text_edit_input.style.color = computedStyle.color;
+                text_edit_input.style.lineHeight = computedStyle.lineHeight;
+                text_edit_input.style.textAlign = computedStyle.textAlign;
+                text_edit_input.style.padding = computedStyle.padding;
+                text_edit_input.style.margin = '0';
+                text_edit_input.style.padding = '0';
+                text_edit_input.style.border = 'none';
+                text_edit_input.style.outline = 'none';
+                text_edit_input.style.background = 'transparent';
+                text_edit_input.style.resize = 'none';
+                text_edit_input.style.overflow = 'hidden';
+                // text_edit_input.style.width = rect.width + 'px';
+                // text_edit_input.style.height = rect.height + 'px';
+                // console.log(rect.width, rect.height);
+                
+                // Replace element content
+                current_element.textContent = '';
+                current_element.appendChild(text_edit_input);
+                text_edit_input.focus();
+                text_edit_input.select();
+
+                
+                text_edit_input.addEventListener('blur', finish_text_edit);
+
+
+                // grow with text
+                text_edit_input.style.minWidth = rect.width-20 + 'px';
+                function autoResizeHeight() {
+                    text_edit_input.style.height = 'auto';
+                    text_edit_input.style.height = text_edit_input.scrollHeight/2 + 'px';
+
+                    if (text_edit_input.value.includes('\n') || rect.height > text_edit_input.getBoundingClientRect().height) {
+                        text_edit_input.style.height = text_edit_input.scrollHeight + 'px';
+                    }
+                }
+                text_edit_input.addEventListener('input', autoResizeHeight);
+                autoResizeHeight();
+            });
 
             const right_click_menu = document.getElementById('right_click_menu');
             iframeDoc.addEventListener('contextmenu', (event) => {
@@ -7305,8 +7395,6 @@ If you want a style change to apply to both desktop and mobile, make changes in 
         window.addEventListener('click', (event) => {
             right_click_menu.style.display = 'none';
         });
-
-
 
     </script>
 
