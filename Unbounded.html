@@ -7341,14 +7341,10 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
 
                 // grow with text
-                text_edit_input.style.minWidth = rect.width-20 + 'px';
+                text_edit_input.style.minWidth = rect.width + 'px';
                 function autoResizeHeight() {
                     text_edit_input.style.height = 'auto';
-                    text_edit_input.style.height = text_edit_input.scrollHeight/2 + 'px';
-
-                    if (text_edit_input.value.includes('\n') || rect.height > text_edit_input.getBoundingClientRect().height) {
-                        text_edit_input.style.height = text_edit_input.scrollHeight + 'px';
-                    }
+                    text_edit_input.style.height = text_edit_input.scrollHeight + 'px';
                 }
                 text_edit_input.addEventListener('input', autoResizeHeight);
                 autoResizeHeight();
