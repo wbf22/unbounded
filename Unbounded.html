@@ -1320,8 +1320,8 @@
             }
         ];
 
-        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header", "li", "div", "button", "option"]);
-        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "option", "canvas", "body", "label", "html", "footer", "header", "nav", "section", "ul", "ol", "li", "textarea"];
+        const text_types = new Set(["p", "h1", "h2", "h3", "a", "span", "label", "footer", "header", "li", "div", "button", "option", "td", "th"]);
+        const all_types = ["div", "a", "p", "h1", "h2", "h3", "span", "img", "input", "button", "select", "option", "canvas", "body", "label", "html", "footer", "header", "nav", "section", "ul", "ol", "li", "textarea", "table", "tbody", "tr", "th", "td"];
         let file_name = "index.html";
 
         let actions = [];
@@ -1379,6 +1379,8 @@
             'flex-wrap',
             'border',
             'border-radius',
+            'border-collapse',
+            'border-spacing',
             'object-fit',
             'z-index',
             'grid-template-rows',
@@ -4815,8 +4817,8 @@
                     styles['grid-template-rows'],
                     6,
                     (event) => {
+                        add_action(STYLE, current_element, 'grid-template-rows', current_style_ref.style.gridTemplateColumns);
                         current_style_ref.style.gridTemplateColumns = event.target.value;
-                        add_action(STYLE, current_element, 'grid-template-rows', event.target.value);
                     },
                     'Determines the size of grid rows. For example "1fr 1fr 2fr" specifies 3 rows with the last row being twice as big.'
                 );
@@ -5215,6 +5217,45 @@
                         'The place holder text for this text area'
                     );
                 }
+
+                if (type == "table") {
+
+                    let table_container = create_attribute_container(attribute_view_div, "table");
+            
+                    create_drop_down_attribiute_div(
+                        table_container,
+                        "table-layout", 
+                        styles['table-layout'], 
+                        ["", "auto", "fixed", "inherit", "initial", "unset"], 
+                        (event) => {
+                            add_action(STYLE, current_style_ref, 'table-layout', current_style_ref.style.tableLayout);
+                            current_style_ref.style.tableLayout = event.target.value;
+                        },
+                        "Determines how table cells are sized."
+                    );
+                    create_drop_down_attribiute_div(
+                        table_container,
+                        "border-collapse", 
+                        styles['border-collapse'], 
+                        ["", "seperate", "collapse"], 
+                        (event) => {
+                            add_action(STYLE, current_style_ref, 'border-collapse', current_style_ref.style.borderCollapse);
+                            current_style_ref.style.borderCollapse = event.target.value;
+                        },
+                        "Determines how borders are collapsed. Most used in tables"
+                    );
+                    create_short_input_attribute_div(
+                        table_container,
+                        "border-spacing", 
+                        styles['border-spacing'],
+                        6,
+                        (event) => {
+                            add_action(STYLE, current_element, 'border-spacing', current_style_ref.style.borderSpacing);
+                            current_style_ref.style.borderSpacing = event.target.value;
+                        },
+                        'Controls the spacing between borders. Most often used with tables'
+                    );
+                }
             }
             create_color_attribute_div(text_container, "color", "color", update_element_color, "The text color of this element. Use 'background-color' to change the color of the element itself.");
             create_drop_down_attribiute_div(
@@ -5499,7 +5540,6 @@
             create_measurement_attribiute_div(border_container, "border-radius", styles['border-radius'], "border-radius", "How rounded the corners are. '10px' is a common value.");
             create_box_shadow_attribute_div(border_container, "For creating a shadow behind a box to make it pop out slightly. Can make really nice visuals for sections on a page. (offset-x, offset-y, blur-raidus, spread-radius, color, inset). A good example is (0 0 10 #e3e3e3)");
             
-
 
             let positioning_container = create_attribute_container(attribute_view_div, "float positioning");
             create_transform_attribute_div(positioning_container, "Allows you to scale, translate, or rotate and element. Often used do make an element feel interactable when hovered over by a user. (method, x, y) Example 'translate(0px, -5px)");
