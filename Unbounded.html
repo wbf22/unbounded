@@ -43,7 +43,7 @@
     <link rel="icon" sizes="32x32" href="assets/favicon/favicon-32x32.png">
     <link rel="icon" sizes="16x16" href="assets/favicon/favicon-16x16.png">
     <link rel="icon" type="image/png" href="assets/favicon/android-chrome-192x192.png">
-    <link rel="manifest" href="assets/favicon/manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
     <style>
 
@@ -549,9 +549,34 @@
         #file_input {
             margin-bottom: 1rem;
         }
+        
 
         #open_file_done_button {
             margin-left: 0;
+            width: 3rem;
+            
+        }
+
+        #open_file_copy_button {
+            margin-bottom: 1rem;
+            transition: transform 0.15s ease;
+        }
+
+        #open_file_copy_section {
+            display: flex;
+            
+        }
+
+        #open_file_copy_button:hover {
+            transform: scale(1.15);
+            cursor: pointer;
+        }
+
+        #open_file_copy_message {
+            margin: 0;
+            margin-left: 1rem;
+            color: #66d870;
+            display: none;
         }
 
         #class_editor_menu {
@@ -1005,6 +1030,12 @@
             You can open a file or paste some html you wish to edit below
         </p>
         <input type="file" id="file_input"/>
+        <div id="open_file_copy_section">
+            <svg id="open_file_copy_button" onclick="open_file_copy()" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-copy" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>
+            </svg>
+            <p id="open_file_copy_message">Copied!</p>
+        </div>
         <textarea id="open_text_area" class="attribute_input" autocomplete="off" wrap="off" placeholder="html here"></textarea>
         <button id="open_file_done_button" class="control_button" onclick="open_file_done_button()">Done</button>
 
@@ -3033,6 +3064,12 @@
                     child_container.style.maxHeight = 0;
                 }
             });
+
+            // hide sections by default
+            if(!element.contains(current_element)) {
+                carrot.innerHTML = carrot_side;
+                child_container.style.maxHeight = 0;
+            }
 
 
             element_info.addEventListener('mousedown', (e) => {
@@ -6258,8 +6295,14 @@
         function open_file() {
             template_selection.style.display = 'none';
             document.getElementById('gray_out').style.display = "block";
-            document.getElementById('open_menu').style.display = "block";
+            document.getElementById('open_menu').style.display = "flex";
+            document.getElementById('open_file_copy_message').style.display = "none";
             open_text_area.value = get_iframe_html();
+        }
+
+        function open_file_copy() {
+            navigator.clipboard.writeText(open_text_area.value);
+            document.getElementById('open_file_copy_message').style.display = "block";
         }
 
         function open_file_done_button() {
@@ -8269,6 +8312,40 @@ If you want a style change to apply to both desktop and mobile, make changes in 
     </script>
 
 
+
+
+    <!-- progressive web app setup -->
+    <script>
+        self.addEventListener('install', (event) => {
+            event.waitUntil(
+                caches.open('v1').then((cache) => {
+                    return cache.addAll([
+                        '/',
+                        '/Unbounded.html',
+                        'assets/favicon/android-chrome-192x192.png',
+                        'assets/favicon/android-chrome-512x512.png',
+                        'assets/favicon/apple-touch-icon.png',
+                        'assets/favicon/favicon-16x16.png',
+                        'assets/favicon/favicon-32x32.png',
+                        'assets/favicon/favicon-48x48.png',
+                        'assets/favicon/favicon.ico'
+                    ]);
+                })
+            );
+        });
+
+        self.addEventListener('fetch', (event) => {
+            event.respondWith(
+                caches.match(event.request).then((response) => {
+                return response || fetch(event.request);
+                })
+            );
+        });
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js');
+        }
+    </script>
 
 
 </body>
