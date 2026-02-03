@@ -62,7 +62,12 @@
         }
 
         .menu_button {
-            padding: .5rem;
+            padding: 0.5rem;
+        }
+
+        .svg_menu_icon {
+            width: 2rem;
+            height: 2rem;
         }
 
         .sub_menu {
@@ -237,6 +242,16 @@
             align-items: center;
         }
 
+        #draw_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+        }
+
         #erase_button {
             height: 3rem;
             width: 3rem;
@@ -254,6 +269,7 @@
             justify-content: center;
             align-items: center;
         }
+
 
         .tooltip-text {
             visibility: hidden;
@@ -603,16 +619,16 @@
             <svg
                 id="draw-svg"
                 xmlns="http://www.w3.org/2000/svg"
-                width="3rem"
-                height="3rem"
-                viewBox="0 0 24 24"
+                class="svg_menu_icon"
+                viewBox="0 0 16 16"
                 fill="var(--accent-color)"
                 stroke="var(--accent-color)"
                 stroke-width="1"
                 stroke-linecap="round"
                 stroke-linejoin="round"
             >
-                <polygon points="7 5  17 15  18 18  15 17  5 7" />
+                <!-- <polygon points="7 5  17 15  18 18  15 17  5 7" /> viewBox="0 0 24 24" -->
+                <polygon points="2.8 0.5  14.3 12  15.5 15.5  12 14.3  0.5 2.8" />
             </svg>
             <span id="draw_tool_tip" class="tooltip-text">main mode for drawing/painting (a)</span>
         
@@ -626,10 +642,8 @@
             <svg 
                 id="erase_svg" 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
+                class="svg_menu_icon"
                 fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
                 class="bi bi-eraser-fill" 
                 viewBox="0 0 16 16"
             >
@@ -646,10 +660,8 @@
             <svg 
                 id="copy_svg"
                 xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
+                class="svg_menu_icon"
                 fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
                 class="bi bi-copys" 
                 viewBox="0 0 16 16"
             >
@@ -666,10 +678,8 @@
             <svg 
                 id="move_svg" 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
+                class="svg_menu_icon"
                 fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
                 class="bi bi-hand-index-fill" 
                 viewBox="0 0 16 16"
             >
@@ -699,10 +709,8 @@
             
             <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
+                class="svg_menu_icon"
                 fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
                 class="bi bi-download" 
                 viewBox="0 0 16 16"
             >
@@ -720,10 +728,8 @@
             <svg 
                 id="settings_svg" 
                 xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
+                class="svg_menu_icon"
                 fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
                 class="bi bi-gear-fill" 
                 viewBox="0 0 16 16"
             >
@@ -1973,7 +1979,7 @@
             if (move_mode) {
                 move_mode_button.style.backgroundColor = 'var(--accent-color)';
                 move_svg.setAttribute('fill', 'var(--secondary-color)');
-                move_svg.setAttribute('stroke', 'var(--secondary-color)');
+                // move_svg.setAttribute('stroke', 'var(--secondary-color)');
             }
             else {
                 turn_off_move_mode();
@@ -1988,7 +1994,7 @@
             const move_svg = document.getElementById("move_svg");
             move_mode_button.style.backgroundColor = 'var(--secondary-color)';
             move_svg.setAttribute('fill', 'var(--accent-color)');
-            move_svg.setAttribute('stroke', 'var(--accent-color)');
+            // move_svg.setAttribute('stroke', 'var(--accent-color)');
         }
 
         function draw_select_box() {
@@ -2082,7 +2088,7 @@
             if (in_settings) {
                 settings_button.style.backgroundColor = 'var(--accent-color)';
                 settings_svg.setAttribute('fill', 'var(--secondary-color)');
-                settings_svg.setAttribute('stroke', 'var(--secondary-color)');
+                // settings_svg.setAttribute('stroke', 'var(--secondary-color)');
                 place_settings_sub_menu();
             }
             else {
@@ -2097,7 +2103,7 @@
             const settings_svg = document.getElementById('settings_svg');
             settings_button.style.backgroundColor = 'var(--secondary-color)';
             settings_svg.setAttribute('fill', 'var(--accent-color)');
-            settings_svg.setAttribute('stroke', 'var(--accent-color)');
+            // settings_svg.setAttribute('stroke', 'var(--accent-color)');
             settings_sub_menu.style.display = 'none';
 
         }
@@ -2269,7 +2275,7 @@
         if (erase_mode) {
             erase_button.style.backgroundColor = 'var(--accent-color)';
             erase_svg.setAttribute('fill', 'var(--secondary-color)');
-            erase_svg.setAttribute('stroke', 'var(--secondary-color)');
+            // erase_svg.setAttribute('stroke', 'var(--secondary-color)');
         }
         else {
             turn_off_erase_mode();
@@ -2284,7 +2290,7 @@
         const erase_svg = document.getElementById("erase_svg");
         erase_button.style.backgroundColor = 'var(--secondary-color)';
         erase_svg.setAttribute('fill', 'var(--accent-color)');
-        erase_svg.setAttribute('stroke', 'var(--accent-color)');
+        // erase_svg.setAttribute('stroke', 'var(--accent-color)');
     }
 
     </script>
@@ -2303,7 +2309,7 @@
             if (copy_mode) {
                 copy_button.style.backgroundColor = 'var(--accent-color)';
                 copy_svg.setAttribute('fill', 'var(--secondary-color)');
-                copy_svg.setAttribute('stroke', 'var(--secondary-color)');
+                // copy_svg.setAttribute('stroke', 'var(--secondary-color)');
             }
             else {
                 turn_off_copy_mode();
@@ -2316,7 +2322,7 @@
             const copy_svg = document.getElementById("copy_svg");
             copy_button.style.backgroundColor = 'var(--secondary-color)';
             copy_svg.setAttribute('fill', 'var(--accent-color)');
-            copy_svg.setAttribute('stroke', 'var(--accent-color)');
+            // copy_svg.setAttribute('stroke', 'var(--accent-color)');
         }
    
         function snapshot_canvas_region() {
