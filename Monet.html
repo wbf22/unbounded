@@ -1270,7 +1270,7 @@
 
             // remove from layer
             current_layer = storke_to_remove.layer_uuid;
-            layers.get(current_layer).strokes.filter(uuid => uuid != stroke_uuid);
+            layers.get(current_layer).strokes = layers.get(current_layer).strokes.filter(uuid => uuid != stroke_uuid);
 
 
             // set pixels on canvas
@@ -2169,10 +2169,8 @@
                 const reader = new FileReader();
                 reader.onload = function () {
                     
-
                     // add for undo
                     add_action(SET_BACKGROUND, get_background_data_for_undo());
-
 
                     // scale canvas to image size
                     const img = new Image();
@@ -2390,12 +2388,20 @@
         let undone_actions = [];
         
         function add_action(type, data) {
+            
+            // add action and limit stack size
             actions.push(
                 make_action(type, data)
             );
+            if (actions.length > MAX_ACTIONS) {
+                actions.shift();
+            }
+
+
+            // clear redo stack after action is performed
             undone_actions = [];
 
-            const last = actions[actions.length - 1];
+
 
             // console.log("action", type);
             // console.log("data", last.data);
