@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>monet</title>
+    <title>Free Online Paint App | Monet</title>
+    <meta name="description" content="A free online paint app, great for pixel art and general painting.">
+    <meta name="keywords" content="paint online free pixel art">
 
     <link rel="icon" type="image/png" href="assets/favicon/monet/android-chrome-192x192.png">
     <link rel="icon" type="image/x-icon" href="assets/favicon/monet/favicon.ico">
@@ -2248,6 +2250,7 @@
         }
 
         function turn_off_erase_mode() {
+            erase_mode = false;
             const erase_button = document.getElementById("erase_button");
             const erase_svg = document.getElementById("erase_svg");
             erase_button.style.backgroundColor = 'var(--secondary-color)';
