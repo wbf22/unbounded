@@ -246,6 +246,14 @@
             align-items: center;
         }
 
+        #copy_button {
+            height: 3rem;
+            width: 3rem;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
         .tooltip-text {
             visibility: hidden;
@@ -664,6 +672,26 @@
         </div>
 
         <div
+            id="copy_button"
+            class="menu_button"
+            onclick="copy_button_click()"
+        >
+            <svg 
+                id="copy_svg"
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-copys" 
+                viewBox="0 0 16 16"
+            >
+                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>    
+            </svg>
+            <span id="erase_tool_tip" class="tooltip-text">d</span>
+        </div>
+
+        <div
             id="download_button"
             class="menu_button"
             onclick="download_dialog()"
@@ -704,7 +732,6 @@
             <span id="settings_tool_tip" class="tooltip-text">g</span>
         </div>
 
-       
 
     </div>
 
@@ -944,6 +971,7 @@
         let draw_mode = false;
         let move_mode = false;
         let erase_mode = false;
+        let copy_mode = false;
         let in_settings = false;
 
         let drawing = false;
@@ -951,6 +979,7 @@
         let color_pick = false;
         let draw_box_select = false;
         let move_box_select = false;
+        let copy_box_drawn = false;
         let dims = { defaultWidth: 1920, defaultHeight: 1080 };
         let width = 0;
         let height = 0;
@@ -1367,9 +1396,11 @@
                 if (selected_strokes) {
                     add_action(MOVE_STROKES, selected_strokes);
 
-                    selected_stroke_uuids.forEach(uuid => {
-                        remove_stroke(uuid);
-                    });
+                    if (!copy_mode) {
+                        selected_stroke_uuids.forEach(uuid => {
+                            remove_stroke(uuid);
+                        });
+                    }
 
                     // save canvas
                     canvas_data_without_selected_strokes = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -1926,10 +1957,10 @@
     <!-- MOVE MODE -->
     <script>
 
-        let move_select_start_x = null;
-        let move_select_start_y = null;
-        let move_select_end_x = null;
-        let move_select_end_y = null;
+        let select_start_x = null;
+        let select_start_y = null;
+        let select_end_x = null;
+        let select_end_y = null;
 
         function move_mode_button_click() {
             // console.log("clicked");
@@ -1974,10 +2005,10 @@
             select_box.id = 'select_box';
 
             // Set the position of the box (you can change these values)
-            const left = Math.min(move_select_start_x, move_select_end_x) + 'px';
-            const top = Math.min(move_select_start_y, move_select_end_y) + 'px';
-            const box_width = Math.abs(move_select_start_x - move_select_end_x) + 'px';
-            const box_height = Math.abs(move_select_start_y - move_select_end_y) + 'px';
+            const left = Math.min(select_start_x, select_end_x) + 'px';
+            const top = Math.min(select_start_y, select_end_y) + 'px';
+            const box_width = Math.abs(select_start_x - select_end_x) + 'px';
+            const box_height = Math.abs(select_start_y - select_end_y) + 'px';
             select_box.style.left = left; // Position from the left
             select_box.style.top = top; // Position from the top
             select_box.style.width = box_width;
@@ -1995,19 +2026,19 @@
         }
 
         function remove_select_box() {
-            move_select_start_x = null;
-            move_select_start_y = null;
-            move_select_end_x = null;
-            move_select_end_y = null;
+            select_start_x = null;
+            select_start_y = null;
+            select_end_x = null;
+            select_end_y = null;
             select_box.remove();
         }
 
         function select_strokes() {
             // console.log("select_strokes");
-            let box_start_x = mouse_x_to_canvas_x(move_select_start_x);
-            let box_start_y = mouse_y_to_canvas_y(move_select_start_y);
-            let box_end_x = mouse_x_to_canvas_x(move_select_end_x);
-            let box_end_y = mouse_y_to_canvas_y(move_select_end_y);
+            let box_start_x = mouse_x_to_canvas_x(select_start_x);
+            let box_start_y = mouse_y_to_canvas_y(select_start_y);
+            let box_end_x = mouse_x_to_canvas_x(select_end_x);
+            let box_end_y = mouse_y_to_canvas_y(select_end_y);
             // consoa.log("box_end_y", box_end_y);
 
             let step_x = box_end_x - box_start_x > 0? 1 : -1;
@@ -2225,41 +2256,115 @@
     </script>
 
     <!-- Erase -->
-     <script>
+    <script>
 
-        function erase_button_click() {
+    function erase_button_click() {
+        // console.log("clicked");
+
+        turn_off_other_modes('erase');
+        erase_mode = !erase_mode;
+
+        const erase_button = document.getElementById("erase_button");
+        const erase_svg = document.getElementById("erase_svg");
+        
+
+        if (erase_mode) {
+            erase_button.style.backgroundColor = 'var(--accent-color)';
+            erase_svg.setAttribute('fill', 'var(--secondary-color)');
+            erase_svg.setAttribute('stroke', 'var(--secondary-color)');
+        }
+        else {
+            turn_off_erase_mode();
+        }
+
+
+    }
+
+    function turn_off_erase_mode() {
+        erase_mode = false;
+        const erase_button = document.getElementById("erase_button");
+        const erase_svg = document.getElementById("erase_svg");
+        erase_button.style.backgroundColor = 'var(--secondary-color)';
+        erase_svg.setAttribute('fill', 'var(--accent-color)');
+        erase_svg.setAttribute('stroke', 'var(--accent-color)');
+    }
+
+    </script>
+
+    <!-- Copy -->
+    <script>
+        function copy_button_click() {
             // console.log("clicked");
 
-            turn_off_other_modes('erase');
-            erase_mode = !erase_mode;
+            turn_off_other_modes("copy");
+            copy_mode = !copy_mode;
 
-            const erase_button = document.getElementById("erase_button");
-            const erase_svg = document.getElementById("erase_svg");
+            const copy_button = document.getElementById("copy_button");
+            const copy_svg = document.getElementById("copy_svg");
             
-
-            if (erase_mode) {
-                erase_button.style.backgroundColor = 'var(--accent-color)';
-                erase_svg.setAttribute('fill', 'var(--secondary-color)');
-                erase_svg.setAttribute('stroke', 'var(--secondary-color)');
+            if (copy_mode) {
+                copy_button.style.backgroundColor = 'var(--accent-color)';
+                copy_svg.setAttribute('fill', 'var(--secondary-color)');
+                copy_svg.setAttribute('stroke', 'var(--secondary-color)');
             }
             else {
-                turn_off_erase_mode();
+                turn_off_copy_mode();
+            }
+        }
+
+        function turn_off_copy_mode() {
+            copy_mode = false;
+            const copy_button = document.getElementById("copy_button");
+            const copy_svg = document.getElementById("copy_svg");
+            copy_button.style.backgroundColor = 'var(--secondary-color)';
+            copy_svg.setAttribute('fill', 'var(--accent-color)');
+            copy_svg.setAttribute('stroke', 'var(--accent-color)');
+        }
+   
+        function snapshot_canvas_region() {
+            // console.log("select_strokes");
+            let box_start_x = mouse_x_to_canvas_x(select_start_x);
+            let box_start_y = mouse_y_to_canvas_y(select_start_y);
+            let box_end_x = mouse_x_to_canvas_x(select_end_x);
+            let box_end_y = mouse_y_to_canvas_y(select_end_y);
+            // consoa.log("box_end_y", box_end_y);
+
+            let step_x = box_end_x - box_start_x > 0? 1 : -1;
+            let step_y = box_end_y - box_start_y > 0? 1 : -1;
+            
+
+            let pixels = [];
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            for(let x = box_start_x; x != box_end_x; x += step_x) {
+                for(let y = box_start_y; y != box_end_y; y += step_y) {
+                    const index = (y * canvas.width + x) * 4; // Calculate index for the pixel
+
+                    // Set the alpha composite pixel color (R, G, B, A)
+                    const r_image = imageData.data[index];
+                    const g_image = imageData.data[index + 1];
+                    const b_image = imageData.data[index + 2];
+                    const a_image = imageData.data[index + 3] / 255;
+
+                    let pixel = {
+                        x: x,
+                        y: y,
+                        r: r_image,
+                        g: g_image,
+                        b: b_image,
+                        a: a_image
+                    };
+
+                    pixels.push(pixel);
+
+                }
             }
 
-
+            add_to_stroke(pixels, false);
+            finish_stroke(true);
         }
-
-        function turn_off_erase_mode() {
-            erase_mode = false;
-            const erase_button = document.getElementById("erase_button");
-            const erase_svg = document.getElementById("erase_svg");
-            erase_button.style.backgroundColor = 'var(--secondary-color)';
-            erase_svg.setAttribute('fill', 'var(--accent-color)');
-            erase_svg.setAttribute('stroke', 'var(--accent-color)');
-        }
-
-     </script>
-
+        
+    </script>
+    
     <!-- UNDO OR CTRL Z -->
     <script>
         const MAX_ACTIONS = 200;
@@ -2592,9 +2697,12 @@
                 erase_button_click();
             }
             else if (!event.ctrlKey && !typing && event.key === 'f') {
-                download_dialog();
+                copy_button_click();
             }
             else if (!event.ctrlKey && !typing && event.key === 'g') {
+                download_dialog();
+            }
+            else if (!event.ctrlKey && !typing && event.key === 'h') {
                 settings_button_click();
             }
             else if (event.key === ' ') {
@@ -2658,10 +2766,10 @@
                     // box select vs single stroke select
                     if (ctrl) {
                         draw_box_select = true;
-                        move_select_start_x = event.clientX;
-                        move_select_start_y = event.clientY;
-                        move_select_end_x = event.clientX;
-                        move_select_end_y = event.clientY;
+                        select_start_x = event.clientX;
+                        select_start_y = event.clientY;
+                        select_end_x = event.clientX;
+                        select_end_y = event.clientY;
                     }
                     else if (event.target == select_box) {
                         move_box_select = true;
@@ -2684,7 +2792,22 @@
                     remove_stroke(most_recent.uuid);
                     add_action(ERASE_STROKE, most_recent);
                 }
-
+                else if (copy_mode) {
+                    // box select
+                    if (!copy_box_drawn) {
+                        draw_box_select = true;
+                        select_start_x = event.clientX;
+                        select_start_y = event.clientY;
+                        select_end_x = event.clientX;
+                        select_end_y = event.clientY;
+                    }
+                    else if (event.target == select_box) {
+                        snapshot_canvas_region();
+                        move_mode = true;
+                        move_box_select = true;
+                        select_strokes();
+                    }
+                }
 
             }
         };
@@ -2702,8 +2825,8 @@
                     update_move_draw_select_box(delta_x, delta_y);
                 }
                 else if (draw_box_select) {
-                    move_select_end_x = event.clientX;
-                    move_select_end_y = event.clientY;
+                    select_end_x = event.clientX;
+                    select_end_y = event.clientY;
                     draw_select_box();
                 }
                 else if (move_mode && selected_strokes && event.target == canvas) {
@@ -2723,13 +2846,19 @@
         window.addEventListener('mousemove', handleMouseMove);
         
         const handleMouseUp = (event) => {
-            // console.log("mouseUp");a
+            // console.log("mouseUp");
             is_dragging = false;
             if (draw_mode && drawing) {
                 drawing = false;
                 finish_stroke(true);
             }
             else if (move_mode) {
+
+                if (copy_mode) {
+                    move_mode = false;
+                    copy_box_drawn = false;
+                }
+
                 if (move_box_select) {
                     drop_selected_stroke();
                     move_box_select = false;
@@ -2741,6 +2870,10 @@
                 else if (move_mode && selected_strokes){
                     drop_selected_stroke();
                 }
+            }
+            else if (copy_mode && !copy_box_drawn) {
+                copy_box_drawn = true;
+                draw_box_select = false;
             }
         };
         window.addEventListener('mouseup', handleMouseUp);
@@ -2895,6 +3028,9 @@
             }
             if (erase_mode && current_mode != "erase") {
                 turn_off_erase_mode();
+            }
+            if (copy_mode && current_mode != "copy") {
+                turn_off_copy_mode();
             }
         }
     </script>
