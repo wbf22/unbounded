@@ -614,8 +614,48 @@
             >
                 <polygon points="7 5  17 15  18 18  15 17  5 7" />
             </svg>
-            <span id="draw_tool_tip" class="tooltip-text">a</span>
+            <span id="draw_tool_tip" class="tooltip-text">main mode for drawing/painting (a)</span>
         
+        </div>
+
+        <div
+            id="erase_button"
+            class="menu_button"
+            onclick="erase_button_click()"
+        >
+            <svg 
+                id="erase_svg" 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-eraser-fill" 
+                viewBox="0 0 16 16"
+            >
+                <path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm.66 11.34L3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/>
+            </svg>
+            <span id="erase_tool_tip" class="tooltip-text">mode for erasing storkes (s)</span>
+        </div>
+
+        <div
+            id="copy_button"
+            class="menu_button"
+            onclick="copy_button_click()"
+        >
+            <svg 
+                id="copy_svg"
+                xmlns="http://www.w3.org/2000/svg" 
+                width="2rem" 
+                height="2rem" 
+                fill="var(--accent-color)" 
+                stroke="var(--accent-color)" 
+                class="bi bi-copys" 
+                viewBox="0 0 16 16"
+            >
+                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>    
+            </svg>
+            <span id="copy_tool_tip" class="tooltip-text">mode for copying sections of the canvas (d)</span>
         </div>
 
         <div
@@ -648,47 +688,7 @@
             >
                 <path fill-rule="evenodd" d="M7.646.146a.5.5 0 0 1 .708 0l2 2a.5.5 0 0 1-.708.708L8.5 1.707V5.5a.5.5 0 0 1-1 0V1.707L6.354 2.854a.5.5 0 1 1-.708-.708zM8 10a.5.5 0 0 1 .5.5v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 14.293V10.5A.5.5 0 0 1 8 10M.146 8.354a.5.5 0 0 1 0-.708l2-2a.5.5 0 1 1 .708.708L1.707 7.5H5.5a.5.5 0 0 1 0 1H1.707l1.147 1.146a.5.5 0 0 1-.708.708zM10 8a.5.5 0 0 1 .5-.5h3.793l-1.147-1.146a.5.5 0 0 1 .708-.708l2 2a.5.5 0 0 1 0 .708l-2 2a.5.5 0 0 1-.708-.708L14.293 8.5H10.5A.5.5 0 0 1 10 8"/>
             </svg> -->
-            <span id="move_tool_tip" class="tooltip-text">s</span>
-        </div>
-
-        <div
-            id="erase_button"
-            class="menu_button"
-            onclick="erase_button_click()"
-        >
-            <svg 
-                id="erase_svg" 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
-                fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
-                class="bi bi-eraser-fill" 
-                viewBox="0 0 16 16"
-            >
-                <path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm.66 11.34L3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/>
-            </svg>
-            <span id="erase_tool_tip" class="tooltip-text">d</span>
-        </div>
-
-        <div
-            id="copy_button"
-            class="menu_button"
-            onclick="copy_button_click()"
-        >
-            <svg 
-                id="copy_svg"
-                xmlns="http://www.w3.org/2000/svg" 
-                width="2rem" 
-                height="2rem" 
-                fill="var(--accent-color)" 
-                stroke="var(--accent-color)" 
-                class="bi bi-copys" 
-                viewBox="0 0 16 16"
-            >
-                <path fill-rule="evenodd" d="M4 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1zM2 5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-1h1v1a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h1v1z"/>    
-            </svg>
-            <span id="erase_tool_tip" class="tooltip-text">d</span>
+            <span id="move_tool_tip" class="tooltip-text">mode for moving strokes (f)</span>
         </div>
 
         <div
@@ -709,7 +709,7 @@
                 <path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5"/>
                 <path d="M7.646 11.854a.5.5 0 0 0 .708 0l3-3a.5.5 0 0 0-.708-.708L8.5 10.293V1.5a.5.5 0 0 0-1 0v8.793L5.354 8.146a.5.5 0 1 0-.708.708z"/>
             </svg>
-            <span id="download_tool_tip" class="tooltip-text">f</span>
+            <span id="download_tool_tip" class="tooltip-text">download the canvas as an image (g)</span>
         </div>
 
         <div
@@ -729,7 +729,7 @@
             >
                 <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/>
             </svg>
-            <span id="settings_tool_tip" class="tooltip-text">g</span>
+            <span id="settings_tool_tip" class="tooltip-text">settings for this canvas (h)</span>
         </div>
 
 
@@ -1268,7 +1268,7 @@
 
 
             // set pixels on canvas
-            console.log("canvas_background_img", canvas_background_img);
+            // console.log("canvas_background_img", canvas_background_img);
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             storke_to_remove.pixels.forEach((pixel) => {
 
@@ -1396,11 +1396,9 @@
                 if (selected_strokes) {
                     add_action(MOVE_STROKES, selected_strokes);
 
-                    if (!copy_mode) {
-                        selected_stroke_uuids.forEach(uuid => {
-                            remove_stroke(uuid);
-                        });
-                    }
+                    selected_stroke_uuids.forEach(uuid => {
+                        remove_stroke(uuid);
+                    });
 
                     // save canvas
                     canvas_data_without_selected_strokes = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -2340,10 +2338,10 @@
                     const index = (y * canvas.width + x) * 4; // Calculate index for the pixel
 
                     // Set the alpha composite pixel color (R, G, B, A)
-                    const r_image = imageData.data[index];
-                    const g_image = imageData.data[index + 1];
-                    const b_image = imageData.data[index + 2];
-                    const a_image = imageData.data[index + 3] / 255;
+                    let r_image = imageData.data[index];
+                    let g_image = imageData.data[index + 1];
+                    let b_image = imageData.data[index + 2];
+                    let a_image = imageData.data[index + 3];
 
                     let pixel = {
                         x: x,
@@ -2360,7 +2358,21 @@
             }
 
             add_to_stroke(pixels, false);
+            let new_uuid = stroke_uuid;
             finish_stroke(true);
+            let new_stroke = uuid_to_stroke.get(new_uuid);
+
+            selected_strokes = [new_stroke];
+            add_action(MOVE_STROKES, selected_strokes);
+
+            remove_stroke(new_uuid);
+
+            // save canvas
+            canvas_data_without_selected_strokes = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            selected_strokes.forEach(selected_stroke => {
+                set_pixels(selected_stroke.pixels);
+            });
         }
         
     </script>
@@ -2379,8 +2391,8 @@
 
             const last = actions[actions.length - 1];
 
-            console.log("action", type);
-            console.log("data", last.data);
+            // console.log("action", type);
+            // console.log("data", last.data);
         }
 
         function make_action(type, data) {
@@ -2474,8 +2486,8 @@
 
                 }
                 
-                console.log("actions", actions);
-                console.log("undone_actions", undone_actions);
+                // console.log("actions", actions);
+                // console.log("undone_actions", undone_actions);
             }
         }
 
@@ -2548,8 +2560,8 @@
 
                 }
 
-                console.log("actions", actions);
-                console.log("undone_actions", undone_actions);
+                // console.log("actions", actions);
+                // console.log("undone_actions", undone_actions);
             }
         }
 
@@ -2691,13 +2703,13 @@
                 draw_button_click();
             }
             else if (!event.ctrlKey && !typing && event.key === 's') {
-                move_mode_button_click();
-            }
-            else if (!event.ctrlKey && !typing && event.key === 'd') {
                 erase_button_click();
             }
-            else if (!event.ctrlKey && !typing && event.key === 'f') {
+            else if (!event.ctrlKey && !typing && event.key === 'd') {
                 copy_button_click();
+            }
+            else if (!event.ctrlKey && !typing && event.key === 'f') {
+                move_mode_button_click();
             }
             else if (!event.ctrlKey && !typing && event.key === 'g') {
                 download_dialog();
@@ -2805,7 +2817,6 @@
                         snapshot_canvas_region();
                         move_mode = true;
                         move_box_select = true;
-                        select_strokes();
                     }
                 }
 
@@ -2871,9 +2882,14 @@
                     drop_selected_stroke();
                 }
             }
-            else if (copy_mode && !copy_box_drawn) {
-                copy_box_drawn = true;
-                draw_box_select = false;
+            else if (copy_mode) {
+                if (!copy_box_drawn) {
+                    copy_box_drawn = true;
+                    draw_box_select = false;
+                }
+                else if (copy_box_drawn) {
+                    copy_box_drawn = false;
+                }
             }
         };
         window.addEventListener('mouseup', handleMouseUp);
@@ -3152,6 +3168,13 @@
         erase_tool_tip.style.top = (rect.top + offset) + 'px';
         erase_tool_tip.style.left = (rect.left + offset) + 'px';
 
+        const copy_button = document.getElementById('copy_button');
+        const copy_tool_tip = document.getElementById('copy_tool_tip');
+        rect = copy_button.getBoundingClientRect();
+        offset = rect.width * .8;
+        copy_tool_tip.style.top = (rect.top + offset) + 'px';
+        copy_tool_tip.style.left = (rect.left + offset) + 'px';
+        
         const download_button = document.getElementById('download_button');
         const download_tool_tip = document.getElementById('download_tool_tip');
         rect = download_button.getBoundingClientRect();
