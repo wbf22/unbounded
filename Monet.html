@@ -2213,7 +2213,9 @@
             select_start_y = null;
             select_end_x = null;
             select_end_y = null;
-            select_box.remove();
+            if (select_box) {
+                select_box.remove();
+            }
         }
 
         function select_strokes() {
