@@ -469,6 +469,16 @@
             align-items: center;
         }
 
+
+        #fill_bucket {
+            padding: 0.5rem;
+            border-radius: 10px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
         #download_popup {
             position: fixed;
             background-color: rgba(0, 0, 0, 0.166);
@@ -543,6 +553,20 @@
                         viewBox="0 0 16 16"
                     >
                         <path d="M13.354.646a1.207 1.207 0 0 0-1.708 0L8.5 3.793l-.646-.647a.5.5 0 1 0-.708.708L8.293 5l-7.147 7.146A.5.5 0 0 0 1 12.5v1.793l-.854.853a.5.5 0 1 0 .708.707L1.707 15H3.5a.5.5 0 0 0 .354-.146L11 7.707l1.146 1.147a.5.5 0 0 0 .708-.708l-.647-.646 3.147-3.146a1.207 1.207 0 0 0 0-1.708zM2 12.707l7-7L10.293 7l-7 7H2z"/>
+                    </svg>
+                </div>
+                <div id="fill_bucket" onclick="fill_bucket_click()">
+                    <svg 
+                        id="fill_bucket_svg"
+                        xmlns="http://www.w3.org/2000/svg" 
+                        width="1rem" 
+                        height="1rem" 
+                        fill="var(--accent-color)" 
+                        stroke="var(--accent-color)" 
+                        class="bi bi-paint-bucket" 
+                        viewBox="0 0 16 16"
+                    >
+                        <path d="M6.192 2.78c-.458-.677-.927-1.248-1.35-1.643a3 3 0 0 0-.71-.515c-.217-.104-.56-.205-.882-.02-.367.213-.427.63-.43.896-.003.304.064.664.173 1.044.196.687.556 1.528 1.035 2.402L.752 8.22c-.277.277-.269.656-.218.918.055.283.187.593.36.903.348.627.92 1.361 1.626 2.068.707.707 1.441 1.278 2.068 1.626.31.173.62.305.903.36.262.05.64.059.918-.218l5.615-5.615c.118.257.092.512.05.939-.03.292-.068.665-.073 1.176v.123h.003a1 1 0 0 0 1.993 0H14v-.057a1 1 0 0 0-.004-.117c-.055-1.25-.7-2.738-1.86-3.494a4 4 0 0 0-.211-.434c-.349-.626-.92-1.36-1.627-2.067S8.857 3.052 8.23 2.704c-.31-.172-.62-.304-.903-.36-.262-.05-.64-.058-.918.219zM4.16 1.867c.381.356.844.922 1.311 1.632l-.704.705c-.382-.727-.66-1.402-.813-1.938a3.3 3.3 0 0 1-.131-.673q.137.09.337.274m.394 3.965c.54.852 1.107 1.567 1.607 2.033a.5.5 0 1 0 .682-.732c-.453-.422-1.017-1.136-1.564-2.027l1.088-1.088q.081.181.183.365c.349.627.92 1.361 1.627 2.068.706.707 1.44 1.278 2.068 1.626q.183.103.365.183l-4.861 4.862-.068-.01c-.137-.027-.342-.104-.608-.252-.524-.292-1.186-.8-1.846-1.46s-1.168-1.32-1.46-1.846c-.147-.265-.225-.47-.251-.607l-.01-.068zm2.87-1.935a2.4 2.4 0 0 1-.241-.561c.135.033.324.11.562.241.524.292 1.186.8 1.846 1.46.45.45.83.901 1.118 1.31a3.5 3.5 0 0 0-1.066.091 11 11 0 0 1-.76-.694c-.66-.66-1.167-1.322-1.458-1.847z"/>
                     </svg>
                 </div>
             </div>
@@ -653,7 +677,7 @@
             >
                 <path d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm.66 11.34L3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"/>
             </svg>
-            <span id="erase_tool_tip" class="tooltip-text">mode for erasing storkes (s)</span>
+            <span id="erase_tool_tip" class="tooltip-text">mode for erasing strokes (s)</span>
         </div>
 
         <div
@@ -987,6 +1011,7 @@
         let drawing = false;
         let typing = false;
         let color_pick = false;
+        let color_fill = false;
         let draw_box_select = false;
         let move_box_select = false;
         let copy_box_drawn = false;
@@ -1762,6 +1787,8 @@
 
         // color picker
         function color_picker_click() {
+            if (color_fill) fill_bucket_click();
+
             color_pick = !color_pick;
 
             const color_picker = document.getElementById("color_picker");
@@ -1779,7 +1806,110 @@
                 color_picker_svg.setAttribute('stroke', 'var(--accent-color)');
             }
 
+        }
 
+        function fill_bucket_click() {
+            if (color_pick) color_picker_click();
+
+            color_fill = !color_fill;
+
+            const fill_bucket = document.getElementById("fill_bucket");
+            const fill_bucket_svg = document.getElementById("fill_bucket_svg");
+            
+
+            if (color_fill) {
+                fill_bucket.style.backgroundColor = 'var(--accent-color)';
+                fill_bucket_svg.setAttribute('fill', 'var(--secondary-color)');
+                fill_bucket_svg.setAttribute('stroke', 'var(--secondary-color)');
+            }
+            else {
+                fill_bucket.style.backgroundColor = 'var(--secondary-color)';
+                fill_bucket_svg.setAttribute('fill', 'var(--accent-color)');
+                fill_bucket_svg.setAttribute('stroke', 'var(--accent-color)');
+            }
+
+
+        }
+
+        function fill_color(x, y) {
+            let color_rgba = hsla_to_rgba(color.hue, color.saturation, color.lightness, color.alpha);
+            let [r, g, b, a] = ctx.getImageData(x, y, 1, 1).data;
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let fill_queue = [[x,y]];
+            let already_visiting = new Set();
+            let fill_pixels = [];
+            while(fill_queue.length > 0) {
+
+                let tag;
+                let [x_i, y_i] = fill_queue.pop();
+
+                // get neighbors with same color and queue
+                let y_up = y_i-1;
+                tag = `${x_i},${y_up}`;
+                if (y_up < canvas.height && y_up >= 0 && !already_visiting.has(tag)) {
+                    const index = Math.round(y_up * canvas.width + x_i) * 4;
+                    const r_o = imageData.data[index];
+                    const g_o = imageData.data[index + 1];
+                    const b_o = imageData.data[index + 2];
+                    const a_o = imageData.data[index + 3];
+                    if (r == r_o && g == g_o && b == b_o && a == a_o) {
+                        fill_queue.push([x_i, y_up]);
+                        already_visiting.add(tag);
+                    }
+                }
+                let y_down = y_i+1;
+                tag = `${x_i},${y_down}`;
+                if (y_down < canvas.height && y_down >= 0 && !already_visiting.has(tag)) {
+                    const index = Math.round(y_down * canvas.width + x_i) * 4;
+                    const r_o = imageData.data[index];
+                    const g_o = imageData.data[index + 1];
+                    const b_o = imageData.data[index + 2];
+                    const a_o = imageData.data[index + 3];
+                    if (r == r_o && g == g_o && b == b_o && a == a_o) {
+                        fill_queue.push([x_i, y_down]);
+                        already_visiting.add(tag);
+                    }
+                }
+                let x_left = x_i-1;
+                tag = `${x_left},${y_i}`;
+                if (x_left < canvas.width && x_left >= 0 && !already_visiting.has(tag)) {
+                    const index = Math.round(y_i * canvas.width + x_left) * 4;
+                    const r_o = imageData.data[index];
+                    const g_o = imageData.data[index + 1];
+                    const b_o = imageData.data[index + 2];
+                    const a_o = imageData.data[index + 3];
+                    if (r == r_o && g == g_o && b == b_o && a == a_o) {
+                        fill_queue.push([x_left, y_i]);
+                        already_visiting.add(tag);
+                    }
+                }
+                let x_right = x_i+1;
+                tag = `${x_right},${y_i}`;
+                if (x_right < canvas.width && x_right >= 0 && !already_visiting.has(tag)) {
+                    const index = Math.round(y_i * canvas.width + x_right) * 4;
+                    const r_o = imageData.data[index];
+                    const g_o = imageData.data[index + 1];
+                    const b_o = imageData.data[index + 2];
+                    const a_o = imageData.data[index + 3];
+                    if (r == r_o && g == g_o && b == b_o && a == a_o) {
+                        fill_queue.push([x_right, y_i]);
+                        already_visiting.add(tag);
+                    }
+                }
+
+                // save pixel
+                fill_pixels.push({
+                    x: x_i,
+                    y: y_i,
+                    r: color_rgba.r,
+                    g: color_rgba.g,
+                    b: color_rgba.b,
+                    a: color_rgba.a
+                });
+            }
+
+            add_to_stroke(fill_pixels, false);
+            finish_stroke(true);
         }
 
         function set_color_rgba(r, g, b, a) {
@@ -2848,6 +2978,12 @@
                             console.log(r, g, b, a);
                             set_color_rgba(r, g, b, a);
                             color_picker_click();
+                        }
+                        else if (color_fill) {
+                            console.log("fill color");
+                            let x = mouse_x_to_canvas_x(event.clientX);
+                            let y = mouse_y_to_canvas_y(event.clientY);
+                            fill_color(x, y);
                         }
                         else {
                             drawing = true;
