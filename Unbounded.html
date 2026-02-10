@@ -1161,8 +1161,15 @@
     </div>
 
     <div id="help_dialog">
+
+        <h1>Feedback and Supporting Us</h1>
+        <p>If you find a bug or have any feedback feel free to send us that here:</p>
+        <a href="https://github.com/wbf22/unbounded/issues/new/choose">https://github.com/wbf22/unbounded/issues/new/choose</a>
+        <p>If you'd like to support us you can give us a tip here:</p>
+        <a href="https://github.com/sponsors/wbf22">https://github.com/sponsors/wbf22</a>
+
         <h1>Help</h1>
-        <p>Hi! To get started, click on a something in the view window to see what styles are applied to that element.</p>
+        <p>To get started, click on a something in the view window to see what styles are applied to that element.</p>
         <p>It may help you to look at some of our templates under 'new page'. (Often the best way to start is by using a template similar to your idea)</p>
         <p>We don't have a dedicated staff to help you unfortunately, but here are some resources for when you're stuck:</p>
         <ul>
@@ -2547,6 +2554,7 @@
             });
         }
 
+
     
     </script>
 
@@ -3091,6 +3099,8 @@
 
         }
 
+        
+        let marker_line = null;
         function show_layout_tab() {
             
             unselect_tabs();
@@ -3106,26 +3116,37 @@
             let selected_element = null;
             let container = null;
             let index = 0;
-            attributes_view.addEventListener('mousedown', (e) => {
+            attributes_view.removeEventListener('mousedown', attributes_view.mouse_down_handler);
+            attributes_view.mouse_down_handler = function (e) {
                 if (layout_tab.classList.contains("side_view_tab_selected")) {
                     start_x = e.clientX;
                     start_y = e.clientY;
                     mouse_down = true;
                     selected_element = e.target.closest(".element_tag");
                 }
-            });
+            }
+            attributes_view.addEventListener('mousedown', attributes_view.mouse_down_handler);
 
-            attributes_view.addEventListener('mousemove', (e) => {
+            attributes_view.removeEventListener('mousemove', attributes_view.mouse_move_handler);
+            attributes_view.mouse_move_handler = function (e) {
                 if (layout_tab.classList.contains("side_view_tab_selected")) {
                     // e.preventDefault();
                     const deltaX = e.clientX - start_x;
                     const deltaY = e.clientY - start_y;
                     if (mouse_down) {
 
+                        // reset visuals indicators
+                        if (container) {
+                            container.parentElement.style.backgroundColor = "";
+                        }
+                        if (marker_line) {
+                            marker_line.remove();
+                        }
+
+                        // determine new position
                         const hovering_over = document.elementFromPoint(e.clientX, e.clientY);
 
-                        // avoid trying to insert itself into itself
-                        if (selected_element.contains(hovering_over)) return;
+                        if (selected_element.contains(hovering_over)) return; // avoid trying to insert itself into itself
 
                         container = hovering_over.closest(".layout_child_container");
                         const tag = hovering_over.closest(".element_tag")
@@ -3136,6 +3157,7 @@
                             }
                         }
 
+                        // highlight container where the div is going
                         if (container) {
                             index = 0;
                             for (let i = 0; i < container.children.length; i++) {
@@ -3145,15 +3167,28 @@
                                     index = i+1;
                                 }
                             }
-                            container.insertBefore(selected_element, container.children[index]);
+                            container.parentElement.style.backgroundColor = "#241387";
+
+                            // add maker line
+                            marker_line = document.createElement("div");
+                            marker_line.id = "marker_line";
+                            marker_line.style.backgroundColor = "#dddddd";
+                            marker_line.style.width = "100%";
+                            marker_line.style.height = "2px";
+                            marker_line.style.pointerEvents = "none";
+                            marker_line.style.flexShrink = "0";
+                            marker_line.style.alignSelf = "stretch";
+                            container.insertBefore(marker_line, container.children[index]);
                         }
                     }
 
                 }
 
-            });
+            }
+            attributes_view.addEventListener('mousemove', attributes_view.mouse_move_handler);
 
-            attributes_view.addEventListener('mouseup', (e) => {
+            attributes_view.removeEventListener('mouseup', attributes_view.mouse_up_handler);
+            attributes_view.mouse_up_handler = function (e) {
                 if (layout_tab.classList.contains("side_view_tab_selected")) {
                     mouse_down = false;
                     
@@ -3176,7 +3211,8 @@
                         show_layout_tab();
                     }
                 }
-            });
+            }
+            attributes_view.addEventListener('mouseup', attributes_view.mouse_up_handler);
 
         }
 
@@ -6771,7 +6807,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
             // clear undone actions
             undone_actions = [];
-            console.log(actions, undone_actions);
+            // console.log(actions, undone_actions);
 
         }
 
@@ -6887,7 +6923,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 reset_selected_tab();
             }
             undone_actions.push(action);
-            console.log(actions, undone_actions);
+            // console.log(actions, undone_actions);
         }
 
         function redo() {
@@ -6982,7 +7018,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 reset_selected_tab();
             }
             actions.push(action);
-            console.log(actions, undone_actions);
+            // console.log(actions, undone_actions);
         }
 
     </script>
