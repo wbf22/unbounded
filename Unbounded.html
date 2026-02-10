@@ -580,23 +580,23 @@
         }
 
         #class_editor_menu {
-            z-index: 1001;
             background-color: #07002f;
             border-radius: 2px;
 
-            width: 80vw;
-            height: 80vh;
+            /* width: 80vw;
+            height: 80vh; */
+            padding: 0.2rem;
 
-            display: none;
             /* display: flex; */
+            display: none;
             flex-direction: column;
 
 
+            /* z-index: 1001;
             position: fixed;
             top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
-            padding: 1rem;
+            transform: translate(-50%, -50%); */
 
 
         }
@@ -932,7 +932,6 @@
                 <button id="save_button" class="control_button" onclick="save()">export</button>
                 <button id="open_button" class="control_button" onclick="open_file()">import</button>
                 <button id="new_page_button" class="control_button" onclick="template_dialog()">new page</button>
-                <button id="classes_button" class="control_button" onclick="show_class_editor()">classes</button>
                 <button id="css_variables_button" class="control_button" onclick="show_add_css_variable_dialog()">css variables</button>
                 <button id="animations_button" class="control_button" onclick="show_animation_editor()">animations</button>
                 <button id="reload_src_button" class="control_button" onclick="set_src_dir()">reload src folder assets</button>
@@ -946,9 +945,36 @@
                 <span id="components_tab" class="side_view_tab side_view_tab_selected" onclick="show_components_tab()">components</span>
                 <span id="css_tab" class="side_view_tab" onclick="show_css_tab()">edit</span>
                 <span id="layout_tab" class="side_view_tab" onclick="show_layout_tab()">layout</span>
+                <span id="classes_tab" class="side_view_tab" onclick="show_classes_tab()">classes</span>
             </div>
             <div id="attributes_view" class="attributes_view">
                 
+                <!-- this is populated with css styles via code below depending on the situation -->
+
+                <div id="class_editor_menu">
+                    <h3>Edit a Class</h3>
+
+                    <p>
+                        Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change, instead of changing each element. This is useful 
+                        for things like buttons that you want to be consistant on your page.
+                    </p>
+                    <p>
+                        WARNING: styles applied to individual elements take precedence over styles in classes. So if you want have a class style show up on an element, make sure the corresponding style is blank
+                        on the element.
+                    </p>
+
+                    <div id="class_list" class="attributes_view"></div>
+                    <div id="var_list_buttons">
+                        <input id="new_class_name" class="attribute_input" placeholder="new class name" type="text" autocomplete="off"></input>
+                        <button class="control_button var_list_button" onclick="add_class()">+</button>
+                        <button class="control_button var_list_button" onclick="remove_class()">-</button>
+                        <p>hover style</p>
+                        <div id="hover_styles_check" class="custom-checkbox" style="margin:1rem"></div>
+                    </div>
+
+                    <div id="class_attribute_view" class="attributes_view">
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1041,30 +1067,6 @@
 
     </div>
 
-    <div id="class_editor_menu">
-        <h3>Edit a Class</h3>
-
-        <p>
-            Classes are a way to make sure your design is consistant. It allows you update the style of all elements with the same class with one change, instead of changing each element. This is useful 
-            for things like buttons that you want to be consistant on your page.
-        </p>
-        <p>
-            WARNING: styles applied to individual elements take precedence over styles in classes. So if you want have a class style show up on an element, make sure the corresponding style is blank
-            on the element.
-        </p>
-
-        <div id="class_list" class="attributes_view"></div>
-        <div id="var_list_buttons">
-            <input id="new_class_name" class="attribute_input" placeholder="new class name" type="text" autocomplete="off"></input>
-            <button class="control_button var_list_button" onclick="add_class()">+</button>
-            <button class="control_button var_list_button" onclick="remove_class()">-</button>
-            <p>hover style</p>
-            <div id="hover_styles_check" class="custom-checkbox" style="margin:1rem"></div>
-        </div>
-
-        <div id="class_attribute_view" class="attributes_view">
-        </div>
-    </div>
 
     <div id="hint_popper"></div>
 
@@ -1338,6 +1340,7 @@
         const components_tab = document.getElementById("components_tab");
         const css_tab = document.getElementById("css_tab");
         const layout_tab = document.getElementById("layout_tab");
+        const classes_tab = document.getElementById("classes_tab");
         
         let components = [
             {
@@ -2750,6 +2753,7 @@
             components_tab.classList.remove("side_view_tab_selected");
             css_tab.classList.remove("side_view_tab_selected");
             layout_tab.classList.remove("side_view_tab_selected");
+            classes_tab.classList.remove("side_view_tab_selected");
             unsetAttributeView();
         }
 
@@ -3176,6 +3180,13 @@
 
         }
 
+        function show_classes_tab() {
+            unselect_tabs();
+            classes_tab.classList.add("side_view_tab_selected");
+
+            show_class_editor();
+        }
+
     </script>
 
     <!-- attribute view -->
@@ -3318,21 +3329,7 @@
             modifiers.style.display = 'flex';
 
             // add warning this is affect by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    modifiers.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, modifiers, name);
 
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
@@ -3371,21 +3368,7 @@
             value_section.style.display = 'flex';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    value_section.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, value_section, name);
 
             // let computed_color = get_computer_color(style_property);
             let color_rgba = parse_any_format_to_rgba(current_style_ref.style[style_property]);
@@ -3496,21 +3479,7 @@
             modifiers.style.display = 'flex';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    modifiers.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, modifiers, name);
 
 
             let input_div = document.createElement("textarea");
@@ -3544,21 +3513,7 @@
             modifiers.style.display = 'flex';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    modifiers.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, modifiers, name);
 
             let input_div = document.createElement("input");
             input_div.className = 'attribute_input';
@@ -3592,21 +3547,7 @@
             modifiers.style.display = 'flex';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    modifiers.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, modifiers, name);
 
             let input_div = document.createElement("input");
             input_div.className = 'attribute_input';
@@ -3643,21 +3584,7 @@
             side_pair.className = 'side_pair';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    side_pair.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, side_pair, name);
 
             let measurement_input = document.createElement("input");
             measurement_input.className = 'attribute_input number_input';
@@ -3735,21 +3662,7 @@
 
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    side_5.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, side_5, name);
 
 
             let first_input = document.createElement("input");
@@ -3840,21 +3753,7 @@
             side_5.className = 'side_quad';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    side_5.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, side_5, name);
 
             let top_input = document.createElement("input");
             top_input.className = 'attribute_input number_input';
@@ -3978,21 +3877,7 @@
             pair.style.display = 'flex';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    pair.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, pair, name);
 
 
             let input_path = document.createElement("input");
@@ -4121,21 +4006,7 @@
             side_pair.className = 'border_attribute';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, "border");
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    side_pair.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, side_pair, "border");
 
             let measurement_input = document.createElement("input");
             measurement_input.className = 'attribute_input number_input';
@@ -4297,21 +4168,7 @@
             side_5.style.flexWrap = 'wrap';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, "box-shadow");
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    side_5.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, side_5, "box-shadow");
 
             let top_input = document.createElement("input");
             top_input.className = 'attribute_input number_input';
@@ -4566,21 +4423,7 @@
             attribute_values.style.flexWrap = 'wrap';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    attribute_values.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, attribute_values, "transition");
 
             let select_div = document.createElement("select");
             select_div.className = 'attribute_input';
@@ -4700,21 +4543,7 @@
             attribute_values.style.flexWrap = 'wrap';
 
             // add warning if this is affected by a class
-            if (attributes_view.contains(target_attribute_view)) {
-                let affecting_class = get_element_class_affecting_style(current_element, name);
-                if (affecting_class) {
-                    let warning = document.createElement('div');
-                    warning.innerHTML = '!';
-                    warning.className = 'class_warning_link';
-
-                    warning.addEventListener('click', () => {
-                        show_class_in_class_editor(affecting_class);
-                    });
-                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
-
-                    attribute_values.appendChild(warning)
-                }
-            }
+            add_warning_if_class_affected_style(target_attribute_view, attribute_values, "transform");
 
             let method = document.createElement("select");
             method.className = 'attribute_input';
@@ -4787,6 +4616,28 @@
             return attributes;
         }
 
+
+        function add_warning_if_class_affected_style(target_attribute_view, attribute_values, name) {
+
+            // add warning if this is affected by a class
+            if (!classes_tab.classList.contains("side_view_tab_selected")) {
+                let affecting_class = get_element_class_affecting_style(current_element, name);
+                if (affecting_class) {
+                    let warning = document.createElement('div');
+                    warning.innerHTML = '!';
+                    warning.className = 'class_warning_link';
+
+                    warning.addEventListener('click', () => {
+                        hint_popper.style.display = 'none';
+                        show_class_in_class_editor(affecting_class);
+                    });
+                    set_hint(warning, "This style is being set by a class for this element. You can override that by editing here, or click on this icon to edit that class");
+
+                    attribute_values.appendChild(warning)
+                }
+            }
+
+        }
 
         let scroll_pos = 0;
 
@@ -5837,7 +5688,8 @@
         }
 
         function unsetAttributeView() {
-            attributes_view.replaceChildren();
+            attributes_view.replaceChildren(class_editor_menu); // clear everything except the class editor menu
+            class_editor_menu.style.display = "none";
 
             // // take outline off last element
             // remove_outlines(current_element);
@@ -5847,15 +5699,15 @@
 
     <!-- class editing -->
     <script>
-        const class_editor_menu = document.getElementById("class_editor_menu");
-        const class_attribute_view = document.getElementById("class_attribute_view");
-        const class_list = document.getElementById("class_list");
-        const hover_styles_check = document.getElementById("hover_styles_check");
-        const new_class_name = document.getElementById("new_class_name");
+        let class_editor_menu = document.getElementById("class_editor_menu");
+        let class_attribute_view = document.getElementById("class_attribute_view");
+        let class_list = document.getElementById("class_list");
+        let hover_styles_check = document.getElementById("hover_styles_check");
+        let new_class_name = document.getElementById("new_class_name");
         let selected_class = null;
 
         function show_class_in_class_editor(class_name) {
-            show_class_editor();
+            show_classes_tab();
             for (let class_item of class_list.children) {
                 if (class_item.textContent == class_name) {
                     class_item.click();
@@ -5976,7 +5828,6 @@
         }
 
         function show_class_editor() {
-            document.getElementById('gray_out').style.display = "block";
             class_editor_menu.style.display = 'flex';
             new_class_name.value = '';
             selected_class = null;
@@ -6249,7 +6100,6 @@
         function show_hidden_divs() {
             
             unhide_recursively(iframeDoc.body);
-            attributes_view.replaceChildren();
             
             unsetAttributeView();
         }
