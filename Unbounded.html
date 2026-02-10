@@ -3225,6 +3225,48 @@
 
     </script>
 
+    <!-- ai tab -->
+    <script>
+        function get_ai_response(user_prompt) {
+            
+            // create prompt
+            const user_page = get_iframe_html();
+            
+            const all_styles_str = all_styles.join(" ");
+            const instructions = `
+                Hello, you're currently bing asked to help a user in Unbounded, a visual html editor for editing static
+                pages. They can modify css styles for elements in the page they are creating under an 'edit'
+                tab. We'll send you the users page and their request, and we'd love it if you can send back
+                a complete html page with their desired edits. 
+
+                The editor supports the following css styles:
+                ${all_styles_str}
+
+                We'd love it if you could modify the users page only using those styles if possible. Please send
+                back a code block delineated with \`\`\` containing the user's page. We'll use the first code
+                block in your response to replace the contents of the user's page. If you'd like to say more to
+                the user feel free too. We'll display your response in its entirety to them in a seperate tab.
+
+                Here's the current state of their page:
+
+                \`\`\`
+                ${get_iframe_html}
+                \`\`\`
+
+                And here's their prompt:
+
+                ${user_prompt}
+            `;
+
+
+            // send prompt to ai
+
+            // extract first code block and set as html for page
+
+
+        }
+    </script>
+
     <!-- attribute view -->
     <script>
 
@@ -5848,6 +5890,7 @@
             if (selected_class) {
 
                 current_element = null;
+                remove_outlines();
                 current_style_ref = get_rule_from_iframe_style(selected_class.class_name, 'class');
 
                 const styles = get_styles_for_element(

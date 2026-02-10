@@ -12,10 +12,7 @@
 - change 'change parent' to 'move'
 - make server code generation
 
-- fix hover styles not updating edit tab
-- fix layout tab
-- add links for adding issues and sponsering
-- 
+- add ai tab
 
 
 
