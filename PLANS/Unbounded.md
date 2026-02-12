@@ -14,5 +14,10 @@
 
 - add ai tab
 
+- fix undo for css variables?
+- fix undo for duplicate?
+- add convert element styles to class
+- don't give css warning for fonts
+
 
 

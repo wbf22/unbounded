@@ -5646,6 +5646,13 @@
         
         function setAttributeView(element, hover_styles) {
 
+            // if classes tab revert to that logic
+            if (classes_tab.classList.contains("side_view_tab_selected")) {
+                set_class_attribute_view();
+                return;
+            }
+
+            // otherwise set attribute view for edit tab
             unselect_tabs();
             css_tab.classList.add("side_view_tab_selected");
 
@@ -8109,6 +8116,10 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                     }
                     else if (layout_tab.classList.contains("side_view_tab_selected")) {
                         show_layout_tab();
+                    }
+                    else if (classes_tab.classList.contains("side_view_tab_selected")) {
+                        unselect_tabs();
+                        setAttributeView(element);
                     }
                 }
 
