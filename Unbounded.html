@@ -4698,7 +4698,7 @@
         function add_warning_if_class_affected_style(target_attribute_view, attribute_values, name) {
 
             // add warning if this is affected by a class
-            if (!classes_tab.classList.contains("side_view_tab_selected")) {
+            if (css_tab.classList.contains("side_view_tab_selected") && animation_editor.style.display == 'none') {
                 let affecting_class = get_element_class_affecting_style(current_element, name);
                 if (affecting_class) {
                     let warning = document.createElement('div');
