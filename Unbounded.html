@@ -894,6 +894,30 @@
             cursor: pointer;
         }
 
+
+        .text_entry_popup {
+            z-index: 1001;
+            background-color: #07002f;
+            border-radius: 2px;
+
+            display: none;
+            flex-direction: column;
+
+
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-70%, -50%);
+            padding: 1rem;
+
+        }
+
+        
+        #text_entry_done_button {
+            width: 3rem;
+            margin-top: 1rem;
+        }
+
     </style>
 </head>
 <body>
@@ -1010,6 +1034,7 @@
         <div class="menu-item" onclick="select_parent()">select parent</div>
         <div class="menu-item" onclick="duplicate()">duplicate</div>
         <div class="menu-item" onclick="add_component(current_element)">save as component</div>
+        <div class="menu-item" onclick="create_new_class_from_current_element()">make class from element</div>
     </div>
 
     <div id="gray_out"></div>
@@ -2440,6 +2465,63 @@
             return affecting_class;
         }
 
+        function save_element_styles_as_class(element, class_name) {
+            if (!element) return;
+
+            let styles = get_styles_for_element(
+                element,
+                all_styles,
+                true
+            );
+
+            // make sure class doesn't already exist
+            if(has_rule(class_name)) {
+                alert("That class already exists");
+                return;
+            }
+
+            // add new class to iframe
+            add_css_rule(`.${class_name} {}`);
+            current_style_ref = get_rule_from_iframe_style(class_name, 'class');
+            for (let style of all_styles) {
+                if (styles[style]) {
+                    current_style_ref.style[style] = styles[style];
+                }
+            }
+
+            // add undo action
+            add_action(ADD_CLASS, element, class_name, get_rule_from_iframe_style(class_name, 'class'));
+        }
+
+        function text_entry_popup(prompt, done_listener) {
+
+            let entry = document.createElement("div");
+            entry.innerHTML = `
+                <div class="text_entry_popup">
+                    <h3>${prompt}</h3>
+                    <input id="prompt_input" class="attribute_input" placeholder=""></input>
+                    <button id="text_entry_done_button">done</button>
+                </div>
+            `;
+
+            document.body.appendChild(entry);
+            document.getElementById('gray_out').style.display = "block";
+            entry.querySelector(".text_entry_popup").style.display = "flex";
+            let prompt_input = document.getElementById('prompt_input');
+            prompt_input.focus();
+
+            document.getElementById("text_entry_done_button").addEventListener("click", () => {
+
+                let value = prompt_input.value;
+                document.getElementById('gray_out').style.display = "none";
+                entry.remove()
+
+                done_listener(value);
+            });
+
+
+        }
+
 
         // CRYPTO RANDOM
         function random_crypto(min, max) {
@@ -2554,8 +2636,90 @@
             });
         }
 
+        // CLIPBOARD
+        function copy_to_clipboard(text) {
+            // Try modern clipboard API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                return navigator.clipboard.writeText(text)
+                .then(() => showCopiedPopup())
+                .catch(() => fallbackCopy(text));
+            } else {
+                return Promise.resolve().then(() => fallbackCopy(text));
+            }
 
+            function fallbackCopy(str) {
+                // Legacy fallback using a temporary textarea
+                const ta = document.createElement('textarea');
+                ta.value = str;
+                // Prevent scrolling to bottom
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                ta.setSelectionRange(0, ta.value.length);
+                let ok = false;
+                try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+                document.body.removeChild(ta);
+                if (ok) showCopiedPopup();
+                return ok;
+            }
+        }
     
+        // FADE POPUP
+
+        function show_fade_pop_up(text, x, y) {
+            const ID = 'fade_popup';
+            const FADE_MS = 300;
+            const VISIBLE_MS = 2000;
+
+            // If popup already exists, reset timer and make it visible again
+            let existing = document.getElementById(ID);
+            if (existing) {
+                existing.style.opacity = '1';
+                if (existing._removeTimeout) clearTimeout(existing._removeTimeout);
+                existing._removeTimeout = setTimeout(() => fadeAndRemove(existing), VISIBLE_MS);
+                return;
+            }
+
+            const popup = document.createElement('div');
+            popup.id = ID;
+            popup.textContent = text;
+            popup.setAttribute('role', 'status');
+            popup.setAttribute('aria-live', 'polite');
+
+            // Inline styles so you don't need external CSS
+            Object.assign(popup.style, {
+                position: 'fixed',
+                left: `${x}px`,
+                top: `${y}px`,
+                width: '3rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(0,0,0,0.8)',
+                color: 'white',
+                borderRadius: '0.5rem',
+                fontSize: '0.8rem',
+                opacity: '1',
+                transition: `opacity ${FADE_MS}ms ease`,
+                zIndex: 9999,
+                pointerEvents: 'none',
+                textAlign: 'center',
+                boxSizing: 'border-box',
+                padding: '0.25rem'
+            });
+
+            document.body.appendChild(popup);
+
+            popup._removeTimeout = setTimeout(() => fadeAndRemove(popup), VISIBLE_MS);
+
+            function fadeAndRemove(el) {
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    if (el.parentNode) el.parentNode.removeChild(el);
+                }, FADE_MS);
+            }
+        }
     </script>
 
     <!-- color picker -->
@@ -2774,6 +2938,9 @@
             }
             else if (layout_tab.classList.contains("side_view_tab_selected")) {
                 show_layout_tab();
+            }
+            else if (classes_tab.classList.contains("side_view_tab_selected")) {
+                show_class_editor();
             }
         }
         
@@ -6199,7 +6366,10 @@
         }
     
         function save() {
-            const blob = new Blob([get_iframe_html()], { type: 'text/plain' });
+            
+            // get html and dowload as a file
+            let html = get_iframe_html()
+            const blob = new Blob([html], { type: 'text/plain' });
 
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
@@ -6208,6 +6378,13 @@
             document.body.appendChild(link);  // Required for Firefox
             link.click();
             document.body.removeChild(link);
+
+            // copy html into clip board
+            copy_to_clipboard(html);
+            let rect = save_button.getBoundingClientRect()
+            let x = rect.left;
+            let y = rect.top;
+            show_fade_pop_up("copied!", x, y - rect.height);
         }
 
 
@@ -6765,7 +6942,6 @@ If you want a style change to apply to both desktop and mobile, make changes in 
         }
         
 
-
         function change_parent(event) {
             if (selected_parent != event.target) {
                 remove_outlines(selected_parent);
@@ -6802,7 +6978,6 @@ If you want a style change to apply to both desktop and mobile, make changes in 
             iframeDoc.addEventListener("mousemove", change_parent);
         }
 
-
         function change_parent_end() {
             changing_parent = false;
             iframeDoc.removeEventListener("mousemove", change_parent);
@@ -6811,9 +6986,6 @@ If you want a style change to apply to both desktop and mobile, make changes in 
             reset_selected_tab();
         }
     
-    
-    
-        // duplicate
         function duplicate() {
             right_click_menu.style.display = "none";
             const new_element = current_element.cloneNode(true);
@@ -6839,6 +7011,15 @@ If you want a style change to apply to both desktop and mobile, make changes in 
 
         }
     
+        function create_new_class_from_current_element() {
+
+            right_click_menu.style.display = "none";
+            text_entry_popup("Enter the new class name", (class_name) => {
+                save_element_styles_as_class(current_element, class_name);
+                show_class_editor();
+            });
+        } 
+
     </script>
 
     <!-- undo redo -->
@@ -6965,13 +7146,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 reset_components_list();
             }
 
-
-            if (class_editor_menu.style.display == 'flex') {
-                set_class_attribute_view();
-            }
-            else {
-                reset_selected_tab();
-            }
+            reset_selected_tab();
             undone_actions.push(action);
             // console.log(actions, undone_actions);
         }
@@ -7061,12 +7236,7 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 reset_components_list();
             }
 
-            if (class_editor_menu.style.display == 'flex') {
-                set_class_attribute_view();
-            }
-            else {
-                reset_selected_tab();
-            }
+            reset_selected_tab();
             actions.push(action);
             // console.log(actions, undone_actions);
         }
