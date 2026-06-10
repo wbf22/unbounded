@@ -951,23 +951,33 @@
             <div id="ai_view" class="attributes_view" style="display: none; flex-direction: column; flex: 1; min-height: 0;">
                 <div id="ai_chat_history" style="flex: 1; overflow-y: auto; margin-bottom: 1rem; border: var(--def_border); padding: 0.5rem; background-color: #030014;"></div>
                 <div style="display: flex; flex-direction: column;">
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
-                        <input id="ai_base_url" class="attribute_input" placeholder="API Base URL (e.g. https://api.openai.com/v1)" style="flex: 1;" />
-                        <input id="ai_api_key" class="attribute_input" type="password" placeholder="API Key" style="flex: 1;" />
-                    </div>
-                    <select id="ai_model" class="attribute_input" style="margin-bottom: 0.5rem;" onchange="update_api_base_url()">
+                    <input id="ai_api_key" class="attribute_input" type="password" placeholder="API Key" style="margin-bottom: 0.5rem;" />
+                    <select id="ai_model" class="attribute_input" style="margin-bottom: 0.5rem;">
                         <optgroup label="OpenAI">
                             <option value="gpt-4o" data-base-url="https://api.openai.com/v1">GPT-4o</option>
                             <option value="gpt-4o-mini" data-base-url="https://api.openai.com/v1">GPT-4o Mini</option>
+                            <option value="o1" data-base-url="https://api.openai.com/v1">o1</option>
+                            <option value="o1-mini" data-base-url="https://api.openai.com/v1">o1-mini</option>
                             <option value="o3-mini" data-base-url="https://api.openai.com/v1">o3-mini</option>
                         </optgroup>
                         <optgroup label="Groq">
-                            <option value="mixtral-8x7b-32768" data-base-url="https://api.groq.com/openai/v1">Mixtral 8x7b</option>
                             <option value="llama-3.3-70b-versatile" data-base-url="https://api.groq.com/openai/v1">Llama 3.3 70B</option>
+                            <option value="mixtral-8x7b-32768" data-base-url="https://api.groq.com/openai/v1">Mixtral 8x7B</option>
+                            <option value="deepseek-r1-distill-llama-70b" data-base-url="https://api.groq.com/openai/v1">DeepSeek R1 Distill 70B</option>
+                        </optgroup>
+                        <optgroup label="DeepSeek">
+                            <option value="deepseek-chat" data-base-url="https://api.deepseek.com">DeepSeek V3</option>
+                            <option value="deepseek-reasoner" data-base-url="https://api.deepseek.com">DeepSeek R1</option>
+                        </optgroup>
+                        <optgroup label="Together AI">
+                            <option value="meta-llama/Llama-3.3-70B-Instruct-Turbo" data-base-url="https://api.together.xyz/v1">Llama 3.3 70B Turbo</option>
+                            <option value="deepseek-ai/DeepSeek-R1" data-base-url="https://api.together.xyz/v1">DeepSeek R1</option>
+                            <option value="Qwen/Qwen2.5-Coder-32B-Instruct" data-base-url="https://api.together.xyz/v1">Qwen 2.5 Coder 32B</option>
                         </optgroup>
                         <optgroup label="Ollama (Local)">
                             <option value="qwen2.5-coder:7b" data-base-url="http://localhost:11434/v1">Qwen 2.5 Coder 7B</option>
                             <option value="llama3.2:3b" data-base-url="http://localhost:11434/v1">Llama 3.2 3B</option>
+                            <option value="deepseek-coder-v2:16b" data-base-url="http://localhost:11434/v1">DeepSeek Coder V2 16B</option>
                         </optgroup>
                     </select>
                     <textarea id="ai_message_input" class="attribute_input" placeholder="Type instructions here..." style="resize: vertical; min-height: 4rem; margin-bottom: 0.5rem;"></textarea>
@@ -1407,6 +1417,7 @@
         const CSS_VARIABLE = "CSS_VARIABLE";
         const ID_CHANGE = "ID_CHANGE";
         const DELETE_COMPONENT = "DELETE_COMPONENT";
+        const REPLACE_HTML = "REPLACE_HTML";
         
 
         const all_styles = [
@@ -2843,119 +2854,6 @@
             chat_history.scrollTop = chat_history.scrollHeight;
         }
 
-        function update_api_base_url() {
-            const modelSelect = document.getElementById("ai_model");
-            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
-            if (selectedOption && selectedOption.dataset.baseUrl) {
-                document.getElementById("ai_base_url").value = selectedOption.dataset.baseUrl;
-            }
-        }
-
-        async function send_ai_message() {
-            const base_url = document.getElementById("ai_base_url").value || "https://api.openai.com/v1";
-            const api_key = document.getElementById("ai_api_key").value;
-            const model = document.getElementById("ai_model").value || "gpt-4o";
-            const message_input = document.getElementById("ai_message_input");
-            const text = message_input.value.trim();
-
-            if (!text && ai_messages.length === 0) return;
-
-            if (ai_messages.length === 0) {
-                ai_messages.push({
-                    role: "system",
-                    content: "You are an AI web developer assistant integrated into a visual HTML editor. You can view the current HTML and modify it using tools."
-                });
-            }
-
-            if (text) {
-                ai_messages.push({ role: "user", content: text });
-                message_input.value = "";
-                render_ai_chat();
-            }
-
-            const tools = [
-                {
-                    type: "function",
-                    function: {
-                        name: "get_html",
-                        description: "Gets the current full HTML of the webpage being edited.",
-                        parameters: { type: "object", properties: {}, required: [] }
-                    }
-                },
-                {
-                    type: "function",
-                    function: {
-                        name: "execute_javascript",
-                        description: "Executes arbitrary JavaScript in the context of the editor to modify the page. The iframe document is available as `iframeDoc`. For example: `iframeDoc.body.style.backgroundColor = 'red';` or `let el = iframeDoc.createElement('div'); iframeDoc.body.appendChild(el);`.",
-                        parameters: {
-                            type: "object",
-                            properties: {
-                                code: { type: "string", description: "The JavaScript code to execute." }
-                            },
-                            required: ["code"]
-                        }
-                    }
-                }
-            ];
-
-            try {
-                const response = await fetch(`${base_url.replace(/\/$/, '')}/chat/completions`, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${api_key}`
-                    },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: ai_messages,
-                        tools: tools,
-                        tool_choice: "auto"
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
-                }
-
-                const data = await response.json();
-                const ai_msg = data.choices[0].message;
-                ai_messages.push(ai_msg);
-                render_ai_chat();
-
-                if (ai_msg.tool_calls && ai_msg.tool_calls.length > 0) {
-                    for (let tool_call of ai_msg.tool_calls) {
-                        let args = JSON.parse(tool_call.function.arguments);
-                        let result = "";
-
-                        try {
-                            if (tool_call.function.name === "get_html") {
-                                result = get_iframe_html();
-                            } else if (tool_call.function.name === "execute_javascript") {
-                                result = String(eval(args.code));
-                            } else {
-                                result = "Unknown tool.";
-                            }
-                        } catch (e) {
-                            result = `Error: ${e.message}`;
-                        }
-
-                        ai_messages.push({
-                            role: "tool",
-                            tool_call_id: tool_call.id,
-                            name: tool_call.function.name,
-                            content: result || "Success"
-                        });
-                    }
-
-                    // Recursively call to get the AI's response after tool execution
-                    await send_ai_message();
-                }
-
-            } catch (error) {
-                console.error(error);
-                alert("AI Error: " + error.message);
-            }
-        }
 
         function show_ai_tab() {
             unselect_tabs();
@@ -3417,6 +3315,26 @@
     <script>
         function get_ai_response(user_prompt) {
             
+
+            // send prompt to ai
+
+            // extract first code block and set as html for page
+
+
+        }
+
+        async function send_ai_message() {
+            const modelSelect = document.getElementById("ai_model");
+            const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+            const base_url = selectedOption?.dataset?.baseUrl || "https://api.openai.com/v1";
+            const api_key = document.getElementById("ai_api_key").value;
+            const model = document.getElementById("ai_model").value || "gpt-4o";
+            const message_input = document.getElementById("ai_message_input");
+            const user_prompt = message_input.value.trim();
+
+            if (!user_prompt && ai_messages.length === 0) return;
+
+
             // create prompt
             const user_page = get_iframe_html();
             
@@ -3424,34 +3342,115 @@
             const instructions = `
                 Hello, you're currently bing asked to help a user in Unbounded, a visual html editor for editing static
                 pages. They can modify css styles for elements in the page they are creating under an 'edit'
-                tab. We'll send you the users page and their request, and we'd love it if you can send back
-                a complete html page with their desired edits. 
+                tab.
 
                 The editor supports the following css styles:
                 ${all_styles_str}
 
-                We'd love it if you could modify the users page only using those styles if possible. Please send
-                back a code block delineated with \`\`\` containing the user's page. We'll use the first code
-                block in your response to replace the contents of the user's page. If you'd like to say more to
-                the user feel free too. We'll display your response in its entirety to them in a seperate tab.
-
+                We'd love it if you could modify the users page only using those styles if possible. 
                 Here's the current state of their page:
 
                 \`\`\`
-                ${get_iframe_html}
+                ${user_page}
                 \`\`\`
 
-                And here's their prompt:
-
-                ${user_prompt}
             `;
+            ai_messages.push({
+                role: "system",
+                content: instructions
+            });
 
+            if (user_prompt) {
+                ai_messages.push({ role: "user", content: user_prompt });
+                message_input.value = "";
+                render_ai_chat();
+            }
 
-            // send prompt to ai
+            const tools = [
+                {
+                    type: "function",
+                    function: {
+                        name: "get_html",
+                        description: "Gets the current full HTML of the webpage being edited.",
+                        parameters: { type: "object", properties: {}, required: [] }
+                    }
+                },
+                {
+                    type: "function",
+                    function: {
+                        name: "set_html",
+                        description: "Sets the full html of the webpage being edited.",
+                        parameters: {
+                            type: "object",
+                            properties: {
+                                html: { type: "string", description: "The code replacement for the webpage being edited" }
+                            },
+                            required: ["html"]
+                        }
+                    }
+                }
+            ];
 
-            // extract first code block and set as html for page
+            try {
+                const response = await fetch(`${base_url.replace(/\/$/, '')}/chat/completions`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${api_key}`
+                    },
+                    body: JSON.stringify({
+                        model: model,
+                        messages: ai_messages,
+                        tools: tools,
+                        tool_choice: "auto"
+                    })
+                });
 
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
 
+                const data = await response.json();
+                const ai_msg = data.choices[0].message;
+                ai_messages.push(ai_msg);
+                render_ai_chat();
+
+                if (ai_msg.tool_calls && ai_msg.tool_calls.length > 0) {
+                    for (let tool_call of ai_msg.tool_calls) {
+                        let args = JSON.parse(tool_call.function.arguments);
+                        let result = "";
+
+                        try {
+                            if (tool_call.function.name === "get_html") {
+                                result = get_iframe_html();
+                            } else if (tool_call.function.name === "set_html") {
+                                let new_html = args["html"];
+                                add_action(REPLACE_HTML, null, null, get_iframe_html());
+                                iframe.srcdoc = new_html;
+                                result = get_iframe_html();
+                            } else {
+                                result = "Unknown tool.";
+                            }
+                        } catch (e) {
+                            result = `Error: ${e.message}`;
+                        }
+
+                        ai_messages.push({
+                            role: "tool",
+                            tool_call_id: tool_call.id,
+                            name: tool_call.function.name,
+                            content: result || "Success"
+                        });
+                    }
+
+                    // Recursively call to get the AI's response after tool execution
+                    await send_ai_message();
+                }
+
+            } catch (error) {
+                console.error(error);
+                alert("AI Error: " + error.message);
+            }
         }
     </script>
 
@@ -7152,7 +7151,11 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 components.splice(index, 0, component);
                 reset_components_list();
             }
-
+            else if (action.type == REPLACE_HTML) {
+                let current_html = get_iframe_html();
+                iframe.srcdoc = action.value;
+                action.value = current_html;
+            }
 
             if (class_editor_menu.style.display == 'flex') {
                 set_class_attribute_view();
@@ -7247,6 +7250,11 @@ If you want a style change to apply to both desktop and mobile, make changes in 
                 let index = action.property;
                 components.splice(index, 1);
                 reset_components_list();
+            }
+            else if (action.type == REPLACE_HTML) {
+                let current_html = get_iframe_html();
+                iframe.srcdoc = action.value;
+                action.value = current_html;
             }
 
             if (class_editor_menu.style.display == 'flex') {
