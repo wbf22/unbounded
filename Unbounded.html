@@ -3168,12 +3168,12 @@
         // css
         function show_css_tab() {
 
+            unselect_tabs();
+            css_tab.classList.add("side_view_tab_selected");
             if (current_element) {
                 setAttributeView(current_element);
             }
             else {
-                unselect_tabs();
-                css_tab.classList.add("side_view_tab_selected");
                 attributes_view.innerHTML = '<p>Click on something in the view area to edit it here.</p>';
             }
         }
