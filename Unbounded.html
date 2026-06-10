@@ -2855,6 +2855,16 @@
         // ai tab
         let ai_messages = [];
 
+        function format_message(text) {
+            text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+            text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            text = text.replace(/\n/g, '<br>');
+            return text;
+        }
+
         function render_ai_chat() {
             const chat_history = document.getElementById("ai_chat_history");
             chat_history.innerHTML = "";
@@ -2865,16 +2875,18 @@
                 msg_div.style.marginBottom = "1rem";
                 msg_div.style.padding = "0.5rem";
                 msg_div.style.borderRadius = "5px";
+                msg_div.style.whiteSpace = "pre-wrap";
+                msg_div.style.wordBreak = "break-word";
                 
                 if (msg.role === "user") {
                     msg_div.style.backgroundColor = "#241387";
                     msg_div.style.alignSelf = "flex-end";
-                    msg_div.innerHTML = `<strong>You:</strong><br/>${msg.content}`;
+                    msg_div.innerHTML = `<strong>You:</strong><br/>${format_message(msg.content)}`;
                 } 
                 else if (msg.role === "assistant") {
                     msg_div.style.backgroundColor = "#4d31ee";
                     if (msg.content) {
-                        msg_div.innerHTML = `<strong>AI:</strong><br/>${msg.content}`;
+                        msg_div.innerHTML = `<strong>AI:</strong><br/>${format_message(msg.content)}`;
                     } else if (msg.tool_calls) {
                         msg_div.innerHTML = `<strong>AI (Tools):</strong><br/>Used ${msg.tool_calls.length} tool(s)`;
                     }
