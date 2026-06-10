@@ -399,6 +399,16 @@
             background-color: #241387;
         }
 
+        .control_button_highlight {
+            background-color: #4d31ee;
+            border: 1px solid #6b52f5;
+        }
+
+        .control_button_highlight:hover {
+            background-color: #5d41ff;
+            border: 1px solid #8a75ff;
+        }
+
         #add_div_button {
             font-size: 1.3rem;
             margin: .6rem;
@@ -1000,7 +1010,7 @@
                         </optgroup>
                     </select>
                     <textarea id="ai_message_input" class="attribute_input" placeholder="Type instructions here..." style="resize: vertical; min-height: 4rem; margin-bottom: 0.5rem;"></textarea>
-                    <button class="control_button" onclick="send_ai_message()" style="margin: 0;">Send</button>
+                    <button id="ai_send_button" class="control_button control_button_highlight" onclick="send_ai_message()" style="margin: 0;">Send</button>
                 </div>
             </div>
             <div id="attributes_view" class="attributes_view">
@@ -3342,6 +3352,13 @@
 
 
         }
+
+        document.getElementById("ai_message_input").addEventListener("keydown", function(e) {
+            if (e.ctrlKey && e.key === "Enter") {
+                e.preventDefault();
+                send_ai_message();
+            }
+        });
 
         function show_ai_loading() {
             const chat_history = document.getElementById("ai_chat_history");
