@@ -1,12 +1,11 @@
 # Unbounded
 Hello and welcome!
 
-This repo contains the Unbounded no code website creator. The entire app is actually contained in Unbounded.html for ease of use.
-You can download that html file to edit html files offline, or visit https://wbf22.github.io/unbounded/ to use the editor there.
+This repo contains the Unbounded no code website creator. With Unbounded you can create websites visually, and then export your website as html. It includes the majority of css styles, classes, and even animations.
+
+The entire app is actually contained in Unbounded.html for ease of use. You can download that html file to edit html files offline, or visit https://wbf22.github.io/unbounded/ to use the editor there.
 
 Unbounded is free to use and the code is in the public domain. If you'd like to support me, here's my link [https://github.com/sponsors/wbf22](https://github.com/sponsors/wbf22)
-
-
 
 - [Usage](#usage)
   - [Components](#components)
@@ -42,6 +41,9 @@ I haven't made a tutorial yet for using Unbounded but I probably should. Hopeful
 
 ### Layout
 The layout tab shows how your page is structured. HTML pages work by putting elements inside other elements. This is used in scenarios where you might put paragraphs inside a section, or buttons inside a nav bar. This tab is mostly useful for understanding the structure of your page.
+
+### Classes
+This tab is for creating classes that help you keep the same style across different elements in your website. You can make a class and set certain styles on it. Later when adding elements you can select that class in the edit tab to apply those same styles to the element.
 
 ## Design
 I made unbounded with these priorities
