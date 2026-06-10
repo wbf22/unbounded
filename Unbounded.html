@@ -894,6 +894,25 @@
             cursor: pointer;
         }
 
+        @keyframes ai-loading-pulse {
+            0%, 80%, 100% { opacity: 0.3; }
+            40% { opacity: 1; }
+        }
+
+        .ai-loading-dot {
+            display: inline-block;
+            width: 0.5rem;
+            height: 0.5rem;
+            background-color: #dddddd;
+            border-radius: 50%;
+            margin: 0 0.15rem;
+            animation: ai-loading-pulse 1.4s infinite ease-in-out both;
+        }
+
+        .ai-loading-dot:nth-child(1) { animation-delay: -0.32s; }
+        .ai-loading-dot:nth-child(2) { animation-delay: -0.16s; }
+        .ai-loading-dot:nth-child(3) { animation-delay: 0s; }
+
     </style>
 </head>
 <body>
@@ -3324,6 +3343,28 @@
 
         }
 
+        function show_ai_loading() {
+            const chat_history = document.getElementById("ai_chat_history");
+            const loadingDiv = document.createElement("div");
+            loadingDiv.id = "ai-loading";
+            loadingDiv.style.marginBottom = "1rem";
+            loadingDiv.style.padding = "0.5rem";
+            loadingDiv.style.borderRadius = "5px";
+            loadingDiv.style.backgroundColor = "#4d31ee";
+            loadingDiv.style.display = "flex";
+            loadingDiv.style.alignItems = "center";
+            loadingDiv.style.gap = "0.5rem";
+            loadingDiv.innerHTML = `<strong>AI:</strong>`;
+            for (let i = 0; i < 3; i++) {
+                const dot = document.createElement("span");
+                dot.className = "ai-loading-dot";
+                loadingDiv.appendChild(dot);
+            }
+            chat_history.appendChild(loadingDiv);
+            chat_history.scrollTop = chat_history.scrollHeight;
+            return loadingDiv;
+        }
+
         async function send_ai_message() {
             const modelSelect = document.getElementById("ai_model");
             const selectedOption = modelSelect.options[modelSelect.selectedIndex];
@@ -3350,6 +3391,8 @@
                 We'd love it if you could modify the users page only using those styles if possible.
                 The next message is the current state of the user's page
 
+                Don't send html back in user messages, just use tool calls to set the page's html.
+
             `;
             ai_messages.push({
                 role: "system",
@@ -3366,6 +3409,8 @@
                 message_input.value = "";
                 render_ai_chat();
             }
+
+            const loadingMsg = show_ai_loading();
 
             const tools = [
                 {
@@ -3414,6 +3459,7 @@
                 const data = await response.json();
                 const ai_msg = data.choices[0].message;
                 ai_messages.push(ai_msg);
+                loadingMsg.remove();
                 render_ai_chat();
 
                 if (ai_msg.tool_calls && ai_msg.tool_calls.length > 0) {
@@ -3424,12 +3470,14 @@
                         try {
                             if (tool_call.function.name === "get_html") {
                                 result = get_iframe_html();
-                            } else if (tool_call.function.name === "set_html") {
+                            } 
+                            else if (tool_call.function.name === "set_html") {
                                 let new_html = args["html"];
                                 add_action(REPLACE_HTML, null, null, get_iframe_html());
                                 iframe.srcdoc = new_html;
                                 result = get_iframe_html();
-                            } else {
+                            } 
+                            else {
                                 result = "Unknown tool.";
                             }
                         } catch (e) {
@@ -3450,6 +3498,7 @@
 
             } catch (error) {
                 console.error(error);
+                loadingMsg.remove();
                 alert("AI Error: " + error.message);
             }
         }
@@ -8436,11 +8485,13 @@ If you want a style change to apply to both desktop and mobile, make changes in 
             // init current_element to the body element
             set_current_element(iframeDoc.querySelector("body"));
 
-
             // default to showing component tab
-            components = JSON.parse(document.getElementById("starter_components").textContent)
-            show_css_tab();
+            components = JSON.parse(document.getElementById("starter_components").textContent);
+            if (!ai_tab.classList.contains("side_view_tab_selected")) {
+                show_css_tab();
+            }
         });
+        
 
         window.addEventListener('click', (event) => {
             right_click_menu.style.display = 'none';
