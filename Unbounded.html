@@ -2841,7 +2841,8 @@
                     msg_div.style.backgroundColor = "#241387";
                     msg_div.style.alignSelf = "flex-end";
                     msg_div.innerHTML = `<strong>You:</strong><br/>${msg.content}`;
-                } else if (msg.role === "assistant") {
+                } 
+                else if (msg.role === "assistant") {
                     msg_div.style.backgroundColor = "#4d31ee";
                     if (msg.content) {
                         msg_div.innerHTML = `<strong>AI:</strong><br/>${msg.content}`;
@@ -3336,7 +3337,6 @@
 
 
             // create prompt
-            const user_page = get_iframe_html();
             
             const all_styles_str = all_styles.join(" ");
             const instructions = `
@@ -3347,17 +3347,18 @@
                 The editor supports the following css styles:
                 ${all_styles_str}
 
-                We'd love it if you could modify the users page only using those styles if possible. 
-                Here's the current state of their page:
-
-                \`\`\`
-                ${user_page}
-                \`\`\`
+                We'd love it if you could modify the users page only using those styles if possible.
+                The next message is the current state of the user's page
 
             `;
             ai_messages.push({
                 role: "system",
                 content: instructions
+            });
+            const user_page = get_iframe_html();
+            ai_messages.push({
+                role: "system",
+                content: user_page
             });
 
             if (user_prompt) {
