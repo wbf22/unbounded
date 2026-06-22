@@ -2183,7 +2183,7 @@
                         }
                     } catch (e) {
                         // Cross-origin stylesheet, skip
-                        if (!external_style_sheet_warning_given && sheet.href) {
+                        if (!external_style_sheet_warning_given && sheet.href && !sheet.href.contains("font")) {
                             let message = [
                                 "Looks like you're referencing an external style sheet (",
                                 sheet.href,
